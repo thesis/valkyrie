@@ -98,7 +98,7 @@ module.exports = (robot) ->
     found = false
     for userId, pendingInfo of robot.brain.pendingGitHubTokens when token == pendingInfo.token
       pendingInfo.date = (new Date).getTime() # extend lifetime by 5 minutes
-      res.send 200, "<!doctype html><html><body><form target='/github/auth/#{token}' type='post'><label>OAuth Token: <input name='oauthtoken'</label></form></body></html>"
+      res.send 200, "<!doctype html><html><body><form target='/github/auth/#{token}' type='post'><label>OAuth Token: <input name='oauthtoken'></label> <input type='submit'></form></body></html>"
       found = true
       break
 
