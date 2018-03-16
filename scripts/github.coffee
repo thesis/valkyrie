@@ -81,7 +81,7 @@ module.exports = (robot) ->
     else
       res.send "You don't seem to be authenticated with GitHub; try sending me `github auth`!"
 
-  robot.respond /github who am i/, (res) ->
+  robot.respond /github who am (i|I)/, (res) ->
     api = apiFor robot, res.message.user
 
     if api?
