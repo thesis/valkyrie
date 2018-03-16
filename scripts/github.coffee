@@ -33,9 +33,19 @@ apiFor = (bot, user) ->
 
   api
 
+SECOND = 1000
+MINUTE = 60 * SECOND
+
 module.exports = (robot) ->
   robot.brain.pendingGitHubTokens ||= {}
   robot.brain.gitHubTokens ||= {}
+
+  cleanPending = ->
+    now = (new Date).getTime()
+    for userId, pendingInfo of robot.brain.pendingGitHubTokens when (now - pendingInfo.date) > (5 * MINUTE)
+      delete robot.brain.pendingGitHubTokens[userId]
+
+  setInterval cleanPending, 30000
 
   robot.respond /github auth/, (res) ->
     user = res.message.user
@@ -46,7 +56,7 @@ module.exports = (robot) ->
       token: token
       date: (new Date).getTime()
 
-    res.send "You can log in at #{HOST}/github/auth/#{token}"
+    res.send "You can log in at #{HOST}/github/auth/#{token} in the next 5 minutes."
 
   robot.respond /github add (developer|user) ([^ ]+) to (cardforcoin|keep-network)/, (res) ->
     api = apiFor robot, res.message.user
@@ -74,6 +84,7 @@ module.exports = (robot) ->
     token = req.params.token
     found = false
     for userId, pendingInfo of robot.brain.pendingGitHubTokens when token == pendingInfo.token
+      pendingInfo.date = (new Date).getTime() # extend lifetime by 5 minutes
       res.send 200, "<!doctype html><html><body><form target='/github/auth/#{token}' type='post'><label>OAuth Token: <input name='oauthtoken'</label></form></body></html>"
       found = true
       break
