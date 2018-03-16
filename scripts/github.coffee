@@ -34,10 +34,14 @@ apiFor = (bot, user) ->
   api
 
 module.exports = (robot) ->
+  robot.brain.pendingGitHubTokens ||= {}
+  robot.brain.gitHubTokens ||= {}
+
   robot.respond /github auth/, (res) ->
     user = res.message.user
     token = UUIDV4()
 
+    robot.brain.pendingGitHubTokens ||= {}
     robot.brain.pendingGitHubTokens[user.id] =
       token: token
       date: (new Date).getTime()
