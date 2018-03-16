@@ -10,14 +10,9 @@
 #   HUBOT_HOST - Hostname for the Hubot, sans trailing /, e.g. https://example.herokuapp.com
 #
 # Commands:
-#   hubot github auth - returns a URL where you can identify your GitHub self
-#     to the hubot. Upon identification, if a pending addition request exists
-#     from a call to `github add user`, it will be executed.
-#   hubot github add [developer|user] <username> to [cardforcoin|keep-network] -
-#     Adds the given GitHub username to the specified team with the given role. The
-#     username is a *chat* username, and that user must already have logged in using
-#     `github auth` to prove they own that username. If the user has not, the
-#     request to add them will be stored until they have.
+#   hubot github auth - returns a URL where you can identify your GitHub self to the hubot. Upon identification, if a pending addition request exists from a call to `github add user`, it will be executed.
+#   hubot github who am i - returns your profile info
+#   hubot github add [developer|user] <username> to [cardforcoin|keep-network] - Adds the given GitHub username to the specified team with the given role. The username is a *chat* username, and that user must already have logged in using `github auth` to prove they own that username. If the user has not, the request to add them will be stored until they have.
 GitHubApi = require 'github-api'
 UUIDV4 = require 'uuid/v4'
 
