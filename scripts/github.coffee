@@ -73,7 +73,7 @@ module.exports = (robot) ->
   robot.router.get '/github/auth/:token', (req, res) ->
     token = req.params.token
     found = false
-    for userId, userToken of robot.brain.pendingGitHubTokens when token == userToken
+    for userId, userToken of robot.brain.pendingGitHubTokens when token == userToken.token
       res.send 200, "<!doctype html><html><body><form target='/github/auth/#{token}' type='post'><label>OAuth Token: <input name='oauthtoken'</label></form></body></html>"
       found = true
       break
