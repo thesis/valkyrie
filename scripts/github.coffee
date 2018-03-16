@@ -73,7 +73,7 @@ module.exports = (robot) ->
   robot.router.get '/github/auth/:token', (req, res) ->
     token = req.params.token
     found = false
-    for userId, userToken of robot.brain.pendingGitHubTokens when token == userToken.token
+    for userId, pendingInfo of robot.brain.pendingGitHubTokens when token == pendingInfo.token
       res.send 200, "<!doctype html><html><body><form target='/github/auth/#{token}' type='post'><label>OAuth Token: <input name='oauthtoken'</label></form></body></html>"
       found = true
       break
@@ -84,7 +84,7 @@ module.exports = (robot) ->
   robot.router.post '/github/auth/:token', (req, res) ->
     token = req.params.token
     found = false
-    for userId, userToken of robot.brain.pendingGitHubTokens when token == userToken
+    for userId, pendingInfo of robot.brain.pendingGitHubTokens when token == pendingInfo.token
       delete robot.brain.pendingGitHubTokens[userId]
       robot.brain.gitHubTokens[userId] = req.body.oauthtoken
       res.send 200, "<!doctype html><html><body>Got it!</body></html>"
