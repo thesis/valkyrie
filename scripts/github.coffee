@@ -76,6 +76,7 @@ module.exports = (robot) ->
             else
               res.send "Unexpected state adding #{gitHubUsername} to #{org}: #{result.state}."
         .catch (error) ->
+          robot.logger.error "Error looking up user profile: ", error
           res.send "Error adding #{gitHubUsername} to #{org}: #{error}."
     else
       res.send "You don't seem to be authenticated with GitHub; try sending me `github auth`!"
@@ -84,12 +85,16 @@ module.exports = (robot) ->
     api = apiFor robot, res.message.user
 
     if api?
-      bits = api.getUser().getProfile()
-      string = ""
-      for key, value of bits
-        string += "#{key}: #{value}\n"
+      api.getUser().getProfile()
+        .then (result) ->
+          string = ""
+          for key, value of bits
+            string += "#{key}: #{value}\n"
 
-      res.send "You are:\n#{string}"
+          res.send "You are:\n#{string}"
+        .catch (error) ->
+          robot.logger.error "Error looking up user profile: ", error
+          res.send "Something went wrong looking you up :("
     else
       res.send "You don't seem to be authenticated with GitHub; try sending me `github auth`!"
 
