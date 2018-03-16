@@ -80,6 +80,19 @@ module.exports = (robot) ->
     else
       res.send "You don't seem to be authenticated with GitHub; try sending me `github auth`!"
 
+  robot.respond /github who am i/, (res) ->
+    api = apiFor robot, res.message.user
+
+    if api?
+      bits = api.getUser().getProfile()
+      string = ""
+      for key, value of bits
+        string += "#{key}: #{value}\n"
+
+      res.send "You are:\n#{string}"
+    else
+      res.send "You don't seem to be authenticated with GitHub; try sending me `github auth`!"
+
   robot.router.get '/github/auth/:token', (req, res) ->
     token = req.params.token
     found = false
