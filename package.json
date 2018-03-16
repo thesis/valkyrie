@@ -6,6 +6,7 @@
   "description": "Heimdall can see and hear your every need, and keeps watch for the onset of Ragnarok",
   "dependencies": {
     "hubot": "^2.19.0",
+    "hubot-circleci": "^0.8.1",
     "hubot-diagnostics": "0.0.2",
     "hubot-flowdock": "^0.7.7",
     "hubot-gif-locker": "^1.0.7",
