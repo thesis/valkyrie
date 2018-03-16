@@ -81,7 +81,7 @@ module.exports = (robot) ->
 
     if api?
       api.getUser().getProfile()
-        .then (result) ->
+        .then (bits) ->
           string = ""
           for key, value of bits
             string += "#{key}: #{value}\n"
