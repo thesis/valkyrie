@@ -72,13 +72,24 @@ module.exports = (robot) ->
 
   robot.router.get '/github/auth/:token', (req, res) ->
     token = req.params.token
+    found = false
     for userId, userToken of robot.brain.pendingGitHubTokens when token == userToken
-      res.send "<!doctype html><html><body><form target='/github/auth/#{token}' type='post'><label>OAuth Token: <input name='oauthtoken'</label></form></body></html>"
+      res.send 200, "<!doctype html><html><body><form target='/github/auth/#{token}' type='post'><label>OAuth Token: <input name='oauthtoken'</label></form></body></html>"
+      found = true
       break
+
+    unless found
+      res.send 404, "File Not Found."
 
   robot.router.post '/github/auth/:token', (req, res) ->
     token = req.params.token
+    found = false
     for userId, userToken of robot.brain.pendingGitHubTokens when token == userToken
+      delete robot.brain.pendingGitHubTokens[userId]
       robot.brain.gitHubTokens[userId] = req.body.oauthtoken
-      res.send "<!doctype html><html><body>Got it!</body></html>"
+      res.send 200, "<!doctype html><html><body>Got it!</body></html>"
+      found = true
       break
+
+    unless found
+      res.send 404, "File Not Found."
