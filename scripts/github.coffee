@@ -53,7 +53,8 @@ module.exports = (robot) ->
       token: token
       date: (new Date).getTime()
 
-    res.send "You can log in at #{HOST}/github/auth/#{token} in the next 5 minutes."
+    res.reply "You can log in at #{HOST}/github/auth/#{token} in the next 5 minutes."
+    res.send "I sent you a private message with a login URL!"
 
   robot.respond /github add ([^ ]+) to ([^ ]+)( .*)/, (res) ->
     api = apiFor robot, res.message.user
