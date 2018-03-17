@@ -1,0 +1,1 @@
+../../../hacklanta/hubot-gif-locker/src/gif-locker.coffee
