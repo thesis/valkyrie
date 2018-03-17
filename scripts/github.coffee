@@ -56,7 +56,7 @@ module.exports = (robot) ->
   robot.respond /github add (developer|user) ([^ ]+) to (cardforcoin|keep-network)/, (res) ->
     api = apiFor robot, res.message.user
 
-    [role, gitHubUsername, org] = match[1..3] 
+    [role, gitHubUsername, org] = res.match[1..3]
 
     teamId = 'everyone'
 
