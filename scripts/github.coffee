@@ -69,7 +69,8 @@ module.exports = (robot) ->
             when 'pending'
               res.send "Invited #{gitHubUsername} to #{org}."
             else
-              res.send "Unexpected state adding #{gitHubUsername} to #{org}: #{result.state}."
+              robot.logger.error "Failed to add #{gitHubUsername} to #{org}: #{JSON.stringify(result.data)}"
+              res.send "Unexpected state adding #{gitHubUsername} to #{org}."
         .catch (error) ->
           robot.logger.error "Error looking up user profile: ", error
           res.send "Error adding #{gitHubUsername} to #{org}: #{error}."
