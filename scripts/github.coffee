@@ -12,9 +12,11 @@
 # Commands:
 #   hubot github auth - returns a URL where you can identify your GitHub self to the hubot. Upon identification, if a pending addition request exists from a call to `github add user`, it will be executed.
 #   hubot github who am i - returns your profile info
-#   hubot github add [developer|user] <username> to [cardforcoin|keep-network] - Adds the given GitHub username to the specified team with the given role. The username is a *chat* username, and that user must already have logged in using `github auth` to prove they own that username. If the user has not, the request to add them will be stored until they have.
+#   hubot github add <username> to [cardforcoin|keep-network] [<team>+] - Adds the given GitHub username to the specified teams in the given group. Teams are the URL name of the team, which has no spaces or special characters other than dashes. The username is a *chat* username, and that user must already have logged in using `github auth` to prove they own that username. If the user has not, the request to add them will be stored until they have.
+
 GitHubApi = require 'github-api'
 UUIDV4 = require 'uuid/v4'
+axios = require 'axios'
 
 CLIENT_CACHE = {}
 HOST = process.env['HUBOT_HOST']
@@ -53,24 +55,58 @@ module.exports = (robot) ->
 
     res.send "You can log in at #{HOST}/github/auth/#{token} in the next 5 minutes."
 
-  robot.respond /github add (developer|user) ([^ ]+) to (cardforcoin|keep-network)/, (res) ->
+  robot.respond /github add ([^ ]+) to ([^ ]+)( .*)/, (res) ->
     api = apiFor robot, res.message.user
 
-    [role, gitHubUsername, org] = res.match[1..3]
-
-    teamId = 'everyone'
+    [gitHubUsername, org, teamsString] = res.match[1..3]
+    teams = teamsString.split(/,? +/)
+    teamsById = {}
 
     if api?
-      api.getTeam(teamId).addMembership(gitHubUsername)
-        .then (resut) ->
-          switch result.state
-            when 'active'
-              res.send "Added #{gitHubUsername} to #{org}."
-            when 'pending'
-              res.send "Invited #{gitHubUsername} to #{org}."
+      api.getOrganization(org).getTeams()
+        .then (result) ->
+          if result.status != 200
+            robot.logger.error "Error looking up org teams for #{org}: #{JSON.stringify(result.data)}"
+            throw "Failed to look up org teams for #{org}."
+          else
+            teams = result.data
+              .filter((_) -> return teams.indexOf(_.slug) > -1)
+              .map((_) -> teamsById[_.id] = _.slug; api.getTeam(_.id))
+
+            axios.all(teams.map((_) -> _.addMembership(gitHubUsername)))
+        .then(axios.spread ->
+          teamStatuses = Array.prototype.slice.apply(arguments)
+          [successes, failures] =
+            teamStatuses.reduce(
+              (([succ, fail], res) ->
+                if res.status == 200
+                  succ.push(res)
+                else
+                  fail.push(res)
+
+                [succ, fail]),
+              [[], []])
+          allFailed = successes.length == 0
+          pending = successes.some((_) -> _.data.state == 'pending')
+
+          if failures.length > 0
+            robot.logger.error "Got failures adding #{gitHubUsername} to #{teams.join(", ")} in #{org}: " +
+              failures.map((_) -> _.data.message).join(", ") + "."
+
+          successTeams = successes.map((_) -> teamsById[_.data.url.replace(/^.*teams\/([^/]+)\/.*$/, "$1")]).join(", ")
+
+          switch
+            when allFailed
+              res.send  "Failed to add #{gitHubUsername} to any teams in #{org}."
+            when pending && failures.length > 0
+              res.send "Invited #{gitHubUsername} to #{successTeams} in #{org}, but the others failed."
+            when pending
+              res.send "Invited #{gitHubUsername} to #{successTeams} in #{org}."
+            when failures.length > 0
+              res.send "Added #{gitHubUsername} to #{successTeams} in #{org}, but the others failed."
             else
-              robot.logger.error "Failed to add #{gitHubUsername} to #{org}: #{JSON.stringify(result.data)}"
-              res.send "Unexpected state adding #{gitHubUsername} to #{org}."
+              res.send "Added #{gitHubUsername} to #{successTeams} in #{org}."
+        )
         .catch (error) ->
           robot.logger.error "Error looking up user profile: ", error
           res.send "Error adding #{gitHubUsername} to #{org}: #{error}."
