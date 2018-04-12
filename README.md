@@ -47,16 +47,6 @@ Edit `k8s/hubot-deployment.yaml` to reference your tag, and then apply:
 $ kubectl apply -f k8s/hubot-deployment.yaml
 ```
 
-## Things to change before we are "operational":
-
- - [x] Kubify/deploy on GCP.
- - Reset flowdock token once we move to GCP.
- - Revoke/adjust Circle CI token once we move to GCP. Probably a separate
-   Circle account?
- - Revoke/adjust GitHub token once we move to GCP.
- - Move flowdock account to Heimdall-specific email (perhaps ops+heimdall?).
- - Move GitHub account to Heimdall-specific email.
-
 ------------------
 
 heimdall is a chat bot built on the [Hubot][hubot] framework. It was
