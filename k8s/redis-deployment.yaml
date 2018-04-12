@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: master
-          image: k8s.gcr.io/redis:v1
+          image: redis:3.2-alpine
           env:
             - name: MASTER
               value: "true"
@@ -26,6 +26,9 @@ spec:
           resources:
             limits:
               cpu: "0.1"
+          command: [ "sh", "-c"]
+          args:
+          - echo "dir /redis-master-data" | redis-server -
           volumeMounts:
             - mountPath: /redis-master-data
               name: data
