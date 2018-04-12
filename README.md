@@ -1,8 +1,55 @@
 # heimdall
 
+## Running Locally
+
+To run locally, the quickest path is using node:
+
+```
+$ npm install
+$ bin/hubot -n "Heimdall"
+```
+
+You can also run using docker, which is what is deployed to k8s:
+
+```
+$ docker build -t heimdall .
+$ docker run -it --entrypoint "bin/hubot" heimdall:latest
+```
+
+## Deploying
+
+To deploy a new build, you'll need to set up Google Cloud SDK, authenticate,
+install `kubectl`, and authenticate docker; again, on macOS:
+
+```
+$ brew install caskroom/cask/google-cloud-sdk
+$ gcloud init
+$ gcloud components install kubectl
+$ gcloud auth configure-docker
+```
+
+You'll want to authenticate with your Fold (FIXME parentco) credentials and use
+the heimdall cluster. You'll also want to make sure you add
+`/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/bin` to your
+`PATH` if it isn't already added. The easiest way to check is to see if, after
+the above steps, you can run `kubectl config current-context` successfully.
+
+To deploy a new build, you could tag and push your docker image:
+
+```
+$ docker tag heimdall:latest gcr.io/cfc-production/heimdall:my-cool-tag
+$ docker push gcr.io/cfc-production/heimdall:my-cool-tag
+```
+
+Edit `k8s/hubot-deployment.yaml` to reference your tag, and then apply:
+
+```
+$ kubectl apply -f k8s/hubot-deployment.yaml
+```
+
 ## Things to change before we are "operational":
 
- - Kubify/deploy on GCP.
+ - [x] Kubify/deploy on GCP.
  - Reset flowdock token once we move to GCP.
  - Revoke/adjust Circle CI token once we move to GCP. Probably a separate
    Circle account?
