@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: heimdall-hubot-deployment
+  labels:
+    app: hubot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hubot
+  template:
+    metadata:
+      labels:
+        app: hubot
+    spec:
+      containers:
+        - name: hubot
+          image: gcr.io/cfc-production/heimdall:test-6
+          env:
+            - name: HUBOT_CIRCLECI_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: heimdall-hubot
+                  key: circle_ci_token
+            - name: HUBOT_FLOWDOCK_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: heimdall-hubot
+                  key: flowdock_token
+            - name: HUBOT_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: heimdall-hubot
+                  key: host
+            - name: REDIS_URL
+              value: $(HEIMDALL_REDIS_SERVICE_PORT)
+          #command: [ "sh", "-c"]
+          #args:
+          #- while true; do
+          #    echo -en '\n';
+          #    printenv REDIS_URL;
+          #    sleep 10;
+          #  done;
+          ports:
+            - containerPort: 80
+          resources:
+            limits:
+              cpu: "0.1"

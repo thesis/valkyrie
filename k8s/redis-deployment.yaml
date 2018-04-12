@@ -1,0 +1,34 @@
+# Stoleded from https://github.com/kubernetes/examples/blob/master/staging/storage/redis/ .
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: heimdall-redis-deployment
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: master
+          image: k8s.gcr.io/redis:v1
+          env:
+            - name: MASTER
+              value: "true"
+          ports:
+            - containerPort: 6379
+          resources:
+            limits:
+              cpu: "0.1"
+          volumeMounts:
+            - mountPath: /redis-master-data
+              name: data
+      volumes:
+        - name: data
+          emptyDir: {}
