@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: hubot
-          image: gcr.io/cfc-production/heimdall:test-6
+          image: gcr.io/cfc-production/heimdall:test-8
           env:
             - name: HUBOT_CIRCLECI_TOKEN
               valueFrom:
@@ -43,7 +43,7 @@ spec:
           #    sleep 10;
           #  done;
           ports:
-            - containerPort: 80
+            - containerPort: 8080
           resources:
             limits:
               cpu: "0.1"
