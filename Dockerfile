@@ -1,12 +1,8 @@
-FROM alpine:latest
+FROM node:9.11-alpine
 
 WORKDIR /
 
 RUN mkdir hubot
-
-RUN apk add --update --no-cache \
-        nodejs && \
-        rm -rf /var/cache/apk /usr/share/man
 
 WORKDIR /hubot
 
