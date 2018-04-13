@@ -25,12 +25,13 @@ install `kubectl`, and authenticate docker; again, on macOS:
 $ brew install caskroom/cask/google-cloud-sdk
 $ gcloud init
 $ gcloud components install kubectl
+$ gcloud container clusters get-credentials heimdall
 $ gcloud auth configure-docker
 ```
 
 You'll want to authenticate with your Fold (FIXME parentco) credentials and use
-the heimdall cluster. You'll also want to make sure you add
-`/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/bin` to your
+the heimdall cluster in region us-east-4-c. You'll also want to make sure you
+add `/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/bin` to your
 `PATH` if it isn't already added. The easiest way to check is to see if, after
 the above steps, you can run `kubectl config current-context` successfully.
 
