@@ -35,13 +35,6 @@ spec:
                   key: host
             - name: REDIS_URL
               value: $(HEIMDALL_REDIS_SERVICE_PORT)
-          #command: [ "sh", "-c"]
-          #args:
-          #- while true; do
-          #    echo -en '\n';
-          #    printenv REDIS_URL;
-          #    sleep 10;
-          #  done;
           ports:
             - containerPort: 8080
           resources:
