@@ -1,8 +1,8 @@
 # Stoleded from https://github.com/kubernetes/examples/blob/master/staging/storage/redis/ .
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: heimdall-redis-deployment
+  name: heimdall-redis-set
   labels:
     app: redis
 spec:
@@ -28,10 +28,15 @@ spec:
               cpu: "0.1"
           command: [ "sh", "-c"]
           args:
-          - echo "dir /redis-master-data" | redis-server -
+            - echo "dir /redis-master-data" | redis-server -
           volumeMounts:
             - mountPath: /redis-master-data
-              name: data
-      volumes:
-        - name: data
-          emptyDir: {}
+              name: heimdall-data
+  volumeClaimTemplates:
+    - metadata:
+        name: heimdall-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 1Gi
