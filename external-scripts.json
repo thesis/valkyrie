@@ -1,8 +1,8 @@
 [
+  "hubot-circleci",
   "hubot-diagnostics",
   "hubot-help",
   "hubot-redis-brain",
   "hubot-rules",
-  "hubot-shipit",
-  "hubot-circleci"
+  "hubot-shipit"
 ]
