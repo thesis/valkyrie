@@ -1,0 +1,10 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: heimdall-web-ip
+  name: heimdall-web-ingress
+spec:
+  backend:
+    serviceName: heimdall-http-service
+    servicePort: 8080
