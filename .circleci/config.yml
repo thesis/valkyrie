@@ -39,7 +39,7 @@ jobs:
           command: docker push gcr.io/${PROJECT_NAME}/heimdall:$CIRCLE_BUILD_NUM
       - run:
           name: Deploy
-          command: bash k8s/create.sh
+          command: bash k8s/update-image.sh $CIRCLE_BUILD_NUM
 
 
 workflows:
