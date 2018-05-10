@@ -14,6 +14,7 @@ RUN mkdir bin scripts
 COPY external-scripts.json .
 COPY bin ./bin
 COPY scripts ./scripts
+COPY BUILD ./BUILD
 
 ENV PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 

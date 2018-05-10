@@ -33,7 +33,9 @@ jobs:
             gcloud --quiet auth configure-docker
       - run:
           name: Build Docker Image
-          command: docker build -t gcr.io/cfc-production/heimdall:$CIRCLE_BUILD_NUM .
+          command: |
+            echo $CIRCLE_BUILD_NUM > BUILD
+            docker build -t gcr.io/cfc-production/heimdall:$CIRCLE_BUILD_NUM .
       - run:
           name: Push Docker Image
           command: docker push gcr.io/${PROJECT_NAME}/heimdall:$CIRCLE_BUILD_NUM
