@@ -18,7 +18,7 @@ try {
 } catch (e) {
     console.error("Error reading buildNumber file: " + e)
 }
-let buildNumber = buildNumberBuffer.toString()
+let buildNumber = buildNumberBuffer.toString().trim()
 
 // TODO Announce new build to Bifrost flow, configured.
 
