@@ -27,7 +27,9 @@ let buildString = `build [${buildNumber}](https://circle-ci.com/gh/cardforcoin/h
 let releaseNotificationRoom = process.env['RELEASE_NOTIFICATION_ROOM']
 
 module.exports = function (robot) {
+    robot.logger.info(`Will be sending release notification to [${releaseNotificationRoom}].`)
     robot.on('connected', () => {
+        robot.logger.info(`Connected and sending release notification to [${releaseNotificationRoom}].`)
         if (releaseNotificationRoom) {
             robot.messageRoom(releaseNotificationRoom, `Released ${buildString}!`)
         }
