@@ -26,14 +26,44 @@ let buildString = `build [${buildNumber}](https://circle-ci.com/gh/cardforcoin/h
 
 let releaseNotificationRoom = process.env['RELEASE_NOTIFICATION_ROOM']
 
-module.exports = function (robot) {
-    robot.logger.info(`Will be sending release notification to [${releaseNotificationRoom}].`)
-    robot.on('connected', () => {
+function sendReleaseNotification(robot) {
+    if (releaseNotificationRoom) {
         robot.logger.info(`Connected and sending release notification to [${releaseNotificationRoom}].`)
-        if (releaseNotificationRoom) {
-            robot.messageRoom(releaseNotificationRoom, `Released ${buildString}!`)
+        robot.send({
+            user: '',
+            room: releaseNotificationRoom,
+            message: `Released ${buildString}!`
+        })
+    }
+}
+
+function attachToStream(fn) {
+    setTimeout(() => {
+        if (! fn()) {
+            attachToStream(fn)
         }
     })
+}
+
+module.exports = function (robot) {
+    // Adjust for Flowdock adapter dispatching the connected event too soon.
+    if (robot.adapter.bot && robot.adapter.bot.flows) {
+        robot.adapter.bot.flows(() => {
+            attachToStream(() => {
+                if (robot.adapter.stream) {
+                    robot.adapter.stream.on(
+                        'connected',
+                        () => sendReleaseNotification(robot)
+                    )
+                    return true
+                } else {
+                    return false
+                }
+            })
+        })
+    } else {
+        sendReleaseNotification(robot)
+    }
 
     robot.respond(/flows/, (response) => {
         if (robot.adapter.flows != null) {
