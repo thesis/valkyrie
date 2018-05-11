@@ -27,17 +27,19 @@ let buildString = `I'm on build [${buildNumber}](https://circle-ci.com/gh/cardfo
 let releaseNotificationRoom = process.env['RELEASE_NOTIFICATION_ROOM']
 
 module.exports = function (robot) {
-    robot.on('connected', () =>
+    robot.on('connected', () => {
         if (releaseNotificationRoom) {
             robot.messageRoom(releaseNotificationRoom, `Released ${buildString}!`)
-        })
+        }
+    })
 
-    robot.respond(/flows/, (response) =>
+    robot.respond(/flows/, (response) => {
         if (robot.adapter.flows != null) {
             response.send(JSON.stringify(robot.adapter.flows))
         } else {
             response.send('Not using flowdock.')
-        })
+        }
+    })
 
     robot.respond(/current build/, (response) =>
         response.send(`I'm on ${buildString}!`))
