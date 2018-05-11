@@ -3,6 +3,9 @@ let fs = require("fs")
 // Description:
 //   Returns the current deployed build.
 //
+// Configuration:
+//   RELEASE_NOTIFICATION_ROOM - Id of the room for release notifications.
+//
 // Dependencies:
 //   None
 //
@@ -19,11 +22,16 @@ try {
     console.error("Error reading buildNumber file: " + e)
 }
 let buildNumber = buildNumberBuffer.toString().trim()
+let buildString = `I'm on build [${buildNumber}](https://circle-ci.com/gh/cardforcoin/heimdall/${buildNumber})!`
 
-// TODO Announce new build to Bifrost flow, configured.
 let releaseNotificationRoom = process.env['RELEASE_NOTIFICATION_ROOM']
 
 module.exports = function (robot) {
+    robot.on('connected', () =>
+        if (releaseNotificationRoom) {
+            robot.messageRoom(releaseNotificationRoom, `Released ${buildString}!`)
+        })
+
     robot.respond(/flows/, (response) =>
         if (robot.adapter.flows != null) {
             response.send(JSON.stringify(robot.adapter.flows))
@@ -32,5 +40,5 @@ module.exports = function (robot) {
         })
 
     robot.respond(/current build/, (response) =>
-        response.send(`I'm on build [${buildNumber}](https://circle-ci.com/gh/cardforcoin/heimdall/${buildNumber})!`))
+        response.send(`I'm on ${buildString}!`))
 }
