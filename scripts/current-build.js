@@ -28,12 +28,10 @@ let releaseNotificationRoom = process.env['RELEASE_NOTIFICATION_ROOM']
 
 function sendReleaseNotification(robot) {
     if (releaseNotificationRoom) {
-        robot.logger.info(`Connected and sending release notification to [${releaseNotificationRoom}].`)
         robot.send({
             user: '',
-            room: releaseNotificationRoom,
-            message: `Released ${buildString}!`
-        })
+            room: releaseNotificationRoom
+        }, `Released ${buildString}!`)
     }
 }
 
@@ -53,7 +51,7 @@ module.exports = function (robot) {
                 if (robot.adapter.stream) {
                     robot.adapter.stream.on(
                         'connected',
-                        () => sendReleaseNotification(robot)
+                        () => sendReleaseNotification(robot.adapter)
                     )
                     return true
                 } else {
