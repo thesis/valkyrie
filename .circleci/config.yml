@@ -51,8 +51,8 @@ workflows:
       - build:
           filters:
             branches:
-              ignore: continuous-ingrate
+              ignore: master
       - deploy:
           filters:
             branches:
-              only: continuous-ingrate
+              only: master
