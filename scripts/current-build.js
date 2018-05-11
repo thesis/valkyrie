@@ -35,7 +35,9 @@ module.exports = function (robot) {
 
     robot.respond(/flows/, (response) => {
         if (robot.adapter.flows != null) {
-            response.send(JSON.stringify(robot.adapter.flows))
+            response.send(
+                robot.adapter.flows.map((flow) => ` - ${flow.name}: ${flow.id}`).join("\n")
+            )
         } else {
             response.send('Not using flowdock.')
         }
