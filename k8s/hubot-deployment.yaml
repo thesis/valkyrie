@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: hubot
-          image: gcr.io/cfc-production/heimdall:test-8
+#          image: gcr.io/cfc-production/heimdall:USE_CIRCLE_CI_BUILDS
           env:
             - name: HUBOT_CIRCLECI_TOKEN
               valueFrom:
@@ -33,6 +33,11 @@ spec:
                 secretKeyRef:
                   name: heimdall-hubot
                   key: host
+            - name: RELEASE_NOTIFICATION_ROOM
+              valueFrom:
+                secretKeyRef:
+                  name: heimdall-hubot
+                  key: release_notification_room
             - name: REDIS_URL
               value: $(HEIMDALL_REDIS_SERVICE_PORT)
           ports:

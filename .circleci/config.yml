@@ -1,0 +1,58 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: docker:17.05.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Build Docker Image
+          command: docker build .
+  deploy:
+    docker:
+      - image: google/cloud-sdk:latest
+        environment:
+          PROJECT_NAME: cfc-production
+          PROJECT_ID: cfc-production
+          CLUSTER_NAME: heimdall
+          CLOUDSDK_COMPUTE_ZONE: us-east4-c
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Set up GCP
+          command: |
+            echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
+            gcloud --quiet auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+            gcloud --quiet config set project $PROJECT_ID
+            gcloud --quiet config set container/cluster $CLUSTER_NAME
+            gcloud --quiet container clusters get-credentials $CLUSTER_NAME
+            gcloud --quiet auth configure-docker
+      - run:
+          name: Build Docker Image
+          command: |
+            echo $CIRCLE_BUILD_NUM > BUILD
+            docker build -t gcr.io/cfc-production/heimdall:$CIRCLE_BUILD_NUM .
+      - run:
+          name: Push Docker Image
+          command: docker push gcr.io/${PROJECT_NAME}/heimdall:$CIRCLE_BUILD_NUM
+      - run:
+          name: Deploy
+          command: bash k8s/update-image.sh $CIRCLE_BUILD_NUM
+
+
+workflows:
+  version: 2
+  build_or_deploy:
+    jobs:
+      - build:
+          filters:
+            branches:
+              ignore: master
+      - deploy:
+          filters:
+            branches:
+              only: master

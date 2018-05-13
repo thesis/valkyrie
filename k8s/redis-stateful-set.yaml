@@ -7,6 +7,7 @@ metadata:
     app: redis
 spec:
   replicas: 1
+  serviceName: heimdall-redis-service
   selector:
     matchLabels:
       app: redis
