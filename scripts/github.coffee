@@ -44,17 +44,6 @@ module.exports = (robot) ->
 
   setInterval cleanPending, 30000
 
-  robot.respond /github auth/, (res) ->
-    user = res.message.user
-    token = UUIDV4()
-
-    robot.brain.pendingGitHubTokens ||= {}
-    robot.brain.pendingGitHubTokens[user.id] =
-      token: token
-      date: (new Date).getTime()
-
-    res.send "You can log in at #{HOST}/github/auth/#{token} in the next 5 minutes."
-
   robot.respond /github add ([^ ]+) to ([^ ]+)( .*)/, (res) ->
     api = apiFor robot, res.message.user
 
@@ -129,28 +118,3 @@ module.exports = (robot) ->
           res.send "Something went wrong looking you up :("
     else
       res.send "You don't seem to be authenticated with GitHub; try sending me `github auth`!"
-
-  robot.router.get '/github/auth/:token', (req, res) ->
-    token = req.params.token
-    found = false
-    for userId, pendingInfo of robot.brain.pendingGitHubTokens when token == pendingInfo.token
-      pendingInfo.date = (new Date).getTime() # extend lifetime by 5 minutes
-      res.send 200, "<!doctype html><html><body><form action='/github/auth/#{token}' method='post'><label>OAuth Token: <input name='oauthtoken'></label> <input type='submit'></form></body></html>"
-      found = true
-      break
-
-    unless found
-      res.send 404, "File Not Found."
-
-  robot.router.post '/github/auth/:token', (req, res) ->
-    token = req.params.token
-    found = false
-    for userId, pendingInfo of robot.brain.pendingGitHubTokens when token == pendingInfo.token
-      delete robot.brain.pendingGitHubTokens[userId]
-      robot.brain.gitHubTokens[userId] = req.body.oauthtoken
-      res.send 200, "<!doctype html><html><body>Got it!</body></html>"
-      found = true
-      break
-
-    unless found
-      res.send 404, "File Not Found."
