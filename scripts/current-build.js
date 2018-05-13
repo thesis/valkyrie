@@ -22,7 +22,10 @@ try {
     console.error("Error reading buildNumber file: " + e)
 }
 let buildNumber = buildNumberBuffer.toString().trim()
-let buildString = `build [${buildNumber}](https://circle-ci.com/gh/cardforcoin/heimdall/${buildNumber})`
+let buildString =
+    buildNumber ?
+        `build [${buildNumber}](https://circle-ci.com/gh/cardforcoin/heimdall/${buildNumber})` :
+        `unknown build`
 
 let releaseNotificationRoom = process.env['RELEASE_NOTIFICATION_ROOM']
 
