@@ -13,8 +13,21 @@ You can also run using docker, which is what is deployed to k8s:
 
 ```
 $ docker build -t heimdall .
-$ docker run -it --entrypoint "bin/hubot" heimdall:latest
+$ docker run -it --env-file ./env-var.list --entrypoint "bin/hubot" heimdall:latest
 ```
+Note on environment variables set in the `./env-var.list` file. If you
+don't already have these values set on your local env context.  Ask someone how
+to get these values.
+
+To login to your running hubot container:
+
+```
+$ docker ps
+$ docker exec -it <container-id> /bin/sh
+```
+
+The `docker exec` call needs the heimdall container-id obtained from the `docker ps`
+output.
 
 ## Deploying
 
@@ -28,14 +41,14 @@ $ gcloud components install kubectl
 $ gcloud container clusters get-credentials heimdall
 $ gcloud auth configure-docker
 ```
-When running `gcloud init` you'll want to authenticate with your Thesis 
+When running `gcloud init` you'll want to authenticate with your Thesis
 credentials and use the heimdall cluster in region us-east4-c.
 
-You'll need to make google-cloud-sdk available on your path. 
+You'll need to make google-cloud-sdk available on your path.
 `brew cask info google-cloud-sdk` gives general guidance on properly
 pathing your install.
 
-Adding the following to your `~/.bash_profile` will ensure `google-cloud-sdk` 
+Adding the following to your `~/.bash_profile` will ensure `google-cloud-sdk`
 tools can be run:
 
 ```
