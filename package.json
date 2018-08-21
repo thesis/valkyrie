@@ -7,10 +7,10 @@
   "dependencies": {
     "coffeescript": "^1.12.3",
     "github-api": "^3.0.0",
-    "hubot": "^3.0.0",
+    "hubot": "^3.1.1",
     "hubot-circleci": "^0.8.1",
     "hubot-diagnostics": "^1.0.0",
-    "hubot-flowdock": "^0.7.7",
+    "hubot-flowdock": "^0.7.8",
     "hubot-gif-locker": "^1.0.7",
     "hubot-help": "^1.0.1",
     "hubot-redis-brain": "^1.0.0",
@@ -23,6 +23,6 @@
     "cookie-parser": "^1.4.3"
   },
   "engines": {
-    "node": "9.8.x"
+    "node": "10.9.0"
   }
 }
