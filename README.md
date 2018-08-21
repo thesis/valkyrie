@@ -22,17 +22,28 @@ To deploy a new build, you'll need to set up Google Cloud SDK, authenticate,
 install `kubectl`, and authenticate docker; again, on macOS:
 
 ```
-$ brew install caskroom/cask/google-cloud-sdk
+$ brew cask install google-cloud-sdk
 $ gcloud init
 $ gcloud components install kubectl
 $ gcloud container clusters get-credentials heimdall
 $ gcloud auth configure-docker
 ```
+When running `gcloud init` you'll want to authenticate with your Thesis 
+credentials and use the heimdall cluster in region us-east4-c.
 
-You'll want to authenticate with your Fold (FIXME parentco) credentials and use
-the heimdall cluster in region us-east4-c. You'll also want to make sure you
-add `/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/bin` to your
-`PATH` if it isn't already added. The easiest way to check is to see if, after
+You'll need to make google-cloud-sdk available on your path. 
+`brew cask info google-cloud-sdk` gives general guidance on properly
+pathing your install.
+
+Adding the following to your `~/.bash_profile` will ensure `google-cloud-sdk` 
+tools can be run:
+
+```
+source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.bash.inc'
+source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.bash.inc'
+```
+
+The easiest way to check is to see if, after
 the above steps, you can run `kubectl config current-context` successfully.
 
 To deploy a new build, you could tag and push your docker image:
