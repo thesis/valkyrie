@@ -9,8 +9,6 @@ WORKDIR /hubot
 COPY package-lock.json package.json ./
 
 RUN npm install
-# attempt to automagic patch found npm package vulnerabilities
-RUN npm audit fix
 
 RUN mkdir bin scripts
 COPY external-scripts.json .
