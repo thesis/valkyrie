@@ -48,8 +48,8 @@ You'll need to make google-cloud-sdk available on your path.
 `brew cask info google-cloud-sdk` gives general guidance on properly
 pathing your install.
 
-Adding the following to your `~/.bash_profile` will ensure `google-cloud-sdk`
-tools can be run:
+For bash users, adding the following to your `~/.bash_profile` will ensure
+`google-cloud-sdk` tools can be run:
 
 ```
 source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.bash.inc'
