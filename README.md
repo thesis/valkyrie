@@ -22,8 +22,7 @@ someone how to get these values.
 To log in to your running hubot container:
 
 ```
-$ docker ps
-$ docker exec -it <container-id> /bin/sh
+$ docker ps | grep 'heimdall:latest' | awk '{print $1}' | xargs -o -I {} docker exec -it {} /bin/sh
 ```
 
 The `docker exec` call needs the heimdall container-id obtained from the `docker ps`
