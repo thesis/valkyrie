@@ -5,13 +5,18 @@
 To run locally, the quickest path is using node:
 
 ```
+$ brew install npm
 $ npm install
+$ npm audit fix
 $ bin/hubot -n "Heimdall"
 ```
 
 You can also run using docker, which is what is deployed to k8s:
 
 ```
+$ brew install npm
+$ npm install
+$ npm audit fix
 $ docker build -t heimdall .
 $ docker run -it --env-file ./env-var.list --entrypoint "bin/hubot" heimdall:latest
 ```
