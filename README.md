@@ -15,9 +15,9 @@ You can also run using docker, which is what is deployed to k8s:
 $ docker build -t heimdall .
 $ docker run -it --env-file ./env-var.list --entrypoint "bin/hubot" heimdall:latest
 ```
-Note on environment variables set in the `./env-var.list` file. If you
-don't already have these values set on your local env context.  Ask someone how
-to get these values.
+
+If you don't have local values for env vars referenced in `./env-var.list`, ask 
+someone how to get these values.
 
 To log in to your running hubot container:
 
