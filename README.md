@@ -41,6 +41,7 @@ $ gcloud components install kubectl
 $ gcloud container clusters get-credentials heimdall
 $ gcloud auth configure-docker
 ```
+
 When running `gcloud init` you'll want to authenticate with your Thesis
 credentials and use the heimdall cluster in region us-east4-c.
 
