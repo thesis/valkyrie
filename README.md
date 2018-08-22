@@ -43,7 +43,7 @@ $ gcloud auth configure-docker
 ```
 
 When running `gcloud init` you'll want to authenticate with your Thesis
-credentials and use the heimdall cluster in region us-east4-c.
+credentials and use the `heimdall` cluster in region `us-east4-c`.
 
 You'll need to make google-cloud-sdk available on your path.
 `brew cask info google-cloud-sdk` gives general guidance on properly
