@@ -19,7 +19,7 @@ Note on environment variables set in the `./env-var.list` file. If you
 don't already have these values set on your local env context.  Ask someone how
 to get these values.
 
-To login to your running hubot container:
+To log in to your running hubot container:
 
 ```
 $ docker ps
