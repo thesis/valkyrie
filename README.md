@@ -5,15 +5,29 @@
 To run locally, the quickest path is using node:
 
 ```
+$ brew install npm
 $ npm install
+$ npm audit fix
 $ bin/hubot -n "Heimdall"
 ```
 
 You can also run using docker, which is what is deployed to k8s:
 
 ```
+$ brew install npm
+$ npm install
+$ npm audit fix
 $ docker build -t heimdall .
-$ docker run -it --entrypoint "bin/hubot" heimdall:latest
+$ docker run -it --env-file ./env-var.list --entrypoint "bin/hubot" heimdall:latest
+```
+
+If you don't have local values for env vars referenced in `./env-var.list`, ask 
+someone how to get these values.
+
+To log in to your running hubot container:
+
+```
+$ docker ps | grep 'heimdall:latest' | awk '{print $1}' | xargs -o -I {} docker exec -it {} /bin/sh
 ```
 
 ## Deploying
@@ -22,17 +36,21 @@ To deploy a new build, you'll need to set up Google Cloud SDK, authenticate,
 install `kubectl`, and authenticate docker; again, on macOS:
 
 ```
-$ brew install caskroom/cask/google-cloud-sdk
+$ brew cask install google-cloud-sdk
 $ gcloud init
 $ gcloud components install kubectl
 $ gcloud container clusters get-credentials heimdall
 $ gcloud auth configure-docker
 ```
 
-You'll want to authenticate with your Fold (FIXME parentco) credentials and use
-the heimdall cluster in region us-east4-c. You'll also want to make sure you
-add `/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/bin` to your
-`PATH` if it isn't already added. The easiest way to check is to see if, after
+When running `gcloud init` you'll want to authenticate with your Thesis
+credentials and use the `heimdall` cluster in region `us-east4-c`.
+
+You'll need to make google-cloud-sdk available on your path.
+`brew cask info google-cloud-sdk` gives general guidance on properly
+pathing your install.
+
+The easiest way to check is to see if, after
 the above steps, you can run `kubectl config current-context` successfully.
 
 To deploy a new build, you could tag and push your docker image:
