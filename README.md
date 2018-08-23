@@ -30,9 +30,6 @@ To log in to your running hubot container:
 $ docker ps | grep 'heimdall:latest' | awk '{print $1}' | xargs -o -I {} docker exec -it {} /bin/sh
 ```
 
-The `docker exec` call needs the heimdall container-id obtained from the `docker ps`
-output.
-
 ## Deploying
 
 To deploy a new build, you'll need to set up Google Cloud SDK, authenticate,
