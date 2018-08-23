@@ -53,14 +53,6 @@ You'll need to make google-cloud-sdk available on your path.
 `brew cask info google-cloud-sdk` gives general guidance on properly
 pathing your install.
 
-For bash users, adding the following to your `~/.bash_profile` will ensure
-`google-cloud-sdk` tools can be run:
-
-```
-source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/path.bash.inc'
-source '/usr/local/Caskroom/google-cloud-sdk/latest/google-cloud-sdk/completion.bash.inc'
-```
-
 The easiest way to check is to see if, after
 the above steps, you can run `kubectl config current-context` successfully.
 
