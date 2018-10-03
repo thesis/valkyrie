@@ -50,6 +50,11 @@ spec:
                 secretKeyRef:
                   name: heimdall-hubot
                   key: github_client_secret
+            - name: ZEPLIN_FLOWDOCK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: heimdall-hubot
+                  key: zeplin_flowdock_token
           ports:
             - containerPort: 8080
           resources:
