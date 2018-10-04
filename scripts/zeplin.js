@@ -28,6 +28,7 @@ const ZEPLIN_URLS = {
     notifications: "https://api.zeplin.io/notifications?count=10",
     notificationMarker: "https://api.zeplin.io/users/notificationLastReadTime",
     project: "https://app.zeplin.io/project/{projectId}",
+    apiProject: "https://app.zeplin.io/project/{projectId}",
     projectDashboard: "https://app.zeplin.io/project/{projectId}/dashboard",
     screen: "https://app.zeplin.io/project/{projectId}/screen/{screenId}"
 };
@@ -80,6 +81,41 @@ function logIn(logger) {
         })
 }
 
+function createFlowdockComment(
+    logger,
+    creator,
+    projectId,
+    screenId,
+    dotId,
+    commentId,
+    commentBody
+) {
+    let screenUrl =
+        ZEPLIN_URLS.screen
+            .replace(/{projectId}/, projectId)
+            .replace(/{screenId}/, screenId);
+
+    let commentUrl = screenUrl + `?did=${dotId}&cmid=${commentId}`
+
+    axios.post(
+        FLOWDOCK_URLS.messages,
+        {
+            flow_token: process.env['ZEPLIN_FLOWDOCK_TOKEN'],
+            event: 'discussion',
+            title: `<a href="${commentUrl}">commented</a>`,
+            body: commentBody,
+            author: {
+                name: creator.name,
+                email: creator.email
+            },
+            external_thread_id: `zeplin-${projectId}-${screenId}`
+        }
+    )
+    .catch(err => {
+        logger.error('Failed to create Flowdock comment: ', JSON.stringify(err.response.data.errors));
+    })
+}
+
 function createFlowdockThread(
     logger,
     creator,
@@ -88,7 +124,8 @@ function createFlowdockThread(
     projectType,
     screenId,
     screenName,
-    screenSrc
+    screenSrc,
+    createdDate
 ) {
     let projectUrl =
         ZEPLIN_URLS.project
@@ -115,10 +152,12 @@ function createFlowdockThread(
             external_thread_id: `zeplin-${projectId}-${screenId}`,
             thread: {
                 title: screenName,
-                body: `<img src="${screenSrc}">`,
+                body: `<img src="${screenSrc}">`, // + description
                 fields: [
                     {label: 'project', value: projectLink},
                     {label: 'type', value: projectType}
+                    // web url
+                    // app url
                 ]
             }
         }
@@ -129,7 +168,153 @@ function createFlowdockThread(
 }
 
 const notificationHandlers = {
-    "CreateDot": () => {
+    // ResolveDot 
+    // CreateScreenVersion
+    // CreateComponent?
+    "CreateDot": (notification, logger) => {
+        let projectId = notification.params.project._id,
+            screenId = notification.params.screen._id;
+
+        let screenUrl =
+            ZEPLIN_URLS.screen
+                .replace(/{projectId}/, projectId)
+                .replace(/{screenId}/, screenId);
+
+        axios.get(screenUrl, htmlHeaders)
+            .then(result => {
+                let $page = cheerio.load(result.data);
+
+                // Extract API data, unescape it via JSON.parse, then parse
+                // the actual JSON.
+                let regexp = /.*window.Zeplin\["apiData"\] = JSON.parse\("(.*)"\);/
+                let apiData = JSON.parse(`"${regexp.exec(result.data)[1].replace(/\\x([0-9a-fA-F]{2})/g, "\\u00$1")}"`);
+                let dots = JSON.parse(apiData).dots.dots;
+                let commentsById = dots.reduce((commentsById, dot) => {
+                    dot.comments.forEach(comment => {
+                        commentsById[comment._id] = {
+                            body: comment.note,
+                            date: comment.created,
+                            creatorName: comment.author.username,
+                            creatorEmail: comment.author.email
+                        };
+                    });
+                    return commentsById
+                }, {})
+
+                notification.events.forEach(event => {
+                    let creator = event.source.username,
+                        creatorEmail = event.source.email;
+                    let commentBody = notification.content;
+
+                    // If we have an entry for the comment, use its values
+                    // instead of the event's.
+                    let comment = commentsById[event.comment._id];
+                    if (comment) {
+                        creator = comment.creatorName;
+                        creatorEmail = comment.creatorEmail;
+                        commentBody = comment.body;
+                    }
+
+                    createFlowdockComment(
+                        logger,
+                        { name: creator, email: creatorEmail },
+                        projectId,
+                        screenId,
+                        event.dot._id,
+                        event.comment._id,
+                        commentBody
+                    );
+                })
+            })
+    },
+    "CreateDotComment": (notification, logger) => {
+        let projectId = notification.params.project._id,
+            screenId = notification.params.screen._id,
+            dotId = notification.params.dot._id;
+
+        let screenUrl =
+            ZEPLIN_URLS.screen
+                .replace(/{projectId}/, projectId)
+                .replace(/{screenId}/, screenId);
+
+        axios.get(screenUrl, htmlHeaders)
+            .then(result => {
+                let $page = cheerio.load(result.data);
+
+                // Extract API data, unescape it via JSON.parse, then parse
+                // the actual JSON.
+                let regexp = /.*window.Zeplin\["apiData"\] = JSON.parse\("(.*)"\);/
+                let apiData = JSON.parse(`"${regexp.exec(result.data)[1].replace(/\\x([0-9a-fA-F]{2})/g, "\\u00$1")}"`);
+                let dots = JSON.parse(apiData).dots.dots;
+                let commentsById = dots.reduce((commentsById, dot) => {
+                    dot.comments.forEach(comment => {
+                        commentsById[comment._id] = {
+                            body: comment.note,
+                            date: comment.created,
+                            creatorName: comment.author.username,
+                            creatorEmail: comment.author.email
+                        };
+                    });
+                    return commentsById
+                }, {})
+
+                notification.events.forEach(event => {
+                    let creator = event.source.username,
+                        creatorEmail = event.source.email;
+                    let commentBody = notification.content;
+
+                    // If we have an entry for the comment, use its values
+                    // instead of the event's.
+                    let comment = commentsById[event.comment._id];
+                    if (comment) {
+                        creator = comment.creatorName;
+                        creatorEmail = comment.creatorEmail;
+                        commentBody = comment.body;
+                    }
+
+                    createFlowdockComment(
+                        logger,
+                        { name: creator, email: creatorEmail },
+                        projectId,
+                        screenId,
+                        dotId,
+                        event.comment._id,
+                        commentBody
+                    );
+                })
+            })
+    },
+    "ResolveDot": (notification, logger) => {
+        /*
+                    "params": {
+                "project": {
+                    "_id": "5bb427491c76477f877b318c",
+                    "type": "web",
+                    "name": "Untitled"
+                },
+                "screen": {
+                    "_id": "5bb427f9f6725597eb3b309a",
+                    "name": "icon_83.5@2x"
+                }
+            },
+            "updated": "2018-10-04T03:14:18.687Z",
+            "_id": "5bb5858af6c410493ae9bd43",
+            "events": [
+                {
+                    "source": {
+                        "_id": "5bb3d0de48a15c645a6691ce",
+                        "email": "antonio@thesis.co",
+                        "username": "lightfiend",
+                        "emotar": null
+                    },
+                    "dot": {
+                        "_id": "5bb44078a994f8686c475f22",
+                        "name": "1"
+                    }
+                }
+            ],
+            "actionName": "ResolveDot"
+        */
     },
     "CreateScreen": (notification, logger) => {
         let projectId = notification.params.project._id,
@@ -138,22 +323,13 @@ const notificationHandlers = {
             creator = notification.params.source.username,
             creatorEmail = notification.params.source.email;
 
-        let projectUrl =
-            ZEPLIN_URLS.project
-                .replace(/{projectId}/, projectId);
-        let projectDashboardUrl =
-            ZEPLIN_URLS.projectDashboard
+        let apiProjectUrl =
+            ZEPLIN_URLS.apiProject
                 .replace(/{projectId}/, projectId);
 
-        axios.get(projectDashboardUrl, htmlHeaders)
+        axios.get(apiProjectUrl, htmlHeaders)
             .then(result => {
-                let $page = cheerio.load(result.data);
-
-                // Extract API data, unescape it via JSON.parse, then parse
-                // the actual JSON.
-                let regexp = /.*window.Zeplin\["apiData"\] = JSON.parse\("(.*)"\);/
-                let apiData = JSON.parse(`"${regexp.exec(result.data)[1].replace(/\\x([0-9a-fA-F]{2})/g, "\\u00$1")}"`);
-                let screens = JSON.parse(apiData).project.screens;
+                let screens = result.data.screens;
                 let screensById = screens.reduce((screensById, screen) => {
                     screensById[screen._id] = screen;
                     return screensById
@@ -202,22 +378,21 @@ function checkForNotifications(logger, brain) {
                     } else {
                         let notifications = result.data.notifications;
 
-                        for (let i = 0; i < notifications.length; ++i) {
-                            let notification = notifications[i];
+                        notifications.reverse().forEach(notification => {
                             let date = new Date(notification.updated)
                             if (date <= lastSeen) {
-                                break;
-                            } else {
-                                let action = notification.actionName;
-                                let notificationHandler = notificationHandlers[action];
-                                if (typeof notificationHandler == "function") {
-                                    notificationHandler(notification, logger);
-                                }
-
-                                lastSeen = date;
-                                brain.set('lastSeen', lastSeen.toISOString());
+                                return;
                             }
-                        }
+
+                            let action = notification.actionName;
+                            let notificationHandler = notificationHandlers[action];
+                            if (typeof notificationHandler == "function") {
+                                notificationHandler(notification, logger);
+                            }
+
+                            //lastSeen = date;
+                            //brain.set('lastSeen', lastSeen.toISOString());
+                        });
                     }
                 })
                 .then(_ => {
