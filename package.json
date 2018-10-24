@@ -1,11 +1,13 @@
 {
   "name": "heimdall",
-  "version": "0.0.0",
+  "version": "0.0.4",
   "private": true,
-  "author": "Antonio Salazar Cardozo <antonio@keep.network>",
+  "author": "Antonio Salazar Cardozo <antonio@thesis.co>",
   "description": "Heimdall can see and hear your every need, and keeps watch for the onset of Ragnarok",
   "dependencies": {
     "coffeescript": "^1.12.3",
+    "typescript": "~3.1.3",
+    "typescript-require": "0.2.10",
     "github-api": "^3.0.0",
     "hubot": "^3.1.1",
     "hubot-circleci": "^0.8.1",
@@ -26,5 +28,9 @@
   },
   "engines": {
     "node": "10.9.0"
+  },
+  "devDependencies": {
+    "@types/cookie": "^0.3.1",
+    "@types/hubot": "^2.19.2"
   }
 }
