@@ -46,26 +46,29 @@ type DiscussionMessage = {
  * This session is authenticated by the `apiToken` passed to the constructor.
  */
 class Session {
-    private apiToken: string
     private postFn: (url:string,data?:any,config?:AxiosRequestConfig)=>Promise<AxiosResponse>
 
-    constructor(apiToken: string, doPost: boolean = true) {
-        this.apiToken = apiToken
-
+    constructor(private apiToken: string, doPost: boolean = true) {
         if (doPost) {
             this.postFn = axios.post.bind(axios)
         } else {
             this.postFn = (url: string, data?: any, config?: AxiosRequestConfig) => {
-                console.log(`Flowdock POST to URL ${url} with data:\n`,
-                    `${JSON.stringify(data)}\nand config:\n${JSON.stringify(config)}`);
+                return new Promise<AxiosResponse>((resolve) => {
+                    setTimeout(() =>  {
+                        console.log(
+                            `Flowdock POST to URL ${url} with data:\n`,
+                            `${JSON.stringify(data)}\nand config:\n${JSON.stringify(config)}`
+                        );
                 
-                return new Promise<AxiosResponse>((resolve)=>resolve({
-                    data: "",
-                    status: 200,
-                    statusText: "",
-                    headers: {},
-                    config: config
-                }));
+                        resolve({
+                            data: "",
+                            status: 200,
+                            statusText: "",
+                            headers: {},
+                            config: config
+                        })
+                    }, 1000)
+                })
             }
         }
     }
