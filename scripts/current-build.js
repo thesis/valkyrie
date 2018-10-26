@@ -1,19 +1,16 @@
-let fs = require("fs")
-
 // Description:
 //   Returns the current deployed build.
 //
 // Configuration:
 //   RELEASE_NOTIFICATION_ROOM - Id of the room for release notifications.
 //
-// Dependencies:
-//   None
-//
 // Commands:
 //   hubot current build
 //
 // Author:
 //   shadowfiend
+
+let fs = require("fs")
 
 let buildNumberBuffer = ""
 try {
