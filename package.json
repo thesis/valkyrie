@@ -21,7 +21,7 @@
     "uuid": "^3.2.1",
     "passport": "^0.4.0",
     "passport-github2": "^0.1.11",
-    "cookie-parser": "^1.4.3"
+    "axios-debug-log": "0.4.0"
   },
   "engines": {
     "node": "10.9.0"
