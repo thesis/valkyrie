@@ -30,13 +30,16 @@ type ActivityThread = {
 }
 
 type ActivityMessage = {
+    uuid: string
     title: string
     author: MessageAuthor
     external_thread_id: string
 }
 
 type DiscussionMessage = {
+    uuid: string
     title: string
+    body: string
     author: MessageAuthor
     external_thread_id: string
 }

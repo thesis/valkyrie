@@ -1,7 +1,8 @@
-import { default as axios, AxiosResponse, AxiosPromise } from 'axios';
-import util from 'util';
-import cookie from 'cookie';
-import querystring from 'querystring';
+import { default as axios, AxiosPromise } from 'axios';
+import * as cheerio from 'cheerio';
+import * as cookie from 'cookie';
+import * as querystring from 'querystring';
+import * as util from 'util';
 
 // Regexp that extracts the API data embedded in a Zeplin HTML page.
 const EMBEDDED_API_DATA_REGEXP = /.*window.Zeplin\["apiData"\] = JSON.parse\("(.*)"\);/
@@ -21,6 +22,10 @@ const URLs = {
 
 type HtmlHeaders = { headers: { Cookie: string } }
 type ApiHeaders = { headers: { 'zeplin-token': string } }
+type ZeplinFetchers = {
+    api: (url: string)=>AxiosPromise
+    html: (url: string)=>AxiosPromise
+}
 
 class Session {
     private _token?: string
@@ -28,13 +33,21 @@ class Session {
     constructor(private username: string, private password: string) {}
 
     async getScreen(projectId: string, screenId: string) {
-        const headers = await this.htmlHeaders();
-        return new Screen(screenId, projectId, (url) => axios.get(url, headers))
+        const fetchers = await this.fetchers();
+        return new Screen(screenId, projectId, fetchers)
     }
 
-    async getProject(projectId: string) {
-        const headers = await this.htmlHeaders();
-        return new Project(projectId, (url) => axios.get(url, headers))
+    async getProject(projectIdOrProps: string | {_id?: string, id?: string, [key: string]: string}) {
+        const fetchers = await this.fetchers()
+
+        if (typeof projectIdOrProps === 'string') {
+            return new Project(projectIdOrProps, fetchers)
+        } else {
+            let {id, name, type} = projectIdOrProps
+            id = id || projectIdOrProps._id
+
+            return new Project(id, fetchers, {name, type})
+        }
     }
 
     async getNotifications() {
@@ -54,6 +67,16 @@ class Session {
         return await axios.put(URLs.notificationMarker, null, headers);
     }
 
+    private async fetchers() {
+        const apiHeaders = await this.apiHeaders(),
+              htmlHeaders = await this.htmlHeaders();
+
+        return {
+            api: (url) => axios.get(url, apiHeaders),
+            html: (url) => axios.get(url, htmlHeaders)
+        }
+    }
+
     private async setTokens() {
         const loginPage = await axios.get(URLs.login)
         if (loginPage.status != 200) {
@@ -62,7 +85,6 @@ class Session {
 
         let $loginPage = cheerio.load(loginPage.data);
 
-        const formTarget = $loginPage('#loginForm').attr('target') || URLs.login;
         const usernameField = $loginPage('#handle').attr('name');
         const passwordField = $loginPage('#password').attr('name');
         let loginParams = {};
@@ -77,6 +99,8 @@ class Session {
         if (loginResult.status != 200) {
             throw `failed to log in to Zeplin: ${loginResult.statusText}, ${util.inspect(loginResult)}`
         }
+
+        this._token = loginResult.data.token
     }
 
     private async apiHeaders(): Promise<ApiHeaders> {
@@ -105,14 +129,98 @@ type Comment = {
     creatorEmail: string
 }
 
+type Author = {
+    username: string,
+    email: string
+}
+
+type DotComment = {
+    _id: string,
+    note: string,
+    created: string,
+    author: Author
+}
+
+type Dot = {
+    _id: string,
+    comments: DotComment[]
+}
+
+type Snapshot = {
+    url: string,
+    width: number,
+    height: number
+}
+
+type ScreenVersion = {
+    created: string
+    snapshot: Snapshot
+}
+
+type ScreenApiData = {
+    name: string
+    versions: ScreenVersion[]
+    dots: {
+        dots: Dot[]
+    }
+}
+
 class Screen {
+    private _apiData: ScreenApiData
+
     constructor(
-        private id: string,
+        public id: string,
         private projectId: string,
-        private zeplinGet: (url: string)=>AxiosPromise
+        private fetchers: ZeplinFetchers,
+        private fields: { name?: string, snapshot?: Snapshot } = {}
     ) {}
 
-    screenUrl() {
+    private async apiData(): Promise<ScreenApiData> {
+        if (this._apiData) {
+            return this._apiData
+        }
+
+        const screenResponse = await this.fetchers.html(this.url),
+              apiDataString = EMBEDDED_API_DATA_REGEXP
+                                  // Extract API data from expression.
+                                 .exec(screenResponse.data)[1]
+                                 // Replace HTML/JS unicode escapey thingies 
+                                 // (\x..-style) with JSON unicode escapes
+                                 // (\u00..-style).
+                                 .replace(/\\x([0-9a-fA-F]{2})/g, "\\u00$1"),
+              // Parse as a JSON string.
+              apiDataJson = JSON.parse(`"${apiDataString}"`);
+
+        let parsedJson = JSON.parse(apiDataJson);
+        parsedJson.versions = parsedJson.versions.versions
+
+        this._apiData = parsedJson
+        return this._apiData
+    }
+
+    get name(): string {
+        return this.fields.name || ""
+    }
+
+    async properties() {
+        return await this.apiData()
+    }
+
+    async snapshotUrl() {
+        const apiData = await this.apiData(),
+              snapshotData = apiData.versions[0].snapshot,
+              url = URLs.sizedImage
+                        .replace(
+                            /{snapshotUrl}/,
+                            encodeURIComponent(snapshotData.url)
+                        )
+                        .replace(/{width}/g, String(snapshotData.width))
+                        .replace(/{height}/g, String(snapshotData.height));
+
+        return url;
+    }
+
+    get url() {
         return URLs.screen
                 .replace(/{projectId}/, this.projectId)
                 .replace(/{screenId}/, this.id);
@@ -128,18 +236,13 @@ class Screen {
             cmid: commentId
         };
 
-        return this.screenUrl + `?${querystring.stringify(queryParams)}`
+        return this.url + `?${querystring.stringify(queryParams)}`
     }
 
-    async getComments(): Promise<Array<Comment>> {
-        const screenResponse = await this.zeplinGet(this.screenUrl()),
-              apiDataString = EMBEDDED_API_DATA_REGEXP
-                                 .exec(screenResponse.data)[1]
-                                 .replace(/\\x([0-9a-fA-F]{2})/g, "\\u00$1"),
-              apiDataJson = JSON.parse(apiDataString),
-              apiData = JSON.parse(apiDataJson),
+    async getComments() {
+        const apiData = await this.apiData(),
               dots = apiData.dots.dots,
-              comments = dots.reduce((comments, dot) => {
+              comments = dots.reduce((comments: Comment[], dot) => {
                 return dot.comments.reduce((comments, dotComment) => {
                     let comment = {
                         id: dotComment._id,
@@ -157,7 +260,7 @@ class Screen {
               }, []);
 
         // Chronologically oldest to newest.
-        return comments.sort((a, b) => a.date - b.date);
+        return comments.sort((a, b) => a.date.getTime() - b.date.getTime());
     }
 
     // Returns the comments of this screen that are newer than the oldest
@@ -179,21 +282,45 @@ class Screen {
 
 class Project {
     constructor(
-        private id: string,
-        private zeplinGet: (url: string)=>AxiosPromise
+        public id: string,
+        private fetchers: ZeplinFetchers,
+        private fields: { name?: string, type?: string } = {}
     ) {}
 
-    async screensById(): Promise<{[key: string]: Screen}> {
-        const apiProjectUrl = URLs.apiProject.replace(/{projectId}/, this.id),
-              projectResponse = await this.zeplinGet(apiProjectUrl),
-              screenData = projectResponse.data.screens;
+    get url(): string {
+        return URLs.project.replace(/{projectId}/, this.id)
+    }
 
+    get name(): string {
+        return this.fields.name || ""
+    }
+
+    get type(): string {
+        return this.fields.type || ""
+    }
+
+    getScreen(id: string, name: string) {
+        return new Screen(id, this.id, this.fetchers, { name })
+    }
+
+    async screensById() {
+        const apiProjectUrl = URLs.apiProject.replace(/{projectId}/, this.id),
+              projectResponse = await this.fetchers.api(apiProjectUrl),
+              screenData: any[] = projectResponse.data.screens;
+ 
         // FIXME Need to capture screen metadata: name, latestVersion.snapshot, ..?
-        return screenData.reduce((screensById, screen) => {
-            screensById[screen._id] = new Screen(screen._id, this.id, this.zeplinGet);
+        return screenData.reduce<{[id: string]: Screen}>((screensById, screen) => {
+            screensById[screen._id] = new Screen(
+                screen._id,
+                this.id,
+                this.fetchers,
+                {
+                    name: screen.name,
+                    snapshot: screen.snapshot
+                }
+            );
             return screensById
         }, {})
-
     }
 }
 
