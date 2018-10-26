@@ -2,7 +2,7 @@
   "name": "heimdall",
   "version": "0.0.0",
   "private": true,
-  "author": "Antonio Salazar Cardozo <antonio@keep.network>",
+  "author": "Antonio Salazar Cardozo <antonio@thesis.co>",
   "description": "Heimdall can see and hear your every need, and keeps watch for the onset of Ragnarok",
   "dependencies": {
     "coffeescript": "^1.12.3",
