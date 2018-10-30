@@ -12,7 +12,7 @@
 
 let fs = require("fs")
 
-let buildNumberBuffer = ""
+let buildNumberBuffer = new Buffer("")
 try {
     buildNumberBuffer = fs.readFileSync(`${__dirname}/../BUILD`)
 } catch (e) {

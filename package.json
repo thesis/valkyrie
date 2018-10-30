@@ -23,13 +23,15 @@
     "passport-github2": "^0.1.11",
     "cookie-parser": "^1.4.3",
     "cheerio": "^1.0.0-rc.2",
-    "axios-debug-log": "0.4.0"
+    "axios-debug-log": "0.4.0",
+    "jsonwebtoken": "~8.3.0"
   },
   "engines": {
     "node": "10.9.0"
   },
   "devDependencies": {
     "@types/cookie": "^0.3.1",
+    "@types/jsonwebtoken": "~7.2.8",
     "@types/hubot": "^2.19.2"
   }
 }

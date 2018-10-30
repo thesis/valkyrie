@@ -18,4 +18,4 @@ COPY BUILD ./BUILD
 
 ENV PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 
-ENTRYPOINT ["node_modules/.bin/hubot", "--name", "heimdall", "--adapter", "flowdock"]
+ENTRYPOINT ["bin/hubot", "--name", "heimdall", "--adapter", "flowdock"]
