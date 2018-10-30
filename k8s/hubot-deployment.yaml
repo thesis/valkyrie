@@ -50,6 +50,16 @@ spec:
                 secretKeyRef:
                   name: heimdall-hubot
                   key: github_client_secret
+            - name: ZOOM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: heimdall-hubot
+                  key: zoom_api_key
+            - name: ZOOM_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: heimdall-hubot
+                  key: zoom_api_secret
           ports:
             - containerPort: 8080
           resources:
