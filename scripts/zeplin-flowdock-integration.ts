@@ -171,7 +171,7 @@ const notificationHandlers = {
                 screen = screensById[screenId];
 
             if (! screen) {
-                return;
+                continue;
             }
 
             await createFlowdockThread(
@@ -199,7 +199,7 @@ function checkForNotifications(logger, brain) {
             for (const notification of notifications.reverse()) {
                 let date = new Date(notification.updated)
                 if (date <= lastSeen) {
-                    return;
+                    break;
                 }
 
                 let action = notification.actionName;
@@ -231,9 +231,12 @@ function checkForNotifications(logger, brain) {
 module.exports = function(robot) {
     let SECONDS = 1000,
         MINUTES = 60 * SECONDS,
-        MINUTE = MINUTES;
+        MINUTE = MINUTES,
 
-    checkForNotifications(robot.logger, robot.brain)();
-    setInterval(checkForNotifications(robot.logger, robot.brain), 1 * MINUTE);
+        notificationChecker = checkForNotifications(robot.logger, robot.brain);
+
+    notificationChecker().then(_ => {
+        setInterval(notificationChecker, 1 * MINUTE);
+    });
   }
   
