@@ -192,6 +192,10 @@ class Screen {
               // Parse as a JSON string.
               apiDataJson = JSON.parse(`"${apiDataString}"`);
 
+        if (apiDataJson === "{}") {
+            throw { code: "not-found", error: "Screen no longer exists." }
+        }
+
         let parsedJson = JSON.parse(apiDataJson);
         parsedJson.versions = parsedJson.versions.versions
 
