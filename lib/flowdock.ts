@@ -65,7 +65,7 @@ class Session {
                             status: 200,
                             statusText: "",
                             headers: {},
-                            config: config
+                            config: config || {}
                         })
                     }, 1000)
                 })

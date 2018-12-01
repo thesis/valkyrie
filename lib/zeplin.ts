@@ -181,15 +181,20 @@ class Screen {
         }
 
         const screenResponse = await this.fetchers.html(this.url),
-              apiDataString = EMBEDDED_API_DATA_REGEXP
-                                  // Extract API data from expression.
-                                 .exec(screenResponse.data)[1]
+              screenData: string = screenResponse.data,
+              // Extract API data from expression.
+              apiDataMatch = EMBEDDED_API_DATA_REGEXP.exec(screenData) || ["", ""],
+              apiDataString = apiDataMatch[1]
                                  // Replace HTML/JS unicode escapey thingies 
                                  // (\x..-style) with JSON unicode escapes
                                  // (\u00..-style).
                                  .replace(/\\x([0-9a-fA-F]{2})/g, "\\u00$1"),
               // Parse as a JSON string.
               apiDataJson = JSON.parse(`"${apiDataString}"`);
+
+        if (apiDataJson === "{}") {
+            throw { code: "not-found", error: "Screen no longer exists." }
+        }
 
         let parsedJson = JSON.parse(apiDataJson);
         parsedJson.versions = parsedJson.versions.versions

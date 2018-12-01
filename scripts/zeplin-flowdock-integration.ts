@@ -12,6 +12,7 @@
 
 import * as flowdock from '../lib/flowdock';
 import * as zeplin from '../lib/zeplin';
+import * as util from 'util';
 
 require('axios-debug-log')({})
 
@@ -194,6 +195,7 @@ function checkForNotifications(logger, brain) {
 
             const notifications = await ZEPLIN_SESSION.getNotifications();
 
+            let seenNotifications = 0;
             for (const notification of notifications.reverse()) {
                 let date = new Date(notification.updated)
                 if (date <= lastSeen) {
@@ -206,17 +208,20 @@ function checkForNotifications(logger, brain) {
                     try {
                         await notificationHandler(notification, logger)
                     } catch (err) {
-                        logger.error(`Error handling notification [${action}]}]: `, err)
+                        logger.error(`Error handling notification [${action}]}]: ${util.inspect(err, { depth: 4 })}`)
                     }
                 }
 
                 lastSeen = date;
+                seenNotifications += 1;
                 brain.set('lastSeen', lastSeen.toISOString());
             };
 
-            // Update our last-read notification time for everyone's
-            // sake...
-            await ZEPLIN_SESSION.updateNotificationMarker()
+            logger.info(
+                "Saw %s notifications; read through %s",
+                seenNotifications,
+                lastSeen.toISOString()
+            )
         } catch(err) {
             logger.error('Failed to check for Zeplin notifications: ', err);
         };
