@@ -12,6 +12,7 @@
 
 import * as flowdock from '../lib/flowdock';
 import * as zeplin from '../lib/zeplin';
+import * as util from 'util';
 
 require('axios-debug-log')({})
 
@@ -206,7 +207,7 @@ function checkForNotifications(logger, brain) {
                     try {
                         await notificationHandler(notification, logger)
                     } catch (err) {
-                        logger.error(`Error handling notification [${action}]}]: `, err)
+                        logger.error(`Error handling notification [${action}]}]: ${util.inspect(err, { depth: 4 })}`)
                     }
                 }
 
