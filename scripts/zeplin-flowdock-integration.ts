@@ -199,7 +199,7 @@ function checkForNotifications(logger, brain) {
             for (const notification of notifications.reverse()) {
                 let date = new Date(notification.updated)
                 if (date <= lastSeen) {
-                    return;
+                    break;
                 }
 
                 let action = notification.actionName;
