@@ -231,9 +231,12 @@ function checkForNotifications(logger, brain) {
 module.exports = function(robot) {
     let SECONDS = 1000,
         MINUTES = 60 * SECONDS,
-        MINUTE = MINUTES;
+        MINUTE = MINUTES,
 
-    checkForNotifications(robot.logger, robot.brain)();
-    setInterval(checkForNotifications(robot.logger, robot.brain), 1 * MINUTE);
+        notificationChecker = checkForNotifications(robot.logger, robot.brain);
+
+    notificationChecker().then(_ => {
+        setInterval(notificationChecker, 1 * MINUTE);
+    });
   }
   
