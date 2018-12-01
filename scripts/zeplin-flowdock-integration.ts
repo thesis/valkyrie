@@ -171,7 +171,7 @@ const notificationHandlers = {
                 screen = screensById[screenId];
 
             if (! screen) {
-                return;
+                continue;
             }
 
             await createFlowdockThread(
