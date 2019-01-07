@@ -23,8 +23,10 @@
     "passport-github2": "^0.1.11",
     "cookie-parser": "^1.4.3",
     "cheerio": "^1.0.0-rc.2",
+    "axios": "0.18.0",
     "axios-debug-log": "0.4.0",
-    "jsonwebtoken": "~8.3.0"
+    "jsonwebtoken": "~8.3.0",
+    "ozymandias": "hacklanta/ozymandias"
   },
   "engines": {
     "node": "10.9.0"
