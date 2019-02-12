@@ -1,10 +1,16 @@
-FROM node:10.9.0-alpine
+FROM node:10.9.0-alpine AS runtime
 
 WORKDIR /
+
+FROM runtime AS build
 
 RUN mkdir hubot
 
 WORKDIR /hubot
+
+RUN apk add --no-cache \
+	git && \
+	rm -rf /usr/share/man/
 
 COPY package-lock.json package.json ./
 
@@ -16,6 +22,12 @@ COPY bin ./bin
 COPY scripts ./scripts
 COPY lib ./lib
 COPY BUILD ./BUILD
+
+FROM runtime
+
+COPY --from=build /hubot /hubot
+
+WORKDIR /hubot
 
 ENV PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 

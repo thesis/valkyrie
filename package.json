@@ -17,7 +17,7 @@
     "hubot-redis-brain": "^1.0.0",
     "hubot-rules": "^0.1.2",
     "hubot-scripts": "^2.17.2",
-    "hubot-shipit": "^0.2.1",
+    "hubot-shipit": "github:takouhai/hubot-shipit#955703ae5e00412bedec5eea0070d4a66e10fc93",
     "uuid": "^3.2.1",
     "passport": "^0.4.0",
     "passport-github2": "^0.1.11",
