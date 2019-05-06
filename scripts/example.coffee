@@ -10,10 +10,10 @@
 
 module.exports = (robot) ->
 
-  robot.hear /badger/i, (res) ->
+  robot.hear /badger/i, id:'badgers', (res) ->
     res.send "Badgers? BADGERS? WE DON'T NEED NO STINKIN BADGERS"
 
-  robot.respond /open the (.*) doors/i, (res) ->
+  robot.respond /open the (.*) doors/i, id:'pod-bay-doors', (res) ->
     doorType = res.match[1]
     if doorType is "pod bay"
       res.reply "I'm afraid I can't let you do that."
@@ -25,7 +25,7 @@ module.exports = (robot) ->
   #
   lulz = ['lol', 'rofl', 'lmao']
 
-  robot.respond /lulz/i, (res) ->
+  robot.respond /lulz/i, id:'lulz', (res) ->
     res.send res.random lulz
   #
   # robot.topic (res) ->
