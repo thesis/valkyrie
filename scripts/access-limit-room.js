@@ -18,10 +18,12 @@ var ALLOWED_ROOMS, RESTRICTED_COMMANDS;
 
 RESTRICTED_COMMANDS = [
   'badgers',
-  'pod-bay-doors' // String that matches the listener ID
-];
+  'pod-bay-doors'
+]; // String that matches the listener ID
 
-ALLOWED_ROOMS = ['playground']; // String that matches the room name or ID
+ALLOWED_ROOMS = [
+  '8dd97a6a-d6f0-4352-be7d-388d9afeea9f' //playground
+]; // String that matches the room ID
 
 module.exports = function(robot) {
   robot.listenerMiddleware(function(context, next, done) {
