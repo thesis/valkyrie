@@ -34,6 +34,9 @@ module.exports = function(robot) {
         context.response.reply(`I'm sorry, but that command doesn't work here.`);
         done();
       }
+
+    } else {
+      next();
     }
   })
 }
