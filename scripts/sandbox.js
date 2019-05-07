@@ -20,7 +20,7 @@ const
     decode = require('decode-html');
 
 module.exports = (robot) => {
-  robot.hear(/dad/i, (res) => {
+  robot.hear(/dad/i, {id:'dad-jokes'}, (res) => {
 
     new Promise((resolve, reject) =>
         robot.http(dadJokeUrl).get()((err, response, body) =>
@@ -28,9 +28,9 @@ module.exports = (robot) => {
             )
         )
     .then(body => JSON.parse(body))
-    .then(json => decode(json.value.joke))
-    .then(joke => res.reply(joke))
-    .catch(err => res.reply('Dad broke the internet: ' + err))
+    .then(json => decode(json.joke))
+    .then(joke => res.send('Dad jokes? I got dad jokes! ', joke))
+    .catch(err => res.send('Looks like Dad borked the internet: ', err))
   })
 }
 
