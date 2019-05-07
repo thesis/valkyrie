@@ -14,8 +14,7 @@
 // Author:
 //   kb0rg
 
-var ALLOWED_ROOMS, RESTRICTED_COMMANDS,
-  indexOf = [].indexOf;
+var ALLOWED_ROOMS, RESTRICTED_COMMANDS;
 
 RESTRICTED_COMMANDS = [
   'badgers',
@@ -25,16 +24,15 @@ RESTRICTED_COMMANDS = [
 ALLOWED_ROOMS = ['playground']; // String that matches the room name or ID
 
 module.exports = function(robot) {
-  return robot.listenerMiddleware(function(context, next, done) {
-    var ref, ref1;
-    if (ref = context.listener.options.id, indexOf.call(RESTRICTED_COMMANDS, ref) >= 0) {
-      if (ref1 = context.response.message.room, indexOf.call(ALLOWED_ROOMS, ref1) >= 0) {
+  robot.listenerMiddleware(function(context, next, done) {
+    if (RESTRICTED_COMMANDS.indexOf(context.listener.options.id) >= 0) {
+      if (ALLOWED_ROOMS.indexOf(context.response.message.room) >= 0) {
         // User is allowed access to this command
-        return next();
+        next();
       } else {
         // Restricted command, but flow isn't in whitelist
-        context.response.reply(`I'm sorry, @${context.response.message.user.name}, but that command doesn't work here.`);
-        return done();
+        context.response.reply(`I'm sorry, but that command doesn't work here.`);
+        done();
       }
     }
   })
