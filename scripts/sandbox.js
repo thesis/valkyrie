@@ -16,15 +16,17 @@
 //   kb0rg
 
 const
-    dadJokeUrl = 'https://icanhazdadjoke.com/api',
+    dadJokeUrl = 'https://icanhazdadjoke.com',
     decode = require('decode-html');
 
 module.exports = (robot) => {
   robot.hear(/dad/i, {id:'dad-jokes'}, (res) => {
 
     new Promise((resolve, reject) =>
-        robot.http(dadJokeUrl).get()((err, response, body) =>
-            err ? reject(err) : resolve(body)
+        robot.http(dadJokeUrl)
+            .header('Accept', 'application/json')
+            .get()((err, response, body) =>
+                err ? reject(err) : resolve(body)
             )
         )
     .then(body => JSON.parse(body))
@@ -33,4 +35,3 @@ module.exports = (robot) => {
     .catch(err => res.send('Looks like Dad borked the internet: ', err))
   })
 }
-
