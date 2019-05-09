@@ -17,7 +17,11 @@
 
 const
     dadJokeUrl = 'https://icanhazdadjoke.com',
-    decode = require('decode-html');
+    decode = require('decode-html'),
+    requestHeaders = {
+        'User-Agent': 'Heimdall Hubot https://github.com/thesis-heimdall',
+        'Accept': 'application/json'
+    };
 
 module.exports = (robot) => {
     robot.hear(/dad/i, {
@@ -26,7 +30,7 @@ module.exports = (robot) => {
 
         new Promise((resolve, reject) =>
                 robot.http(dadJokeUrl)
-                .header('Accept', 'application/json')
+                .headers(requestHeaders)
                 .get()((err, response, body) =>
                     err ? reject(err) : resolve(body)
                 )
