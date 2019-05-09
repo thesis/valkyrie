@@ -29,9 +29,7 @@
  * DS102: Remove unnecessary code created because of implicit returns
  * DS104: Avoid inline assignments
  * DS203: Remove `|| {}` from converted for-own loops
- * DS204: Change includes calls to have a more natural evaluation order
  * DS205: Consider reworking code to avoid use of IIFEs
- * DS207: Consider shorter variations of null checks
  * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
  */
 // configuration settings
@@ -40,7 +38,7 @@ const config = {
   dont_receive: process.env.HUBOT_SCHEDULE_DONT_RECEIVE,
   deny_external_control: process.env.HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL,
   list: {
-    replace_text: JSON.parse(process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT != null ? process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT : '{"@":"[@]"}')
+    replace_text: JSON.parse(process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT ? process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT : '{"@":"[@]"}')
   }
 };
 
@@ -286,7 +284,7 @@ var isCronPattern = function(pattern) {
 };
 
 
-var is_blank = s => !(s != null ? s.trim() : undefined);
+var is_blank = s => !(s ? s.trim() : undefined);
 
 
 const is_empty = o => Object.keys(o).length === 0;
@@ -294,8 +292,7 @@ const is_empty = o => Object.keys(o).length === 0;
 
 var isRestrictedRoom = function(target_room, robot, msg) {
   if (config.deny_external_control === '1') {
-    let needle;
-    if ((needle = target_room, ![getRoomName(robot, msg.message.user), msg.message.user.reply_to].includes(needle))) {
+    if ((![getRoomName(robot, msg.message.user), msg.message.user.reply_to].includes(target_room))) {
       return true;
     }
   }
