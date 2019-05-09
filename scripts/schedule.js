@@ -26,7 +26,6 @@
 //   matsukaz <matsukaz@gmail.com>
 /*
  * decaffeinate suggestions:
- * DS101: Remove unnecessary use of Array.from
  * DS102: Remove unnecessary code created because of implicit returns
  * DS104: Avoid inline assignments
  * DS203: Remove `|| {}` from converted for-own loops
@@ -98,7 +97,7 @@ module.exports = function(robot) {
         job.user.room = room_name;
       }
 
-      if (show_all || Array.from(rooms).includes(job.user.room)) {
+      if (show_all || rooms.includes(job.user.room)) {
         if (job.pattern instanceof Date) {
           dateJobs[id] = job;
         } else {
@@ -109,7 +108,7 @@ module.exports = function(robot) {
 
     // sort by date in ascending order
     let text = '';
-    for (id of Array.from((Object.keys(dateJobs).sort((a, b) => new Date(dateJobs[a].pattern) - new Date(dateJobs[b].pattern))))) {
+    for (id of (Object.keys(dateJobs).sort((a, b) => new Date(dateJobs[a].pattern) - new Date(dateJobs[b].pattern)))) {
       job = dateJobs[id];
       text += `${id}: [ ${formatDate(new Date(job.pattern))} ] \#${job.user.room} ${job.message} \n`;
     }
@@ -233,7 +232,7 @@ var syncSchedules = function(robot) {
   const nonCachedSchedules = difference(robot.brain.get(STORE_KEY), JOBS);
   for (id of Object.keys(nonCachedSchedules || {})) {
     job = nonCachedSchedules[id];
-    scheduleFromBrain(robot, id, ...Array.from(job));
+    scheduleFromBrain(robot, id, ...job);
   }
 
   const nonStoredSchedules = difference(JOBS, robot.brain.get(STORE_KEY));
