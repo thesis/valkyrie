@@ -13,8 +13,8 @@
 //
 // Commands:
 //   hubot schedule [add|new] "<datetime pattern>" <message> - Schedule a message that runs on a specific date and time
-//   hubot schedule [add|new] "<cron pattern>" <message> - Schedule a message that runs recurrently
-//   hubot schedule [add|new] #<room> "<datetime pattern>" <message> - Schedule a message to a specific room that runs on a specific date and time
+//   hubot schedule [add|new] "<cron pattern>" <message> - Schedule a message that runs recurrently. See http://crontab.org/ for cron pattern syntax.
+//   hubot schedule [add|new] #<room> "<datetime pattern>" <message> - Schedule a message to a specific room that runs on a specific date and time. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for datetime pattern syntax.
 //   hubot schedule [add|new] #<room> "<cron pattern>" <message> - Schedule a message to a specific room that runs recurrently
 //   hubot schedule [cancel|del|delete|remove] <id> - Cancel the schedule
 //   hubot schedule [upd|update] <id> <message> - Update scheduled message
