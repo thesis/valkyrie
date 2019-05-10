@@ -18,6 +18,7 @@ var ALLOWED_ROOMS, RESTRICTED_COMMANDS;
 
 RESTRICTED_COMMANDS = [
   'badgers',
+  'dad-jokes',
   'pod-bay-doors'
 ]; // String that matches the listener ID
 
