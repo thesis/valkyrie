@@ -130,7 +130,7 @@ module.exports = function(robot) {
 };
 
 
-var schedule = function(robot, msg, room, pattern, message) {
+function schedule(robot, msg, room, pattern, message) {
   let id;
   if (JOB_MAX_COUNT <= Object.keys(JOBS).length) {
     return msg.send("Too many scheduled messages");
@@ -155,7 +155,7 @@ See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for datetime-b
 };
 
 
-var createSchedule = function(robot, id, pattern, user, room, message) {
+function createSchedule(robot, id, pattern, user, room, message) {
   if (isCronPattern(pattern)) {
     return createCronSchedule(robot, id, pattern, user, room, message);
   }
@@ -181,7 +181,7 @@ var createDatetimeSchedule = (robot, id, pattern, user, room, message) =>
 ;
 
 
-var startSchedule = function(robot, id, pattern, user, room, message, cb) {
+function startSchedule(robot, id, pattern, user, room, message, cb) {
   if (!room) {
     room = getRoomName(robot, user);
   }
@@ -192,7 +192,7 @@ var startSchedule = function(robot, id, pattern, user, room, message, cb) {
 };
 
 
-var updateSchedule = function(robot, msg, id, message) {
+function updateSchedule(robot, msg, id, message) {
   const job = JOBS[id];
   if (!job) { return msg.send(`Schedule ${id} not found`); }
 
@@ -206,7 +206,7 @@ var updateSchedule = function(robot, msg, id, message) {
 };
 
 
-var cancelSchedule = function(robot, msg, id) {
+function cancelSchedule(robot, msg, id) {
   const job = JOBS[id];
   if (!job) { return msg.send(`${id}: Schedule not found`); }
 
@@ -221,7 +221,7 @@ var cancelSchedule = function(robot, msg, id) {
 };
 
 
-var syncSchedules = function(robot) {
+function syncSchedules(robot) {
   let id, job;
   if (!robot.brain.get(STORE_KEY)) {
     robot.brain.set(STORE_KEY, {});
@@ -245,7 +245,7 @@ var syncSchedules = function(robot) {
 };
 
 
-var scheduleFromBrain = function(robot, id, pattern, user, message) {
+function scheduleFromBrain(robot, id, pattern, user, message) {
   const envelope = {user, room: user.room};
   try {
     createSchedule(robot, id, pattern, user, user.room, message);
@@ -258,7 +258,7 @@ var scheduleFromBrain = function(robot, id, pattern, user, message) {
 };
 
 
-var storeScheduleInBrain = function(robot, id, job) {
+function storeScheduleInBrain(robot, id, job) {
   robot.brain.get(STORE_KEY)[id] = job.serialize();
 
   const envelope = {user: job.user, room: job.user.room};
@@ -266,7 +266,7 @@ var storeScheduleInBrain = function(robot, id, job) {
 };
 
 
-var difference = function(obj1, obj2) {
+function difference(obj1, obj2) {
   if (obj1 == null) { obj1 = {}; }
   if (obj2 == null) { obj2 = {}; }
   const diff = {};
@@ -278,7 +278,7 @@ var difference = function(obj1, obj2) {
 };
 
 
-var isCronPattern = function(pattern) {
+function isCronPattern(pattern) {
   const { errors } = cronParser.parseString(pattern);
   return !Object.keys(errors).length;
 };
@@ -290,7 +290,7 @@ var is_blank = s => !(s ? s.trim() : undefined);
 const is_empty = o => Object.keys(o).length === 0;
 
 
-var isRestrictedRoom = function(target_room, robot, msg) {
+function isRestrictedRoom(target_room, robot, msg) {
   if (config.deny_external_control === '1') {
     if ((![getRoomName(robot, msg.message.user), msg.message.user.reply_to].includes(target_room))) {
       return true;
@@ -303,7 +303,7 @@ var isRestrictedRoom = function(target_room, robot, msg) {
 const toTwoDigits = num => (`0${num}`).slice(-2);
 
 
-var formatDate = function(date) {
+function formatDate(date) {
   let offset = -date.getTimezoneOffset();
   let sign = ' GMT+';
   if (offset < 0) {
@@ -314,7 +314,7 @@ var formatDate = function(date) {
 };
 
 
-var getRoomName = function(robot, user) {
+function getRoomName(robot, user) {
   try {
     // Slack adapter needs to convert from room identifier
     // https://slackapi.github.io/hubot-slack/upgrading
