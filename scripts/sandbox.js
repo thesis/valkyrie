@@ -24,7 +24,7 @@ const
     };
 
 module.exports = (robot) => {
-    robot.hear(/dad/i, {
+    robot.hear(/\bdad\b/i, {
         id: 'dad-jokes'
     }, (res) => {
 
