@@ -46,6 +46,7 @@ const config = {
 const scheduler = require('node-schedule');
 const cronParser = require('cron-parser');
 const cronstrue = require('cronstrue');
+const moment = require('moment');
 const {
     TextMessage
 } = require('hubot');
@@ -153,10 +154,10 @@ function schedule(robot, msg, room, pattern, message) {
         if (job) {
             if (isCronPattern(pattern)) {
                 patternParsed = cronstrue.toString(pattern)
-                return msg.send(`${id}: Schedule created: ${patternParsed}`);
             } else {
-                return msg.send(`${id}: Schedule created`);
+                patternParsed = moment(pattern)
             }
+                return msg.send(`${id}: Schedule created: ${patternParsed}`);
         } else {
             return msg.send(`\
 \"${pattern}\" is invalid pattern.
