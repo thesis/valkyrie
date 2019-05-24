@@ -80,7 +80,7 @@ module.exports = function(robot) {
         let id, job, rooms, show_all;
         const target_room = msg.match[1];
         const room_id = msg.message.user.room;
-        const room_name = msg.message.user.room
+        const room_name = getRoomNameFromId(robot, room_id)
         if (is_blank(target_room) || (config.deny_external_control === '1')) {
             // if target_room is undefined or blank, show schedule for current room
             // room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
@@ -96,6 +96,7 @@ module.exports = function(robot) {
         const cronJobs = {};
         for (id in JOBS) {
 
+            // TODO clean up? we actually want room_id, in general, bc flowdock prefers it
             // backward compatibility
             // hubot-schedule under v0.5.1 holds it's job by room_id instead of room_name
             job = JOBS[id];
@@ -117,12 +118,14 @@ module.exports = function(robot) {
         for (id of (Object.keys(dateJobs)
                 .sort((a, b) => new Date(dateJobs[a].pattern) - new Date(dateJobs[b].pattern)))) {
             job = dateJobs[id];
-            text += `${id}: [ ${formatDate(new Date(job.pattern))} ] \#${job.user.room} ${job.message} \n`;
+            roomDisplayName = getRoomNameFromId(robot, job.user.room)
+            text += `${id}: [ ${formatDate(new Date(job.pattern))} ] \#${roomDisplayName} ${job.message} \n`;
         }
 
         for (id in cronJobs) {
             job = cronJobs[id];
-            text += `${id}: [ ${job.pattern} ] \#${job.user.room} ${job.message} \n`;
+            roomDisplayName = getRoomNameFromId(robot, job.user.room)
+            text += `${id}: [ ${job.pattern} ] \#${roomDisplayName} ${job.message} \n`;
         }
 
         if (!!text.length) {
@@ -362,6 +365,15 @@ function formatDate(date) {
 function getRoomIdFromName(msg, robot, roomName) {
     return robot.adapter.findFlow(roomName)
 }
+
+
+function getRoomNameFromId(robot, roomId) {
+    for (let flow of robot.adapter.flows) {
+        if (roomId === flow.id) {
+            return flow.name;
+            }
+        }
+    }
 
 
 class Job {
