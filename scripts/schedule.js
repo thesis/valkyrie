@@ -3,7 +3,8 @@
 //
 // Dependencies:
 //   "node-schedule" : "~1.0.0",
-//   "cron-parser"   : "~1.0.1"
+//   "cron-parser"   : "~1.0.1",
+//   "cronstrue"     : "^1.68.0"
 //
 // Configuration:
 //   HUBOT_SCHEDULE_DEBUG - set "1" for debug
@@ -44,6 +45,8 @@ const config = {
 
 const scheduler = require('node-schedule');
 const cronParser = require('cron-parser');
+const cronstrue = require('cronstrue');
+const moment = require('moment');
 const {
     TextMessage
 } = require('hubot');
@@ -149,7 +152,12 @@ function schedule(robot, msg, room, pattern, message) {
     try {
         const job = createSchedule(robot, id, pattern, msg.message.user, room, message);
         if (job) {
-            return msg.send(`${id}: Schedule created`);
+            if (isCronPattern(pattern)) {
+                patternParsed = cronstrue.toString(pattern)
+            } else {
+                patternParsed = moment(pattern)
+            }
+                return msg.send(`${id}: Schedule created: ${patternParsed}`);
         } else {
             return msg.send(`\
 \"${pattern}\" is invalid pattern.
