@@ -80,7 +80,7 @@ module.exports = function(robot) {
         let id, job, rooms, show_all;
         const target_room = msg.match[1];
         const room_id = msg.message.user.room;
-        const room_name = getRoomName(robot, msg.message.user);
+        const room_name = msg.message.user.room
         if (is_blank(target_room) || (config.deny_external_control === '1')) {
             // if target_room is undefined or blank, show schedule for current room
             // room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
@@ -200,8 +200,8 @@ var createDatetimeSchedule = (robot, id, pattern, user, room, message) =>
 
 
 function startSchedule(robot, id, pattern, user, room, message, cb) {
-    if (!room) {
-        room = getRoomName(robot, user);
+    if (!room) { // if a target_room isn't specified, send to current room
+        room = user.room;
     }
     const job = new Job(id, pattern, user, room, message, cb);
     job.start(robot);
@@ -336,7 +336,7 @@ const is_empty = o => Object.keys(o)
 
 function isRestrictedRoom(target_room, robot, msg) {
     if (config.deny_external_control === '1') {
-        if ((![getRoomName(robot, msg.message.user), msg.message.user.reply_to].includes(target_room))) {
+        if ((![msg.message.user.room, msg.message.user.reply_to].includes(target_room))) {
             return true;
         }
     }
@@ -356,18 +356,6 @@ function formatDate(date) {
         sign = ' GMT-';
     }
     return [date.getFullYear(), toTwoDigits(date.getMonth() + 1), toTwoDigits(date.getDate())].join('-') + ' ' + date.toLocaleTimeString() + sign + toTwoDigits(offset / 60) + ':' + toTwoDigits(offset % 60);
-};
-
-
-function getRoomName(robot, user) {
-    try {
-        // Slack adapter needs to convert from room identifier
-        // https://slackapi.github.io/hubot-slack/upgrading
-        return robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById(user.room)
-            .name;
-    } catch (e) {
-        return user.room;
-    }
 };
 
 
