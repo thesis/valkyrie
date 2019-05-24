@@ -64,10 +64,13 @@ module.exports = function(robot) {
     }
 
     robot.respond(/schedule (?:new|add)(?: #(.*))? "(.*?)" ((?:.|\s)*)$/i, function(msg) {
-        const target_room = msg.match[1];
+        let target_room = msg.match[1]; // optional name of room specified in msg
 
         if (!is_blank(target_room) && isRestrictedRoom(target_room, robot, msg)) {
             return msg.send("Creating schedule for the other room is restricted");
+        }
+        if (!is_blank(target_room)) {
+            target_room = getRoomIdFromName(msg, robot, target_room)
         }
         return schedule(robot, msg, target_room, msg.match[2], msg.match[3]);
     });
@@ -366,6 +369,11 @@ function getRoomName(robot, user) {
         return user.room;
     }
 };
+
+
+function getRoomIdFromName(msg, robot, roomName) {
+    return robot.adapter.findFlow(roomName)
+}
 
 
 class Job {
