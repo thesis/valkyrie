@@ -63,6 +63,7 @@ module.exports = function(robot) {
         robot.brain.set(STORE_KEY, {});
     }
 
+
     robot.respond(/schedule (?:new|add)(?: #(.*))? "(.*?)" ((?:.|\s)*)$/i, function(msg) {
         let target_room = msg.match[1]; // optional name of room specified in msg
 
@@ -80,15 +81,14 @@ module.exports = function(robot) {
         let id, job, rooms, show_all;
         const target_room = msg.match[1];
         const room_id = msg.message.user.room;
-        const room_name = getRoomNameFromId(robot, room_id)
         if (is_blank(target_room) || (config.deny_external_control === '1')) {
             // if target_room is undefined or blank, show schedule for current room
             // room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
-            rooms = [room_name, msg.message.user.reply_to];
+            rooms = [room_id, msg.message.user.reply_to];
         } else if (target_room === "all") {
             show_all = true;
         } else {
-            rooms = [target_room.slice(1)];
+            rooms = [getRoomIdFromName(msg, robot, target_room.slice(1))];
         }
 
         // split jobs into date and cron pattern jobs
@@ -96,13 +96,7 @@ module.exports = function(robot) {
         const cronJobs = {};
         for (id in JOBS) {
 
-            // TODO clean up? we actually want room_id, in general, bc flowdock prefers it
-            // backward compatibility
-            // hubot-schedule under v0.5.1 holds it's job by room_id instead of room_name
             job = JOBS[id];
-            if (job.user.room === room_id) {
-                job.user.room = room_name;
-            }
 
             if (show_all || rooms.includes(job.user.room)) {
                 if (job.pattern instanceof Date) {
