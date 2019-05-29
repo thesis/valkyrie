@@ -54,8 +54,10 @@ const JOBS = {};
 const JOB_MAX_COUNT = 10000;
 const STORE_KEY = 'hubot_schedule';
 
+
 module.exports = function(robot) {
     robot.brain.on('loaded', () => {
+
         return syncSchedules(robot);
     });
 
@@ -67,13 +69,18 @@ module.exports = function(robot) {
     robot.respond(/schedule (?:new|add)(?: #(.*))? "(.*?)" ((?:.|\s)*)$/i, function(msg) {
         let target_room = msg.match[1]; // optional name of room specified in msg
 
-        if (!is_blank(target_room) && isRestrictedRoom(target_room, robot, msg)) {
-            return msg.send("Creating schedule for the other room is restricted");
-        }
         if (!is_blank(target_room)) {
-            target_room = getRoomIdFromName(msg, robot, target_room)
+            if (isRestrictedRoom(target_room, robot, msg)) {
+                return msg.send("Creating schedule for the other room is restricted");
+            }
+
+            target_room_id = getRoomIdFromName(msg, robot, target_room)
+
+            if (!robotIsInRoom(robot, target_room_id)) {
+                return msg.send("Can not create schedule for a room I'm not in");
+            }
         }
-        return schedule(robot, msg, target_room, msg.match[2], msg.match[3]);
+        return schedule(robot, msg, target_room_id, msg.match[2], msg.match[3]);
     });
 
 
@@ -81,6 +88,7 @@ module.exports = function(robot) {
         let id, job, rooms, show_all;
         const target_room = msg.match[1];
         const room_id = msg.message.user.room;
+
         if (is_blank(target_room) || (config.deny_external_control === '1')) {
             // if target_room is undefined or blank, show schedule for current room
             // room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
@@ -88,7 +96,11 @@ module.exports = function(robot) {
         } else if (target_room === "all") {
             show_all = true;
         } else {
-            rooms = [getRoomIdFromName(msg, robot, target_room.slice(1))];
+            target_room_id = getRoomIdFromName(msg, robot, target_room.slice(1))
+            if (!robotIsInRoom(robot, target_room_id)) {
+                return msg.send("I'm not in that flow")
+            }
+            rooms = [target_room_id];
         }
 
         // split jobs into date and cron pattern jobs
@@ -369,6 +381,16 @@ function getRoomNameFromId(robot, roomId) {
             }
         }
     }
+
+
+function getJoinedFlowIds(robot) {
+    return (Array.from(robot.adapter.joinedFlows()).map((flow) => flow.id));
+}
+
+
+function robotIsInRoom(robot, roomId) {
+    return (getJoinedFlowIds(robot).indexOf(roomId) >= 0)
+}
 
 
 class Job {
