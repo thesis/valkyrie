@@ -1,5 +1,6 @@
 // Description:
 //   Schedule a message in both cron-style and datetime-based format pattern
+//   Modified for flowdock, and converted to JS
 //
 // Dependencies:
 //   "node-schedule" : "~1.0.0",
@@ -24,6 +25,7 @@
 //   hubot schedule list all - List all scheduled messages for any rooms
 //
 // Author:
+//   kb0rg
 //   matsukaz <matsukaz@gmail.com>
 /*
  * decaffeinate suggestions:
