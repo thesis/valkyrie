@@ -20,6 +20,7 @@
     "hubot-help": "^1.0.1",
     "hubot-redis-brain": "^1.0.0",
     "hubot-reload-flowdock": "github:thesis/hubot-flowdock#60f334c64f8efb38835adb7864bc2fefa83ba12c",
+    "hubot-reload": "0.0.2",
     "hubot-rules": "^0.1.2",
     "hubot-scripts": "^2.17.2",
     "hubot-shipit": "github:takouhai/hubot-shipit#955703ae5e00412bedec5eea0070d4a66e10fc93",
