@@ -113,13 +113,13 @@ module.exports = function(robot) {
                 .sort((a, b) => new Date(dateJobs[a].pattern) - new Date(dateJobs[b].pattern)))) {
             job = dateJobs[id];
             roomDisplayName = getRoomNameFromId(robot, job.user.room)
-            text += `${id}: [ ${formatDate(new Date(job.pattern))} ] \#${roomDisplayName} ${job.message} \n`;
+            text += `${id}: [ ${formatDate(new Date(job.pattern))} ] ${roomDisplayName} \"${job.message}\" \n`;
         }
 
         for (id in cronJobs) {
             job = cronJobs[id];
             roomDisplayName = getRoomNameFromId(robot, job.user.room)
-            text += `${id}: [ ${job.pattern} ] \#${roomDisplayName} ${job.message} \n`;
+            text += `${id}: [ ${job.pattern} ] ${roomDisplayName} \"${job.message}\" \n`;
         }
 
         if (!!text.length) {
