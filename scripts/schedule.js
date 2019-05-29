@@ -119,7 +119,8 @@ module.exports = function(robot) {
         for (id in cronJobs) {
             job = cronJobs[id];
             roomDisplayName = getRoomNameFromId(robot, job.user.room)
-            text += `${id}: [ ${job.pattern} ] ${roomDisplayName} \"${job.message}\" \n`;
+            patternParsed = cronstrue.toString(job.pattern)
+            text += `${id}: [ ${patternParsed} ] ${roomDisplayName} \"${job.message}\" \n`;
         }
 
         if (!!text.length) {
