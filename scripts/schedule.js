@@ -16,12 +16,12 @@
 // Commands:
 //   hubot schedule [add|new] "<datetime pattern>" <message> - Schedule a message that runs on a specific date and time. "YYYY-MM-DDTHH:mm" to use your local time, "YYYY-MM-DDTHH:mmZ" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
 //   hubot schedule [add|new] "<cron pattern>" <message> - Schedule a message that runs recurrently. For the wizards only. See http://crontab.org/ for cron pattern syntax.
-//   hubot schedule [add|new] #<room> "<datetime pattern>" <message> - Schedule a message to a specific room that runs on a specific date and time.
-//   hubot schedule [add|new] #<room> "<cron pattern>" <message> - Schedule a message to a specific room that runs recurrently
+//   hubot schedule [add|new] to <room> "<datetime pattern>" <message> - Schedule a message to a specific room that runs on a specific date and time.
+//   hubot schedule [add|new] to <room> "<cron pattern>" <message> - Schedule a message to a specific room that runs recurrently
 //   hubot schedule [cancel|del|delete|remove] <id> - Cancel the schedule
 //   hubot schedule [upd|update] <id> <message> - Update scheduled message
 //   hubot schedule list - List all scheduled messages for current room
-//   hubot schedule list #<room> - List all scheduled messages for specified room
+//   hubot schedule list <room> - List all scheduled messages for specified room
 //   hubot schedule list all - List all scheduled messages for any rooms
 //
 // Author:
@@ -68,7 +68,7 @@ module.exports = function(robot) {
     }
 
 
-    robot.respond(/schedule (?:new|add)(?: #(.*))? "(.*?)" ((?:.|\s)*)$/i, function(msg) {
+    robot.respond(/schedule (?:new|add)(?: to (.*))? "(.*?)" ((?:.|\s)*)$/i, function(msg) {
         let target_room = msg.match[1]; // optional name of room specified in msg
 
         if (!is_blank(target_room)) {
@@ -86,7 +86,7 @@ module.exports = function(robot) {
     });
 
 
-    robot.respond(/schedule list(?: (all|#.*))?/i, function(msg) {
+    robot.respond(/schedule list(?: (all|to .*))?/i, function(msg) {
         let id, job, rooms, show_all;
         const target_room = msg.match[1];
         const room_id = msg.message.user.room;
@@ -98,7 +98,7 @@ module.exports = function(robot) {
         } else if (target_room === "all") {
             show_all = true;
         } else {
-            target_room_id = getRoomIdFromName(msg, robot, target_room.slice(1))
+            target_room_id = getRoomIdFromName(msg, robot, target_room.slice(3))
             if (!robotIsInRoom(robot, target_room_id)) {
                 return msg.send("I'm not in that flow")
             }
