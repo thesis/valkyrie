@@ -27,14 +27,7 @@
 // Author:
 //   kb0rg
 //   matsukaz <matsukaz@gmail.com>
-/*
- * decaffeinate suggestions:
- * DS102: Remove unnecessary code created because of implicit returns
- * DS104: Avoid inline assignments
- * DS203: Remove `|| {}` from converted for-own loops
- * DS205: Consider reworking code to avoid use of IIFEs
- * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
- */
+//
 // configuration settings
 const config = {
     debug: process.env.HUBOT_SCHEDULE_DEBUG,
@@ -136,14 +129,14 @@ module.exports = function(robot) {
                 .sort((a, b) => new Date(dateJobs[a].pattern) - new Date(dateJobs[b].pattern)))) {
             job = dateJobs[id];
             roomDisplayName = getRoomNameFromId(robot, job.user.room)
-            text += `${id}: [ ${formatDate(new Date(job.pattern))} ] ${roomDisplayName} \"${job.message}\" \n`;
+            text += `${id}: [ ${formatDate(new Date(job.pattern))} ] to ${roomDisplayName} \"${job.message}\" \n`;
         }
 
         for (id in cronJobs) {
             job = cronJobs[id];
             roomDisplayName = getRoomNameFromId(robot, job.user.room)
             patternParsed = cronstrue.toString(job.pattern)
-            text += `${id}: [ ${patternParsed} ] ${roomDisplayName} \"${job.message}\" \n`;
+            text += `${id}: [ ${patternParsed} ] to ${roomDisplayName} \"${job.message}\" \n`;
         }
 
         if (!!text.length) {
