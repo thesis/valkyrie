@@ -383,9 +383,9 @@ function getRoomNameFromId(robot, roomId) {
     for (let flow of robot.adapter.flows) {
         if (roomId === flow.id) {
             return flow.name;
-            }
         }
     }
+}
 
 
 function getAllFlowIds(robot) {
