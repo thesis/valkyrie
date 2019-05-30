@@ -63,6 +63,7 @@ module.exports = function(robot) {
 
     robot.respond(/schedule (?:new|add)(?: to (.*))? "(.*?)" ((?:.|\s)*)$/i, function(msg) {
         let target_room = msg.match[1]; // optional name of room specified in msg
+        let target_room_id = null
 
         if (!is_blank(target_room)) {
             if (isRestrictedRoom(target_room, robot, msg)) {
@@ -75,7 +76,7 @@ module.exports = function(robot) {
                 return msg.send("Can not create schedule for a room I'm not in");
             }
         }
-        return schedule(robot, msg, target_room_id, msg.match[2], msg.match[3]);
+        return schedule(robot, msg, target_room_id || target_room, msg.match[2], msg.match[3]);
     });
 
 
