@@ -100,7 +100,7 @@ module.exports = function(robot) {
         if (is_blank(target_room) || (config.deny_external_control === '1')) {
             // if target_room is undefined or blank, show schedule for current room
             // room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
-            rooms = [room_id, msg.message.user.reply_to];
+            rooms = [room_id];
         } else if (target_room === "all") {
             show_all = true;
         } else {
@@ -357,7 +357,7 @@ const is_empty = o => Object.keys(o)
 
 function isRestrictedRoom(target_room, robot, msg) {
     if (config.deny_external_control === '1') {
-        if ((![msg.message.user.room, msg.message.user.reply_to].includes(target_room))) {
+        if ((![msg.message.user.room].includes(target_room))) {
             return true;
         }
     }
