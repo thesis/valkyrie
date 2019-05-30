@@ -67,13 +67,13 @@ module.exports = function(robot) {
 
         if (!is_blank(target_room)) {
             if (isRestrictedRoom(target_room, robot, msg)) {
-                return msg.send("Creating schedule for the other room is restricted");
+                return msg.send(`Creating schedule for ${target_room} is restricted`);
             }
 
             target_room_id = getRoomIdFromName(msg, robot, target_room)
 
             if (!robotIsInRoom(robot, target_room_id)) {
-                return msg.send("Can not create schedule for a room I'm not in");
+                return msg.send(`Can't create schedule for ${target_room}: I'm not in that room, or there's a typo in the name`);
             }
         }
         return schedule(robot, msg, target_room_id || target_room, msg.match[2], msg.match[3]);
@@ -95,7 +95,7 @@ module.exports = function(robot) {
         } else {
             target_room_id = getRoomIdFromName(msg, robot, target_room)
             if (!robotIsInRoom(robot, target_room_id)) {
-                return msg.send("I'm not in that flow - or you mistyped")
+                return msg.send(`Sorry, I'm not in ${target_room} - or maybe you mistyped?`)
             }
             rooms = [target_room_id];
         }
@@ -224,7 +224,7 @@ function updateSchedule(robot, msg, id, message) {
     }
 
     if (isRestrictedRoom(job.user.room, robot, msg)) {
-        return msg.send("Updating schedule for the other room is restricted");
+        return msg.send(`Updating schedule for ${getRoomNameFromId(job.user.room)} is restricted`);
     }
 
     job.message = message;
@@ -240,7 +240,7 @@ function cancelSchedule(robot, msg, id) {
     }
 
     if (isRestrictedRoom(job.user.room, robot, msg)) {
-        return msg.send("Canceling schedule for the other room is restricted");
+        return msg.send(`Canceling schedule for ${getRoomNameFromId(job.user.room)} is restricted`);
     }
 
     job.cancel();
