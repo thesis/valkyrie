@@ -84,13 +84,7 @@ module.exports = function(robot) {
         let id, job, rooms, show_all;
         const target_room = msg.match[1];
         const room_id = msg.message.user.room;
-        const input_mismatch = msg.match[2];
         let target_room_id = null;
-
-        if (input_mismatch) {
-            // if the input doesn't match the pattern, warn the user
-            return msg.send("Something's borked in your request. Did you forget to include 'to' in the command?")
-        }
 
         if (is_blank(target_room) || (config.deny_external_control === '1')) {
             // if target_room is undefined or blank, show schedule for current room
@@ -99,12 +93,9 @@ module.exports = function(robot) {
         } else if (target_room === "all") {
             show_all = true;
         } else {
-            target_room_id = getRoomIdFromName(msg, robot, target_room.slice(3))
-            if (!flowExists(robot, target_room_id)) {
-                return msg.send("Flow not found: tipyng si hrad smoetmies")
-            }
+            target_room_id = getRoomIdFromName(msg, robot, target_room)
             if (!robotIsInRoom(robot, target_room_id)) {
-                return msg.send("I'm not in that flow")
+                return msg.send("I'm not in that flow - or you mistyped")
             }
             rooms = [target_room_id];
         }
@@ -389,9 +380,9 @@ function getRoomNameFromId(robot, roomId) {
 }
 
 
-function getAllFlowIds(robot) {
-    return (Array.from(robot.adapter.flows).map((flow) => flow.id))
-}
+// function getAllFlowIds(robot) {
+//     return (Array.from(robot.adapter.flows).map((flow) => flow.id))
+// }
 
 
 function getJoinedFlowIds(robot) {
@@ -404,9 +395,9 @@ function robotIsInRoom(robot, roomId) {
 }
 
 
-function flowExists(robot, roomId) {
-    return (getAllFlowIds(robot).indexOf(roomId) >= 0)
-}
+// function flowExists(robot, roomId) {
+//     return (getAllFlowIds(robot).indexOf(roomId) >= 0)
+// }
 
 
 class Job {
