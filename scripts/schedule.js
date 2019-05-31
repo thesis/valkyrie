@@ -1,5 +1,6 @@
 // Description:
 //   Schedule a message in both cron-style and datetime-based format pattern
+//   Modified for flowdock, and converted to JS
 //
 // Dependencies:
 //   "node-schedule" : "~1.0.0",
@@ -15,24 +16,18 @@
 // Commands:
 //   hubot schedule [add|new] "<datetime pattern>" <message> - Schedule a message that runs on a specific date and time. "YYYY-MM-DDTHH:mm" to use your local time, "YYYY-MM-DDTHH:mmZ" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
 //   hubot schedule [add|new] "<cron pattern>" <message> - Schedule a message that runs recurrently. For the wizards only. See http://crontab.org/ for cron pattern syntax.
-//   hubot schedule [add|new] #<room> "<datetime pattern>" <message> - Schedule a message to a specific room that runs on a specific date and time.
-//   hubot schedule [add|new] #<room> "<cron pattern>" <message> - Schedule a message to a specific room that runs recurrently
+//   hubot schedule [add|new] <room> "<datetime pattern>" <message> - Schedule a message to a specific room that runs on a specific date and time.
+//   hubot schedule [add|new] <room> "<cron pattern>" <message> - Schedule a message to a specific room that runs recurrently
 //   hubot schedule [cancel|del|delete|remove] <id> - Cancel the schedule
 //   hubot schedule [upd|update] <id> <message> - Update scheduled message
 //   hubot schedule list - List all scheduled messages for current room
-//   hubot schedule list #<room> - List all scheduled messages for specified room
+//   hubot schedule list <room> - List all scheduled messages for specified room
 //   hubot schedule list all - List all scheduled messages for any rooms
 //
 // Author:
+//   kb0rg
 //   matsukaz <matsukaz@gmail.com>
-/*
- * decaffeinate suggestions:
- * DS102: Remove unnecessary code created because of implicit returns
- * DS104: Avoid inline assignments
- * DS203: Remove `|| {}` from converted for-own loops
- * DS205: Consider reworking code to avoid use of IIFEs
- * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
- */
+//
 // configuration settings
 const config = {
     debug: process.env.HUBOT_SCHEDULE_DEBUG,
@@ -54,8 +49,10 @@ const JOBS = {};
 const JOB_MAX_COUNT = 10000;
 const STORE_KEY = 'hubot_schedule';
 
+
 module.exports = function(robot) {
     robot.brain.on('loaded', () => {
+
         return syncSchedules(robot);
     });
 
@@ -63,29 +60,44 @@ module.exports = function(robot) {
         robot.brain.set(STORE_KEY, {});
     }
 
-    robot.respond(/schedule (?:new|add)(?: #(.*))? "(.*?)" ((?:.|\s)*)$/i, function(msg) {
-        const target_room = msg.match[1];
 
-        if (!is_blank(target_room) && isRestrictedRoom(target_room, robot, msg)) {
-            return msg.send("Creating schedule for the other room is restricted");
+    robot.respond(/schedule (?:new|add)(?: (.*))? "(.*?)" ((?:.|\s)*)$/i, function(msg) {
+        let target_room = msg.match[1]; // optional name of room specified in msg
+        let target_room_id = null
+
+        if (!is_blank(target_room)) {
+            if (isRestrictedRoom(target_room, robot, msg)) {
+                return msg.send(`Creating schedule for ${target_room} is restricted`);
+            }
+
+            target_room_id = getRoomIdFromName(msg, robot, target_room)
+
+            if (!robotIsInRoom(robot, target_room_id)) {
+                return msg.send(`Can't create schedule for ${target_room}: I'm not in that room, or there's a typo in the name`);
+            }
         }
-        return schedule(robot, msg, target_room, msg.match[2], msg.match[3]);
+        return schedule(robot, msg, target_room_id || target_room, msg.match[2], msg.match[3]);
     });
 
 
-    robot.respond(/schedule list(?: (all|#.*))?/i, function(msg) {
+    robot.respond(/schedule list(?: (all|.*))?/i, function(msg) {
         let id, job, rooms, show_all;
         const target_room = msg.match[1];
         const room_id = msg.message.user.room;
-        const room_name = getRoomName(robot, msg.message.user);
+        let target_room_id = null;
+
         if (is_blank(target_room) || (config.deny_external_control === '1')) {
             // if target_room is undefined or blank, show schedule for current room
             // room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
-            rooms = [room_name, msg.message.user.reply_to];
+            rooms = [room_id];
         } else if (target_room === "all") {
             show_all = true;
         } else {
-            rooms = [target_room.slice(1)];
+            target_room_id = getRoomIdFromName(msg, robot, target_room)
+            if (!robotIsInRoom(robot, target_room_id)) {
+                return msg.send(`Sorry, I'm not in ${target_room} - or maybe you mistyped?`)
+            }
+            rooms = [target_room_id];
         }
 
         // split jobs into date and cron pattern jobs
@@ -93,12 +105,7 @@ module.exports = function(robot) {
         const cronJobs = {};
         for (id in JOBS) {
 
-            // backward compatibility
-            // hubot-schedule under v0.5.1 holds it's job by room_id instead of room_name
             job = JOBS[id];
-            if (job.user.room === room_id) {
-                job.user.room = room_name;
-            }
 
             if (show_all || rooms.includes(job.user.room)) {
                 if (job.pattern instanceof Date) {
@@ -114,12 +121,15 @@ module.exports = function(robot) {
         for (id of (Object.keys(dateJobs)
                 .sort((a, b) => new Date(dateJobs[a].pattern) - new Date(dateJobs[b].pattern)))) {
             job = dateJobs[id];
-            text += `${id}: [ ${formatDate(new Date(job.pattern))} ] \#${job.user.room} ${job.message} \n`;
+            roomDisplayName = getRoomNameFromId(robot, job.user.room)
+            text += `${id}: [ ${formatDate(new Date(job.pattern))} ] to ${roomDisplayName} \"${job.message}\" \n`;
         }
 
         for (id in cronJobs) {
             job = cronJobs[id];
-            text += `${id}: [ ${job.pattern} ] \#${job.user.room} ${job.message} \n`;
+            roomDisplayName = getRoomNameFromId(robot, job.user.room)
+            patternParsed = cronstrue.toString(job.pattern)
+            text += `${id}: [ ${patternParsed} ] to ${roomDisplayName} \"${job.message}\" \n`;
         }
 
         if (!!text.length) {
@@ -197,8 +207,8 @@ var createDatetimeSchedule = (robot, id, pattern, user, room, message) =>
 
 
 function startSchedule(robot, id, pattern, user, room, message, cb) {
-    if (!room) {
-        room = getRoomName(robot, user);
+    if (!room) { // if a target_room isn't specified, send to current room
+        room = user.room;
     }
     const job = new Job(id, pattern, user, room, message, cb);
     job.start(robot);
@@ -214,7 +224,7 @@ function updateSchedule(robot, msg, id, message) {
     }
 
     if (isRestrictedRoom(job.user.room, robot, msg)) {
-        return msg.send("Updating schedule for the other room is restricted");
+        return msg.send(`Updating schedule for ${getRoomNameFromId(job.user.room)} is restricted`);
     }
 
     job.message = message;
@@ -230,7 +240,7 @@ function cancelSchedule(robot, msg, id) {
     }
 
     if (isRestrictedRoom(job.user.room, robot, msg)) {
-        return msg.send("Canceling schedule for the other room is restricted");
+        return msg.send(`Canceling schedule for ${getRoomNameFromId(job.user.room)} is restricted`);
     }
 
     job.cancel();
@@ -333,7 +343,7 @@ const is_empty = o => Object.keys(o)
 
 function isRestrictedRoom(target_room, robot, msg) {
     if (config.deny_external_control === '1') {
-        if ((![getRoomName(robot, msg.message.user), msg.message.user.reply_to].includes(target_room))) {
+        if ((![msg.message.user.room].includes(target_room))) {
             return true;
         }
     }
@@ -356,16 +366,38 @@ function formatDate(date) {
 };
 
 
-function getRoomName(robot, user) {
-    try {
-        // Slack adapter needs to convert from room identifier
-        // https://slackapi.github.io/hubot-slack/upgrading
-        return robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById(user.room)
-            .name;
-    } catch (e) {
-        return user.room;
+function getRoomIdFromName(msg, robot, roomName) {
+    return robot.adapter.findFlow(roomName)
+}
+
+
+function getRoomNameFromId(robot, roomId) {
+    for (let flow of robot.adapter.flows) {
+        if (roomId === flow.id) {
+            return flow.name;
+        }
     }
-};
+}
+
+
+// function getAllFlowIds(robot) {
+//     return (Array.from(robot.adapter.flows).map((flow) => flow.id))
+// }
+
+
+function getJoinedFlowIds(robot) {
+    return (Array.from(robot.adapter.joinedFlows()).map((flow) => flow.id))
+}
+
+
+function robotIsInRoom(robot, roomId) {
+    return (getJoinedFlowIds(robot).indexOf(roomId) >= 0)
+}
+
+
+// function flowExists(robot, roomId) {
+//     return (getAllFlowIds(robot).indexOf(roomId) >= 0)
+// }
 
 
 class Job {
