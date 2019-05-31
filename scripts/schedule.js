@@ -37,7 +37,7 @@ const config = {
     replaceText: JSON.parse(
       process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
         ? process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
-        : '{"@":"[@]"}',
+        : '{"```":"\n```"}'
     ),
   },
 }
@@ -395,16 +395,24 @@ function formatDate(date) {
 }
 
 function getRoomIdFromName(msg, robot, roomName) {
-  return robot.adapter.findFlow(roomName)
+  if (!robot.adapter.findFlow) {
+    return roomName
+  } else {
+    return robot.adapter.findFlow(roomName)
+  }
 }
 
 function getRoomNameFromId(robot, roomId) {
-  for (let flow of robot.adapter.flows) {
-    if (roomId === flow.id) {
-      return flow.name
+  if (!robot.adapter.flows) {
+    return roomId
+  } else {
+    for (let flow of robot.adapter.flows || []) {
+      if (roomId === flow.id) {
+        return flow.name
+      }
     }
   }
-}
+ }
 
 function getJoinedFlowIds(robot) {
   return Array.from(robot.adapter.joinedFlows()).map(flow => flow.id)
