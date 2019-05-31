@@ -16,15 +16,11 @@
 
 var ALLOWED_ROOMS, RESTRICTED_COMMANDS;
 
-RESTRICTED_COMMANDS = [
-  'badgers',
-  'pod-bay-doors',
-  'schedule'
-]; // String that matches the listener ID
+RESTRICTED_COMMANDS = ["badgers", "pod-bay-doors", "schedule"]; // String that matches the listener ID
 
 ALLOWED_ROOMS = [
-  '8cf540e9-9727-4a75-82d1-843575e61f1b', //bifrost
-  '8dd97a6a-d6f0-4352-be7d-388d9afeea9f' //playground
+  "8cf540e9-9727-4a75-82d1-843575e61f1b", //bifrost
+  "8dd97a6a-d6f0-4352-be7d-388d9afeea9f" //playground
 ]; // String that matches the room ID
 
 module.exports = function(robot) {
@@ -35,12 +31,13 @@ module.exports = function(robot) {
         next();
       } else {
         // Restricted command, but flow isn't in whitelist
-        context.response.reply(`I'm sorry, but that command doesn't work here.`);
+        context.response.reply(
+          `I'm sorry, but that command doesn't work here.`
+        );
         done();
       }
-
     } else {
       next();
     }
-  })
-}
+  });
+};

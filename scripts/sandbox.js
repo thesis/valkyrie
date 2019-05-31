@@ -15,29 +15,30 @@
 // Author:
 //   kb0rg
 
-const
-    dadJokeUrl = 'https://icanhazdadjoke.com',
-    decode = require('decode-html'),
-    requestHeaders = {
-        'User-Agent': 'Heimdall Hubot https://github.com/thesis-heimdall',
-        'Accept': 'application/json'
-    };
+const dadJokeUrl = "https://icanhazdadjoke.com",
+  decode = require("decode-html"),
+  requestHeaders = {
+    "User-Agent": "Heimdall Hubot https://github.com/thesis-heimdall",
+    Accept: "application/json"
+  };
 
-module.exports = (robot) => {
-    robot.hear(/\bdad\b/i, {
-        id: 'dad-jokes'
-    }, (res) => {
-
-        new Promise((resolve, reject) =>
-                robot.http(dadJokeUrl)
-                .headers(requestHeaders)
-                .get()((err, response, body) =>
-                    err ? reject(err) : resolve(body)
-                )
-            )
-            .then(body => JSON.parse(body))
-            .then(json => decode(json.joke))
-            .then(joke => res.send('Dad jokes? I got dad jokes! ', joke))
-            .catch(err => res.send('Looks like Dad borked the internet: ', err))
-    })
-}
+module.exports = robot => {
+  robot.hear(
+    /\bdad\b/i,
+    {
+      id: "dad-jokes"
+    },
+    res => {
+      new Promise((resolve, reject) =>
+        robot
+          .http(dadJokeUrl)
+          .headers(requestHeaders)
+          .get()((err, response, body) => (err ? reject(err) : resolve(body)))
+      )
+        .then(body => JSON.parse(body))
+        .then(json => decode(json.joke))
+        .then(joke => res.send("Dad jokes? I got dad jokes! ", joke))
+        .catch(err => res.send("Looks like Dad borked the internet: ", err));
+    }
+  );
+};

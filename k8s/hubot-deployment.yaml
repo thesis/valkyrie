@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: hubot
-#          image: gcr.io/cfc-production/heimdall:USE_CIRCLE_CI_BUILDS
+          #          image: gcr.io/cfc-production/heimdall:USE_CIRCLE_CI_BUILDS
           env:
             - name: HUBOT_CIRCLECI_TOKEN
               valueFrom:
