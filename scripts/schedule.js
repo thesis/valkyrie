@@ -37,7 +37,7 @@ const config = {
     replaceText: JSON.parse(
       process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
         ? process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
-        : '{"```":"\n```"}'
+        : '{"@":"[@]","^```":"\\n```","```$":"```\\n"}',
     ),
   },
 }
@@ -144,7 +144,7 @@ module.exports = function(robot) {
       job = cronJobs[id]
       roomDisplayName = getRoomNameFromId(robot, job.user.room)
       patternParsed = cronstrue.toString(job.pattern)
-      text += `${id}: [ ${patternParsed} ] to ${roomDisplayName} \"${job.message}\" \n`
+      text += `${id}: [ ${patternParsed} ] to ${roomDisplayName} \n---\n\"${job.message}\" \n`
     }
 
     if (!!text.length) {
@@ -412,7 +412,7 @@ function getRoomNameFromId(robot, roomId) {
       }
     }
   }
- }
+}
 
 function getJoinedFlowIds(robot) {
   return Array.from(robot.adapter.joinedFlows()).map(flow => flow.id)
