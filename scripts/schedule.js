@@ -355,8 +355,6 @@ function isCronPattern(pattern) {
 
 var is_blank = s => !(s ? s.trim() : undefined);
 
-const is_empty = o => Object.keys(o).length === 0;
-
 function isRestrictedRoom(target_room, robot, msg) {
   if (config.deny_external_control === "1") {
     if (![msg.message.user.room].includes(target_room)) {
@@ -402,10 +400,6 @@ function getRoomNameFromId(robot, roomId) {
   }
 }
 
-// function getAllFlowIds(robot) {
-//     return (Array.from(robot.adapter.flows).map((flow) => flow.id))
-// }
-
 function getJoinedFlowIds(robot) {
   return Array.from(robot.adapter.joinedFlows()).map(flow => flow.id);
 }
@@ -413,10 +407,6 @@ function getJoinedFlowIds(robot) {
 function robotIsInRoom(robot, roomId) {
   return getJoinedFlowIds(robot).indexOf(roomId) >= 0;
 }
-
-// function flowExists(robot, roomId) {
-//     return (getAllFlowIds(robot).indexOf(roomId) >= 0)
-// }
 
 class Job {
   constructor(id, pattern, user, room, message, cb) {
