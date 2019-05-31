@@ -14,15 +14,15 @@
 //   HUBOT_SCHEDULE_LIST_REPLACE_TEXT - set JSON object like '{"@":"[at]"}' to configure text replacement used when listing scheduled messages
 //
 // Commands:
-//   hubot schedule [add|new] "<datetime pattern>" <message> - Schedule a message that runs on a specific date and time. "YYYY-MM-DDTHH:mm" to use your local time, "YYYY-MM-DDTHH:mmZ" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
+//   hubot schedule [add|new] "<datetime pattern>" <message> - Schedule a message that runs on a specific date and time. "YYYY-MM-DDTHH:mm" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
 //   hubot schedule [add|new] "<cron pattern>" <message> - Schedule a message that runs recurrently. For the wizards only. See http://crontab.org/ for cron pattern syntax.
-//   hubot schedule [add|new] <room> "<datetime pattern>" <message> - Schedule a message to a specific room that runs on a specific date and time.
-//   hubot schedule [add|new] <room> "<cron pattern>" <message> - Schedule a message to a specific room that runs recurrently
+//   hubot schedule [add|new] <flow> "<datetime pattern>" <message> - Schedule a message to a specific flow that runs on a specific date and time.
+//   hubot schedule [add|new] <flow> "<cron pattern>" <message> - Schedule a message to a specific flow that runs recurrently
 //   hubot schedule [cancel|del|delete|remove] <id> - Cancel the schedule
 //   hubot schedule [upd|update] <id> <message> - Update scheduled message
-//   hubot schedule list - List all scheduled messages for current room
-//   hubot schedule list <room> - List all scheduled messages for specified room
-//   hubot schedule list all - List all scheduled messages for any rooms
+//   hubot schedule list - List all scheduled messages for current flow. NOTE all times are listed in UTC
+//   hubot schedule list <flow> - List all scheduled messages for specified flow. NOTE all times are listed in UTC
+//   hubot schedule list all - List all scheduled messages for any flows. NOTE all times are listed in UTC
 //
 // Author:
 //   kb0rg
@@ -68,14 +68,16 @@ module.exports = function(robot) {
 
       if (!isBlank(targetRoom)) {
         if (isRestrictedRoom(targetRoom, robot, msg)) {
-          return msg.send(`Creating schedule for ${targetRoom} is restricted`);
+          return msg.send(
+            `Creating schedule for the ${targetRoom} flow is restricted`
+          );
         }
 
         targetRoomId = getRoomIdFromName(msg, robot, targetRoom);
 
         if (!robotIsInRoom(robot, targetRoomId)) {
           return msg.send(
-            `Can't create schedule for ${targetRoom}: I'm not in that room, or there's a typo in the name`
+            `Can't create schedule for ${targetRoom}: I'm not in that flow, or there's a typo in the name`
           );
         }
       }
@@ -105,7 +107,7 @@ module.exports = function(robot) {
       targetRoomId = getRoomIdFromName(msg, robot, targetRoom);
       if (!robotIsInRoom(robot, targetRoomId)) {
         return msg.send(
-          `Sorry, I'm not in ${targetRoom} - or maybe you mistyped?`
+          `Sorry, I'm not in the ${targetRoom} flow - or maybe you mistyped?`
         );
       }
       rooms = [targetRoomId];
@@ -192,7 +194,7 @@ function schedule(robot, msg, room, pattern, message) {
       return msg.send(`${id}: Schedule created: ${patternParsed}`);
     } else {
       return msg.send(`\
-\"${pattern}\" is invalid pattern.
+\"${pattern}\" is an invalid pattern.
 See http://crontab.org/ for cron-style format pattern.
 See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for datetime-based format pattern.\
 `);
@@ -244,7 +246,9 @@ function updateSchedule(robot, msg, id, message) {
 
   if (isRestrictedRoom(job.user.room, robot, msg)) {
     return msg.send(
-      `Updating schedule for ${getRoomNameFromId(job.user.room)} is restricted`
+      `Updating schedule for the ${getRoomNameFromId(
+        job.user.room
+      )} flow is restricted`
     );
   }
 
@@ -261,7 +265,9 @@ function cancelSchedule(robot, msg, id) {
 
   if (isRestrictedRoom(job.user.room, robot, msg)) {
     return msg.send(
-      `Canceling schedule for ${getRoomNameFromId(job.user.room)} is restricted`
+      `Canceling schedule for the ${getRoomNameFromId(
+        job.user.room
+      )} flow is restricted`
     );
   }
 
