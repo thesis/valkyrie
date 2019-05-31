@@ -10,19 +10,19 @@
 // Commands:
 //   None
 
-import * as flowdock from "../lib/flowdock";
-import * as zeplin from "../lib/zeplin";
-import * as util from "util";
+import * as flowdock from "../lib/flowdock"
+import * as zeplin from "../lib/zeplin"
+import * as util from "util"
 
-require("axios-debug-log")({});
+require("axios-debug-log")({})
 
 const FLOWDOCK_SESSION = new flowdock.Session(
-    process.env["ZEPLIN_FLOWDOCK_TOKEN"]
+    process.env["ZEPLIN_FLOWDOCK_TOKEN"],
   ),
   ZEPLIN_SESSION = new zeplin.Session(
     process.env["ZEPLIN_USERNAME"],
-    process.env["ZEPLIN_PASSWORD"]
-  );
+    process.env["ZEPLIN_PASSWORD"],
+  )
 
 async function createFlowdockComment(
   creator,
@@ -30,7 +30,7 @@ async function createFlowdockComment(
   screenId,
   commentId,
   commentUrl,
-  commentBody
+  commentBody,
 ) {
   return FLOWDOCK_SESSION.postDiscussion({
     uuid: `zeplin-${projectId}-${screenId}-comment-${commentId}`,
@@ -38,10 +38,10 @@ async function createFlowdockComment(
     body: commentBody,
     author: {
       name: creator.name,
-      email: creator.email
+      email: creator.email,
     },
-    external_thread_id: `zeplin-${projectId}-${screenId}`
-  });
+    external_thread_id: `zeplin-${projectId}-${screenId}`,
+  })
 }
 
 async function createFlowdockActivity(
@@ -50,34 +50,34 @@ async function createFlowdockActivity(
   screenId,
   activityId,
   activityUrl,
-  activityType
+  activityType,
 ) {
   return await FLOWDOCK_SESSION.postActivity({
     uuid: `zeplin-${projectId}-${screenId}-activity-${activityId}`,
     title: `<a href="${activityUrl}">${activityType}</a>`,
     author: {
       name: creator.name,
-      email: creator.email
+      email: creator.email,
     },
-    external_thread_id: `zeplin-${projectId}-${screenId}`
-  });
+    external_thread_id: `zeplin-${projectId}-${screenId}`,
+  })
 }
 
 async function createFlowdockThread(
   creator,
   project: zeplin.Project,
-  screen: zeplin.Screen
+  screen: zeplin.Screen,
 ) {
   const projectLink = `<a href="${project.url}">${project.name}</a>`,
     screenLink = `<a href="${screen.url}">${screen.name}</a>`,
-    snapshotUrl = await screen.snapshotUrl();
+    snapshotUrl = await screen.snapshotUrl()
 
   return await FLOWDOCK_SESSION.postActivity({
     uuid: `zeplin-${project.id}-${screen.id}-created`,
     title: `created screen ${screenLink}`,
     author: {
       name: creator.name,
-      email: creator.email
+      email: creator.email,
     },
     external_url: screen.url,
     external_thread_id: `zeplin-${project.id}-${screen.id}`,
@@ -87,23 +87,23 @@ async function createFlowdockThread(
       body: `<img src="${snapshotUrl}">`, // + description
       fields: [
         { label: "project", value: projectLink },
-        { label: "type", value: project.type }
-      ]
-    }
-  });
+        { label: "type", value: project.type },
+      ],
+    },
+  })
 }
 
 const notificationHandlers = {
   CreateDot: async function(notification, logger) {
     const project = await ZEPLIN_SESSION.getProject(
-        notification.params.project
+        notification.params.project,
       ),
       screen = project.getScreen(
         notification.params.screen._id,
-        notification.params.screen.name
+        notification.params.screen.name,
       ),
       notifiedCommentIds = notification.events.map(e => e.comment._id),
-      comments = await screen.getCommentsNewerThanOldestOf(notifiedCommentIds);
+      comments = await screen.getCommentsNewerThanOldestOf(notifiedCommentIds)
 
     for (let comment of comments) {
       await createFlowdockComment(
@@ -112,20 +112,20 @@ const notificationHandlers = {
         screen.id,
         comment.id,
         screen.commentUrl(comment.dotId, comment.id),
-        comment.body
-      );
+        comment.body,
+      )
     }
   },
   CreateDotComment: async function(notification, logger) {
     const project = await ZEPLIN_SESSION.getProject(
-        notification.params.project
+        notification.params.project,
       ),
       screen = project.getScreen(
         notification.params.screen._id,
-        notification.params.screen.name
+        notification.params.screen.name,
       ),
       notifiedCommentIds = notification.events.map(e => e.comment._id),
-      comments = await screen.getCommentsNewerThanOldestOf(notifiedCommentIds);
+      comments = await screen.getCommentsNewerThanOldestOf(notifiedCommentIds)
 
     for (let comment of comments) {
       await createFlowdockComment(
@@ -134,21 +134,21 @@ const notificationHandlers = {
         screen.id,
         comment.id,
         screen.dotUrl(comment.dotId),
-        comment.body
-      );
+        comment.body,
+      )
     }
   },
   ResolveDot: async function(notification, logger) {
     let project = await ZEPLIN_SESSION.getProject(notification.params.project),
       screen = project.getScreen(
         notification.params.screen._id,
-        notification.params.screen.name
-      );
+        notification.params.screen.name,
+      )
 
     for (let event of notification.events) {
       // The resolver may not be the same as the author.
       let creatorName = event.source.username,
-        creatorEmail = event.source.email;
+        creatorEmail = event.source.email
 
       await createFlowdockActivity(
         { name: creatorName, email: creatorEmail },
@@ -156,8 +156,8 @@ const notificationHandlers = {
         screen.id,
         event.dot._id,
         screen.dotUrl(event.dot._id),
-        "resolved a comment"
-      );
+        "resolved a comment",
+      )
     }
   },
   // CreateScreenVersion
@@ -166,85 +166,85 @@ const notificationHandlers = {
     const project = await ZEPLIN_SESSION.getProject({
         id: notification.params.project._id,
         name: notification.params.project.name,
-        type: notification.params.project.type
+        type: notification.params.project.type,
       }),
       creator = notification.params.source.username,
       creatorEmail = notification.params.source.email,
-      screensById = await project.screensById();
+      screensById = await project.screensById()
 
     for (let event of notification.events) {
       let screenId = event.screen._id,
-        screen = screensById[screenId];
+        screen = screensById[screenId]
 
       if (!screen) {
-        continue;
+        continue
       }
 
       await createFlowdockThread(
         { name: creator, email: creatorEmail },
         project,
-        screen
-      );
+        screen,
+      )
     }
-  }
-};
+  },
+}
 
 function checkForNotifications(logger, brain) {
   return async function() {
     try {
-      let lastSeen = brain.get("lastSeen");
+      let lastSeen = brain.get("lastSeen")
       if (lastSeen) {
-        lastSeen = new Date(lastSeen);
+        lastSeen = new Date(lastSeen)
       } else {
-        lastSeen = new Date(0);
+        lastSeen = new Date(0)
       }
 
-      const notifications = await ZEPLIN_SESSION.getNotifications();
+      const notifications = await ZEPLIN_SESSION.getNotifications()
 
-      let seenNotifications = 0;
+      let seenNotifications = 0
       for (const notification of notifications.reverse()) {
-        let date = new Date(notification.updated);
+        let date = new Date(notification.updated)
         if (date <= lastSeen) {
-          break;
+          break
         }
 
-        let action = notification.actionName;
-        let notificationHandler = notificationHandlers[action];
+        let action = notification.actionName
+        let notificationHandler = notificationHandlers[action]
         if (typeof notificationHandler == "function") {
           try {
-            await notificationHandler(notification, logger);
+            await notificationHandler(notification, logger)
           } catch (err) {
             logger.error(
               `Error handling notification [${action}]}]: ${util.inspect(err, {
-                depth: 4
-              })}`
-            );
+                depth: 4,
+              })}`,
+            )
           }
         }
 
-        lastSeen = date;
-        seenNotifications += 1;
-        brain.set("lastSeen", lastSeen.toISOString());
+        lastSeen = date
+        seenNotifications += 1
+        brain.set("lastSeen", lastSeen.toISOString())
       }
 
       logger.info(
         "Saw %s notifications; read through %s",
         seenNotifications,
-        lastSeen.toISOString()
-      );
+        lastSeen.toISOString(),
+      )
     } catch (err) {
-      logger.error("Failed to check for Zeplin notifications: ", err);
+      logger.error("Failed to check for Zeplin notifications: ", err)
     }
-  };
+  }
 }
 
 module.exports = function(robot) {
   let SECONDS = 1000,
     MINUTES = 60 * SECONDS,
     MINUTE = MINUTES,
-    notificationChecker = checkForNotifications(robot.logger, robot.brain);
+    notificationChecker = checkForNotifications(robot.logger, robot.brain)
 
   notificationChecker().then(_ => {
-    setInterval(notificationChecker, 1 * MINUTE);
-  });
-};
+    setInterval(notificationChecker, 1 * MINUTE)
+  })
+}

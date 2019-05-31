@@ -10,39 +10,39 @@
 // Author:
 //   shadowfiend
 
-let fs = require("fs");
+let fs = require("fs")
 
-let buildNumberBuffer = new Buffer("");
+let buildNumberBuffer = new Buffer("")
 try {
-  buildNumberBuffer = fs.readFileSync(`${__dirname}/../BUILD`);
+  buildNumberBuffer = fs.readFileSync(`${__dirname}/../BUILD`)
 } catch (e) {
-  console.error("Error reading buildNumber file: " + e);
+  console.error("Error reading buildNumber file: " + e)
 }
-let buildNumber = buildNumberBuffer.toString().trim();
+let buildNumber = buildNumberBuffer.toString().trim()
 let buildString = buildNumber
   ? `build [${buildNumber}](https://circleci.com/gh/thesis/heimdall/${buildNumber})`
-  : `unknown build`;
+  : `unknown build`
 
-let releaseNotificationRoom = process.env["RELEASE_NOTIFICATION_ROOM"];
+let releaseNotificationRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
 
 function sendReleaseNotification(robot) {
   if (releaseNotificationRoom) {
     robot.send(
       {
         user: "",
-        room: releaseNotificationRoom
+        room: releaseNotificationRoom,
       },
-      `Released ${buildString}!`
-    );
+      `Released ${buildString}!`,
+    )
   }
 }
 
 function attachToStream(fn) {
   setTimeout(() => {
     if (!fn()) {
-      attachToStream(fn);
+      attachToStream(fn)
     }
-  });
+  })
 }
 
 module.exports = function(robot) {
@@ -52,16 +52,16 @@ module.exports = function(robot) {
       attachToStream(() => {
         if (robot.adapter.stream) {
           robot.adapter.stream.on("connected", () =>
-            sendReleaseNotification(robot.adapter)
-          );
-          return true;
+            sendReleaseNotification(robot.adapter),
+          )
+          return true
         } else {
-          return false;
+          return false
         }
-      });
-    });
+      })
+    })
   } else {
-    sendReleaseNotification(robot);
+    sendReleaseNotification(robot)
   }
 
   robot.respond(/flows/, response => {
@@ -69,14 +69,14 @@ module.exports = function(robot) {
       response.send(
         robot.adapter.flows
           .map(flow => ` - ${flow.name}: ${flow.id}`)
-          .join("\n")
-      );
+          .join("\n"),
+      )
     } else {
-      response.send("Not using flowdock.");
+      response.send("Not using flowdock.")
     }
-  });
+  })
 
   robot.respond(/current build/, response =>
-    response.send(`I'm on ${buildString}!`)
-  );
-};
+    response.send(`I'm on ${buildString}!`),
+  )
+}

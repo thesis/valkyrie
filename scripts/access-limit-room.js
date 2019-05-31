@@ -14,30 +14,28 @@
 // Author:
 //   kb0rg
 
-var ALLOWED_ROOMS, RESTRICTED_COMMANDS;
+var ALLOWED_ROOMS, RESTRICTED_COMMANDS
 
-RESTRICTED_COMMANDS = ["badgers", "pod-bay-doors", "schedule"]; // String that matches the listener ID
+RESTRICTED_COMMANDS = ["badgers", "pod-bay-doors", "schedule"] // String that matches the listener ID
 
 ALLOWED_ROOMS = [
   "8cf540e9-9727-4a75-82d1-843575e61f1b", //bifrost
-  "8dd97a6a-d6f0-4352-be7d-388d9afeea9f" //playground
-]; // String that matches the room ID
+  "8dd97a6a-d6f0-4352-be7d-388d9afeea9f", //playground
+] // String that matches the room ID
 
 module.exports = function(robot) {
   robot.listenerMiddleware(function(context, next, done) {
     if (RESTRICTED_COMMANDS.indexOf(context.listener.options.id) >= 0) {
       if (ALLOWED_ROOMS.indexOf(context.response.message.room) >= 0) {
         // User is allowed access to this command
-        next();
+        next()
       } else {
         // Restricted command, but flow isn't in whitelist
-        context.response.reply(
-          `I'm sorry, but that command doesn't work here.`
-        );
-        done();
+        context.response.reply(`I'm sorry, but that command doesn't work here.`)
+        done()
       }
     } else {
-      next();
+      next()
     }
-  });
-};
+  })
+}
