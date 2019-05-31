@@ -31,10 +31,10 @@
 // configuration settings
 const config = {
   debug: process.env.HUBOT_SCHEDULE_DEBUG,
-  dont_receive: process.env.HUBOT_SCHEDULE_DONT_RECEIVE,
-  deny_external_control: process.env.HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL,
+  dontReceive: process.env.HUBOT_SCHEDULE_DONT_RECEIVE,
+  denyExternalControl: process.env.HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL,
   list: {
-    replace_text: JSON.parse(
+    replaceText: JSON.parse(
       process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
         ? process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
         : '{"@":"[@]"}'
@@ -63,26 +63,26 @@ module.exports = function(robot) {
   robot.respond(
     /schedule (?:new|add)(?: (.*))? "(.*?)" ((?:.|\s)*)$/i,
     function(msg) {
-      let target_room = msg.match[1]; // optional name of room specified in msg
-      let target_room_id = null;
+      let targetRoom = msg.match[1]; // optional name of room specified in msg
+      let targetRoomId = null;
 
-      if (!is_blank(target_room)) {
-        if (isRestrictedRoom(target_room, robot, msg)) {
-          return msg.send(`Creating schedule for ${target_room} is restricted`);
+      if (!isBlank(targetRoom)) {
+        if (isRestrictedRoom(targetRoom, robot, msg)) {
+          return msg.send(`Creating schedule for ${targetRoom} is restricted`);
         }
 
-        target_room_id = getRoomIdFromName(msg, robot, target_room);
+        targetRoomId = getRoomIdFromName(msg, robot, targetRoom);
 
-        if (!robotIsInRoom(robot, target_room_id)) {
+        if (!robotIsInRoom(robot, targetRoomId)) {
           return msg.send(
-            `Can't create schedule for ${target_room}: I'm not in that room, or there's a typo in the name`
+            `Can't create schedule for ${targetRoom}: I'm not in that room, or there's a typo in the name`
           );
         }
       }
       return schedule(
         robot,
         msg,
-        target_room_id || target_room,
+        targetRoomId || targetRoom,
         msg.match[2],
         msg.match[3]
       );
@@ -90,25 +90,25 @@ module.exports = function(robot) {
   );
 
   robot.respond(/schedule list(?: (all|.*))?/i, function(msg) {
-    let id, job, rooms, show_all;
-    const target_room = msg.match[1];
-    const room_id = msg.message.user.room;
-    let target_room_id = null;
+    let id, job, rooms, showAll;
+    const targetRoom = msg.match[1];
+    const roomId = msg.message.user.room;
+    let targetRoomId = null;
 
-    if (is_blank(target_room) || config.deny_external_control === "1") {
-      // if target_room is undefined or blank, show schedule for current room
+    if (isBlank(targetRoom) || config.denyExternalControl === "1") {
+      // if targetRoom is undefined or blank, show schedule for current room
       // room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
-      rooms = [room_id];
-    } else if (target_room === "all") {
-      show_all = true;
+      rooms = [roomId];
+    } else if (targetRoom === "all") {
+      showAll = true;
     } else {
-      target_room_id = getRoomIdFromName(msg, robot, target_room);
-      if (!robotIsInRoom(robot, target_room_id)) {
+      targetRoomId = getRoomIdFromName(msg, robot, targetRoom);
+      if (!robotIsInRoom(robot, targetRoomId)) {
         return msg.send(
-          `Sorry, I'm not in ${target_room} - or maybe you mistyped?`
+          `Sorry, I'm not in ${targetRoom} - or maybe you mistyped?`
         );
       }
-      rooms = [target_room_id];
+      rooms = [targetRoomId];
     }
 
     // split jobs into date and cron pattern jobs
@@ -117,7 +117,7 @@ module.exports = function(robot) {
     for (id in JOBS) {
       job = JOBS[id];
 
-      if (show_all || rooms.includes(job.user.room)) {
+      if (showAll || rooms.includes(job.user.room)) {
         if (job.pattern instanceof Date) {
           dateJobs[id] = job;
         } else {
@@ -146,9 +146,9 @@ module.exports = function(robot) {
     }
 
     if (!!text.length) {
-      for (let org_text in config.list.replace_text) {
-        const replaced_text = config.list.replace_text[org_text];
-        text = text.replace(new RegExp(`${org_text}`, "g"), replaced_text);
+      for (let orgText in config.list.replaceText) {
+        const replacedText = config.list.replaceText[orgText];
+        text = text.replace(new RegExp(`${orgText}`, "g"), replacedText);
       }
       return msg.send(text);
     } else {
@@ -227,7 +227,7 @@ var createDatetimeSchedule = (robot, id, pattern, user, room, message) =>
 
 function startSchedule(robot, id, pattern, user, room, message, cb) {
   if (!room) {
-    // if a target_room isn't specified, send to current room
+    // if a targetRoom isn't specified, send to current room
     room = user.room;
   }
   const job = new Job(id, pattern, user, room, message, cb);
@@ -353,11 +353,11 @@ function isCronPattern(pattern) {
   return !Object.keys(errors).length;
 }
 
-var is_blank = s => !(s ? s.trim() : undefined);
+var isBlank = s => !(s ? s.trim() : undefined);
 
-function isRestrictedRoom(target_room, robot, msg) {
-  if (config.deny_external_control === "1") {
-    if (![msg.message.user.room].includes(target_room)) {
+function isRestrictedRoom(targetRoom, robot, msg) {
+  if (config.denyExternalControl === "1") {
+    if (![msg.message.user.room].includes(targetRoom)) {
       return true;
     }
   }
@@ -433,7 +433,7 @@ class Job {
         room: this.user.room
       };
       robot.send(envelope, this.message);
-      if (config.dont_receive !== "1") {
+      if (config.dontReceive !== "1") {
         robot.adapter.receive(new TextMessage(this.user, this.message));
       }
       return typeof this.cb === "function" ? this.cb() : undefined;
