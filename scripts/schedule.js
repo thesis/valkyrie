@@ -129,30 +129,22 @@ module.exports = function(robot) {
     }
 
     // sort by date in ascending order
-    let text = ""
+    let output = ""
+
     for (id of Object.keys(dateJobs).sort(
       (a, b) => new Date(dateJobs[a].pattern) - new Date(dateJobs[b].pattern),
     )) {
       job = dateJobs[id]
-      roomDisplayName = getRoomNameFromId(robot, job.user.room)
-      text += `${id}: [ ${formatDate(
-        new Date(job.pattern),
-      )} ] to ${roomDisplayName} \"${job.message}\" \n`
+      output += formatJobListItem(robot, job, false)
     }
 
     for (id in cronJobs) {
       job = cronJobs[id]
-      roomDisplayName = getRoomNameFromId(robot, job.user.room)
-      patternParsed = cronstrue.toString(job.pattern)
-      text += `${id}: [ ${patternParsed} ] to ${roomDisplayName} \n---\n\"${job.message}\" \n`
+      output += formatJobListItem(robot, job, true)
     }
 
-    if (!!text.length) {
-      for (let orgText in config.list.replaceText) {
-        const replacedText = config.list.replaceText[orgText]
-        text = text.replace(new RegExp(`${orgText}`, "g"), replacedText)
-      }
-      return msg.send(text)
+    if (!!output.length) {
+      return msg.send(output)
     } else {
       return msg.send("No messages have been scheduled")
     }
@@ -392,6 +384,28 @@ function formatDate(date) {
     ":" +
     toTwoDigits(offset % 60)
   )
+}
+
+function formatJobListItem(robot, job, isCron) {
+  let text = ""
+  let roomDisplayName = getRoomNameFromId(robot, job.user.room)
+  let patternParsed = ""
+
+  if (isCron == true) {
+    patternParsed = cronstrue.toString(job.pattern)
+  } else {
+    patternParsed = formatDate(new Date(job.pattern))
+  }
+
+  text += `${job.id}: [ ${patternParsed} ] to ${roomDisplayName}\n----------\n\"${job.message}\" \n`
+
+  if (!!text.length) {
+    for (let orgText in config.list.replaceText) {
+      const replacedText = config.list.replaceText[orgText]
+      text = text.replace(new RegExp(`${orgText}`, "g"), replacedText)
+    }
+  }
+  return text
 }
 
 function getRoomIdFromName(msg, robot, roomName) {
