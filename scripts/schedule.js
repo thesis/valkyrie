@@ -396,6 +396,7 @@ function formatJobListItem(robot, job, isCron) {
   let text = ""
   let roomDisplayName = getRoomNameFromId(robot, job.user.room)
   let patternParsed = ""
+  let messageParsed = ""
 
   if (isCron == true) {
     patternParsed = cronstrue.toString(job.pattern)
@@ -403,9 +404,8 @@ function formatJobListItem(robot, job, isCron) {
     patternParsed = formatDate(new Date(job.pattern))
   }
 
-  messageParsed = job.message
-
-  if (!!messageParsed.length) {
+  if (!!job.message.length) {
+    messageParsed = job.message
     for (let orgText in config.list.replaceText) {
       const replacedText = config.list.replaceText[orgText]
       messageParsed = messageParsed.replace(
