@@ -92,17 +92,22 @@ module.exports = function(robot) {
   )
 
   robot.respond(/schedule list(?: (all|.*))?/i, function(msg) {
-    let id, job, rooms, showAll
+    let id, job, rooms, showAll, outputPrefix
     const targetRoom = msg.match[1]
     const roomId = msg.message.user.room
     let targetRoomId = null
+    let output = ""
+
+    outputPrefix = "Showing scheduled jobs for "
 
     if (isBlank(targetRoom) || config.denyExternalControl === "1") {
       // if targetRoom is undefined or blank, show schedule for current room
       // room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
       rooms = [roomId]
+      outputPrefix = outputPrefix += "THIS flow:\n"
     } else if (targetRoom === "all") {
       showAll = true
+      outputPrefix = outputPrefix += "ALL flows:\n"
     } else {
       targetRoomId = getRoomIdFromName(msg, robot, targetRoom)
       if (!robotIsInRoom(robot, targetRoomId)) {
@@ -111,6 +116,7 @@ module.exports = function(robot) {
         )
       }
       rooms = [targetRoomId]
+      outputPrefix = outputPrefix += `the ${targetRoom} flow:\n`
     }
 
     // split jobs into date and cron pattern jobs
@@ -129,7 +135,6 @@ module.exports = function(robot) {
     }
 
     // sort by date in ascending order
-    let output = ""
 
     for (id of Object.keys(dateJobs).sort(
       (a, b) => new Date(dateJobs[a].pattern) - new Date(dateJobs[b].pattern),
@@ -144,6 +149,7 @@ module.exports = function(robot) {
     }
 
     if (!!output.length) {
+      output = outputPrefix + "==================================\n" + output
       return msg.send(output)
     } else {
       return msg.send("No messages have been scheduled")
@@ -397,14 +403,19 @@ function formatJobListItem(robot, job, isCron) {
     patternParsed = formatDate(new Date(job.pattern))
   }
 
-  text += `${job.id}: [ ${patternParsed} ] to ${roomDisplayName}\n----------\n\"${job.message}\" \n`
+  messageParsed = job.message
 
-  if (!!text.length) {
+  if (!!messageParsed.length) {
     for (let orgText in config.list.replaceText) {
       const replacedText = config.list.replaceText[orgText]
-      text = text.replace(new RegExp(`${orgText}`, "g"), replacedText)
+      messageParsed = messageParsed.replace(
+        new RegExp(`${orgText}`, "g"),
+        replacedText,
+      )
     }
   }
+
+  text += `**${job.id}: [ ${patternParsed} ]** (to ${roomDisplayName}):\n>${messageParsed}\n`
   return text
 }
 
