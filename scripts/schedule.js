@@ -415,7 +415,7 @@ function formatJobListItem(robot, job, isCron) {
     }
   }
 
-  text += `**${job.id}: [ ${patternParsed} ]** (to ${roomDisplayName}):\n>${messageParsed}\n`
+  text += `**${job.id}: [ ${patternParsed} ]** (to ${roomDisplayName}):\n>${messageParsed}\n\n`
   return text
 }
 
