@@ -67,13 +67,13 @@ module.exports = function(robot) {
       let targetRoomId = null
 
       if (!isBlank(targetRoom)) {
-        if (isRestrictedRoom(targetRoom, robot, msg)) {
+        targetRoomId = getRoomIdFromName(msg, robot, targetRoom)
+
+        if (isRestrictedRoom(targetRoomId, robot, msg)) {
           return msg.send(
             `Creating schedule for the ${targetRoom} flow is restricted`,
           )
         }
-
-        targetRoomId = getRoomIdFromName(msg, robot, targetRoom)
 
         if (!robotIsInRoom(robot, targetRoomId)) {
           return msg.send(
@@ -361,7 +361,7 @@ var isBlank = s => !(s ? s.trim() : undefined)
 
 function isRestrictedRoom(targetRoom, robot, msg) {
   if (config.denyExternalControl === "1") {
-    if (![msg.message.user.room].includes(targetRoom)) {
+    if (!(msg.message.user.room === targetRoom)) {
       return true
     }
   }
