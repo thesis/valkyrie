@@ -444,7 +444,11 @@ function getRoomNameFromId(robot, roomId) {
 }
 
 function getJoinedFlowIds(robot) {
-  return Array.from(robot.adapter.joinedFlows()).map(flow => flow.id)
+  if (!robot.adapter.flows) {
+    return []
+  } else {
+    return robot.adapter.joinedFlows().map(flow => flow.id)
+  }
 }
 
 function robotIsInRoom(robot, roomId) {
