@@ -140,16 +140,16 @@ module.exports = function(robot) {
       (a, b) => new Date(dateJobs[a].pattern) - new Date(dateJobs[b].pattern),
     )) {
       job = dateJobs[id]
-      output += formatJobListItem(robot, job, false)
+      output += formatJobListItem(robot, job, false, showAll)
     }
 
     for (id in cronJobs) {
       job = cronJobs[id]
-      output += formatJobListItem(robot, job, true)
+      output += formatJobListItem(robot, job, true, showAll)
     }
 
     if (!!output.length) {
-      output = outputPrefix + "==================================\n" + output
+      output = outputPrefix + "===\n" + output
       return msg.send(output)
     } else {
       return msg.send("No messages have been scheduled")
@@ -392,9 +392,9 @@ function formatDate(date) {
   )
 }
 
-function formatJobListItem(robot, job, isCron) {
+function formatJobListItem(robot, job, isCron, showRoom) {
   let text = ""
-  let roomDisplayName = getRoomNameFromId(robot, job.user.room)
+  let roomDisplayText = ""
   let patternParsed = ""
   let messageParsed = ""
 
@@ -402,6 +402,10 @@ function formatJobListItem(robot, job, isCron) {
     patternParsed = cronstrue.toString(job.pattern)
   } else {
     patternParsed = formatDate(new Date(job.pattern))
+  }
+
+  if (showRoom) {
+    roomDisplayText = `(to ${getRoomNameFromId(robot, job.user.room)})`
   }
 
   if (!!job.message.length) {
@@ -415,7 +419,7 @@ function formatJobListItem(robot, job, isCron) {
     }
   }
 
-  text += `**${job.id}: [ ${patternParsed} ]** (to ${roomDisplayName}):\n>${messageParsed}\n\n`
+  text += `**${job.id}: [ ${patternParsed} ]** ${roomDisplayText}:\n>${messageParsed}\n\n`
   return text
 }
 
