@@ -1,4 +1,4 @@
-'use strict'
+"use strict"
 
 // Description:
 //   Sets up a 200 response on / for GCP ingress healthchecks.
@@ -10,5 +10,7 @@
 //   None
 
 module.exports = function(robot) {
-  robot.router.get('/', (req, res) => res.status(200).send("I watch for Ragnarok."));
+  robot.router.get("/", (req, res) =>
+    res.status(200).send("I watch for Ragnarok."),
+  )
 }
