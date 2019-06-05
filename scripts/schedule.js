@@ -37,7 +37,7 @@ const config = {
     replaceText: JSON.parse(
       process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
         ? process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
-        : '{"@":"[@]","```":"\\n```\\n","#":"[#]","\\n":"\\n>"}',
+        : '{"(@{1,2})":"[$1]","```":"\\n```\\n","#":"[#]","\\n":"\\n>"}',
     ),
   },
 }
