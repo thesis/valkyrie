@@ -37,7 +37,7 @@ const config = {
     replaceText: JSON.parse(
       process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
         ? process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
-        : '{"@":"[@]"}',
+        : '{"(@@?)":"[$1]","```":"\\n```\\n","#":"[#]","\\n":"\\n>"}',
     ),
   },
 }
@@ -67,13 +67,13 @@ module.exports = function(robot) {
       let targetRoomId = null
 
       if (!isBlank(targetRoom)) {
-        if (isRestrictedRoom(targetRoom, robot, msg)) {
+        targetRoomId = getRoomIdFromName(msg, robot, targetRoom)
+
+        if (isRestrictedRoom(targetRoomId, robot, msg)) {
           return msg.send(
             `Creating schedule for the ${targetRoom} flow is restricted`,
           )
         }
-
-        targetRoomId = getRoomIdFromName(msg, robot, targetRoom)
 
         if (!robotIsInRoom(robot, targetRoomId)) {
           return msg.send(
@@ -92,17 +92,22 @@ module.exports = function(robot) {
   )
 
   robot.respond(/schedule list(?: (all|.*))?/i, function(msg) {
-    let id, job, rooms, showAll
+    let id, job, rooms, showAll, outputPrefix
     const targetRoom = msg.match[1]
     const roomId = msg.message.user.room
     let targetRoomId = null
+    let output = ""
+
+    outputPrefix = "Showing scheduled jobs for "
 
     if (isBlank(targetRoom) || config.denyExternalControl === "1") {
       // if targetRoom is undefined or blank, show schedule for current room
       // room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
       rooms = [roomId]
+      outputPrefix += "THIS flow:\n"
     } else if (targetRoom === "all") {
       showAll = true
+      outputPrefix += "ALL flows:\n"
     } else {
       targetRoomId = getRoomIdFromName(msg, robot, targetRoom)
       if (!robotIsInRoom(robot, targetRoomId)) {
@@ -111,6 +116,7 @@ module.exports = function(robot) {
         )
       }
       rooms = [targetRoomId]
+      outputPrefix += `the ${targetRoom} flow:\n`
     }
 
     // split jobs into date and cron pattern jobs
@@ -129,30 +135,22 @@ module.exports = function(robot) {
     }
 
     // sort by date in ascending order
-    let text = ""
+
     for (id of Object.keys(dateJobs).sort(
       (a, b) => new Date(dateJobs[a].pattern) - new Date(dateJobs[b].pattern),
     )) {
       job = dateJobs[id]
-      roomDisplayName = getRoomNameFromId(robot, job.user.room)
-      text += `${id}: [ ${formatDate(
-        new Date(job.pattern),
-      )} ] to ${roomDisplayName} \"${job.message}\" \n`
+      output += formatJobListItem(robot, job, false, showAll)
     }
 
     for (id in cronJobs) {
       job = cronJobs[id]
-      roomDisplayName = getRoomNameFromId(robot, job.user.room)
-      patternParsed = cronstrue.toString(job.pattern)
-      text += `${id}: [ ${patternParsed} ] to ${roomDisplayName} \"${job.message}\" \n`
+      output += formatJobListItem(robot, job, true, showAll)
     }
 
-    if (!!text.length) {
-      for (let orgText in config.list.replaceText) {
-        const replacedText = config.list.replaceText[orgText]
-        text = text.replace(new RegExp(`${orgText}`, "g"), replacedText)
-      }
-      return msg.send(text)
+    if (!!output.length) {
+      output = outputPrefix + "===\n" + output
+      return msg.send(output)
     } else {
       return msg.send("No messages have been scheduled")
     }
@@ -363,7 +361,7 @@ var isBlank = s => !(s ? s.trim() : undefined)
 
 function isRestrictedRoom(targetRoom, robot, msg) {
   if (config.denyExternalControl === "1") {
-    if (![msg.message.user.room].includes(targetRoom)) {
+    if (msg.message.user.room !== targetRoom) {
       return true
     }
   }
@@ -394,20 +392,63 @@ function formatDate(date) {
   )
 }
 
+function formatJobListItem(robot, job, isCron, showRoom) {
+  let text = ""
+  let roomDisplayText = ""
+  let patternParsed = ""
+  let messageParsed = ""
+
+  if (isCron == true) {
+    patternParsed = cronstrue.toString(job.pattern)
+  } else {
+    patternParsed = formatDate(new Date(job.pattern))
+  }
+
+  if (showRoom) {
+    roomDisplayText = `(to ${getRoomNameFromId(robot, job.user.room)})`
+  }
+
+  if (!!job.message.length) {
+    messageParsed = job.message
+    for (let orgText in config.list.replaceText) {
+      const replacedText = config.list.replaceText[orgText]
+      messageParsed = messageParsed.replace(
+        new RegExp(`${orgText}`, "g"),
+        replacedText,
+      )
+    }
+  }
+
+  text += `**${job.id}: [ ${patternParsed} ]** ${roomDisplayText}:\n>${messageParsed}\n\n`
+  return text
+}
+
 function getRoomIdFromName(msg, robot, roomName) {
-  return robot.adapter.findFlow(roomName)
+  if (!robot.adapter.findFlow) {
+    return roomName
+  } else {
+    return robot.adapter.findFlow(roomName)
+  }
 }
 
 function getRoomNameFromId(robot, roomId) {
-  for (let flow of robot.adapter.flows) {
-    if (roomId === flow.id) {
-      return flow.name
+  if (!robot.adapter.flows) {
+    return roomId
+  } else {
+    for (let flow of robot.adapter.flows || []) {
+      if (roomId === flow.id) {
+        return flow.name
+      }
     }
   }
 }
 
 function getJoinedFlowIds(robot) {
-  return Array.from(robot.adapter.joinedFlows()).map(flow => flow.id)
+  if (!robot.adapter.flows) {
+    return []
+  } else {
+    return robot.adapter.joinedFlows().map(flow => flow.id)
+  }
 }
 
 function robotIsInRoom(robot, roomId) {
