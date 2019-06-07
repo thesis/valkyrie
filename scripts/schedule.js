@@ -37,7 +37,7 @@ const config = {
     replaceText: JSON.parse(
       process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
         ? process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
-        : '{"(@{1,2})":"[$1]","```":"\\n```\\n","#":"[#]","\\n":"\\n>"}',
+        : '{"(@@?)":"[$1]","```":"\\n```\\n","#":"[#]","\\n":"\\n>"}',
     ),
   },
 }
@@ -104,10 +104,10 @@ module.exports = function(robot) {
       // if targetRoom is undefined or blank, show schedule for current room
       // room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
       rooms = [roomId]
-      outputPrefix = outputPrefix += "THIS flow:\n"
+      outputPrefix += "THIS flow:\n"
     } else if (targetRoom === "all") {
       showAll = true
-      outputPrefix = outputPrefix += "ALL flows:\n"
+      outputPrefix += "ALL flows:\n"
     } else {
       targetRoomId = getRoomIdFromName(msg, robot, targetRoom)
       if (!robotIsInRoom(robot, targetRoomId)) {
@@ -116,7 +116,7 @@ module.exports = function(robot) {
         )
       }
       rooms = [targetRoomId]
-      outputPrefix = outputPrefix += `the ${targetRoom} flow:\n`
+      outputPrefix += `the ${targetRoom} flow:\n`
     }
 
     // split jobs into date and cron pattern jobs
@@ -361,7 +361,7 @@ var isBlank = s => !(s ? s.trim() : undefined)
 
 function isRestrictedRoom(targetRoom, robot, msg) {
   if (config.denyExternalControl === "1") {
-    if (!(msg.message.user.room === targetRoom)) {
+    if (msg.message.user.room !== targetRoom) {
       return true
     }
   }
