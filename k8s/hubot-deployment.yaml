@@ -50,6 +50,16 @@ spec:
                 secretKeyRef:
                   name: heimdall-hubot
                   key: github_client_secret
+            - name: IMGFLIP_API_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: heimdall-hubot
+                  key: imgflip_api_username
+            - name: IMGFLIP_API_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: heimdall-hubot
+                  key: imgflip_api_password
             - name: ZEPLIN_FLOWDOCK_TOKEN
               valueFrom:
                 secretKeyRef:
