@@ -31,4 +31,4 @@ WORKDIR /hubot
 
 ENV PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 
-ENTRYPOINT ["bin/hubot", "--name", "heimdall", "--adapter", "flowdock"]
+ENTRYPOINT ["bin/hubot", "--name", "heimdall", "--adapter", "reload-flowdock"]
