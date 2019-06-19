@@ -143,9 +143,12 @@ module.exports = function(robot) {
         return watchMeeting(meeting)
           .then(fulfilledPromise => {
             if (fulfilledPromise && fulfilledPromise === "never started") {
-              // log, but do not send flowdock prompt
+              // log, send flowdock note but no `@` mention
               robot.logger.info(
                 `This meeting looks like it never started: ${meeting.id}`,
+              )
+              res.send(
+                `Looks like you didn't need this meeting, after all. If do you still need a zoom, please start a new one :)`,
               )
               return
             }
