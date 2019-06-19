@@ -7,7 +7,6 @@ const API_BASE_URL = "https://api.zoom.us/v2",
 const URLs = {
   meetings: `${API_BASE_URL}/users/{userId}/meetings`,
   meetingDetail: `${API_BASE_URL}/meetings/{meetingId}`,
-  pastMeetingDetail: `${API_BASE_URL}/past_meetings/{meetingUUID}`,
   users: `${API_BASE_URL}/users`,
   appJoin: `${APP_BASE_URL}/join?action=join&confno={meetingId}`,
 }
@@ -34,11 +33,7 @@ async function getSession(apiKey: string, apiSecret: string) {
   }
 }
 
-async function getMeetingDetails(
-  sessionToken: string,
-  meetingId: string,
-  meetingUUID: string,
-) {
+async function getMeetingDetails(sessionToken: string, meetingId: string) {
   try {
     const response = await axios.get(
       URLs.meetingDetail.replace(/{meetingId}/, meetingId),

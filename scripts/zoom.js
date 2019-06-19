@@ -21,7 +21,7 @@ const MEETING_DURATION_TIMEOUT_DELAY = 2 * 60 * 1000 // 60 * 60 * 1000 // approx
 
 function isMeetingStarted(meeting) {
   return zoom
-    .getMeetingDetails(ZOOM_SESSION.token, meeting.id, meeting.uuid)
+    .getMeetingDetails(ZOOM_SESSION.token, meeting.id)
     .then(meetingDetail => {
       console.log(`\n\n\n##############\nSTARTED? meetingDetail`)
       console.log(require("util").inspect(meetingDetail))
@@ -33,10 +33,9 @@ function isMeetingStarted(meeting) {
     })
 }
 
-// TODO: add hasStarted param & condition, otherwise this is a lie if called by itself
 function isMeetingFinished(meeting, meetingDidStart) {
   return zoom
-    .getMeetingDetails(ZOOM_SESSION.token, meeting.id, meeting.uuid)
+    .getMeetingDetails(ZOOM_SESSION.token, meeting.id)
     .then(meetingDetail => {
       console.log(`\n\n\n##############\nENDED? meetingDetail`)
       console.log(require("util").inspect(meetingDetail))
