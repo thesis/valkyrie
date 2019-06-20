@@ -132,7 +132,6 @@ module.exports = function(robot) {
           util.inspect(err),
         )
         res.send("Uh-oh, there was an issue finding an available meeting :(")
-        return
       })
       .then(meeting => {
         robot.logger.info(`Start watching meeting: ${meeting.id}`)
@@ -147,14 +146,12 @@ module.exports = function(robot) {
                 res.send(
                   `Looks like you didn't need this meeting, after all. If do you still need a zoom, please start a new one :)`,
                 )
-                return
               } else {
                 // otherwise, send flowdock prompt
                 res.send(`@${res.message.user.name} Please post call notes!`)
                 robot.logger.info(
                   `Stopped watching, meeting ended: ${meeting.id}`,
                 )
-                return
               }
             } else {
               // if fulfilledPromise is null, the meeting exceeded the timeout.
@@ -165,7 +162,6 @@ module.exports = function(robot) {
               robot.logger.info(
                 `Stopped watching, meeting still going: ${meeting.id}`,
               )
-              return
             }
           })
           .catch(err => {
