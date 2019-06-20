@@ -135,17 +135,32 @@ module.exports = function(robot) {
     }
 
     // sort by date in ascending order
-
     for (id of Object.keys(dateJobs).sort(
       (a, b) => new Date(dateJobs[a].pattern) - new Date(dateJobs[b].pattern),
     )) {
       job = dateJobs[id]
-      output += formatJobListItem(robot, job, false, showAll)
+      output += formatJobListItem(
+        robot,
+        job.pattern,
+        false, //not a cron job
+        job.id,
+        job.message,
+        job.user.room,
+        showAll,
+      )
     }
 
     for (id in cronJobs) {
       job = cronJobs[id]
-      output += formatJobListItem(robot, job, true, showAll)
+      output += formatJobListItem(
+        robot,
+        job.pattern,
+        true,
+        job.id,
+        job.message,
+        job.user.room,
+        showAll,
+      )
     }
 
     if (!!output.length) {
@@ -189,7 +204,17 @@ function schedule(robot, msg, room, pattern, message) {
       } else {
         patternParsed = moment(pattern)
       }
-      return msg.send(`${id}: Schedule created: ${patternParsed}`)
+
+      formattedJob = formatJobListItem(
+        robot,
+        pattern,
+        isCronPattern(pattern),
+        id,
+        message,
+        room,
+        room ? true : false,
+      )
+      return msg.send(`Schedule created:\n${formattedJob}`)
     } else {
       return msg.send(`\
 \"${pattern}\" is an invalid pattern.
@@ -252,6 +277,7 @@ function updateSchedule(robot, msg, id, message) {
 
   job.message = message
   robot.brain.get(STORE_KEY)[id] = job.serialize()
+  // TODO: update format here too
   return msg.send(`${id}: Scheduled message updated`)
 }
 
@@ -272,6 +298,7 @@ function cancelSchedule(robot, msg, id) {
   job.cancel()
   delete JOBS[id]
   delete robot.brain.get(STORE_KEY)[id]
+  // TODO: update format here too
   return msg.send(`${id}: Schedule canceled`)
 }
 
@@ -353,6 +380,7 @@ function difference(obj1, obj2) {
 }
 
 function isCronPattern(pattern) {
+  // TODO: update to work with patterns from either add or list command
   const { errors } = cronParser.parseString(pattern)
   return !Object.keys(errors).length
 }
@@ -392,24 +420,32 @@ function formatDate(date) {
   )
 }
 
-function formatJobListItem(robot, job, isCron, showRoom) {
+function formatJobListItem(
+  robot,
+  jobPattern,
+  isCron,
+  jobId,
+  jobMessage,
+  jobRoom,
+  showRoom,
+) {
   let text = ""
   let roomDisplayText = ""
   let patternParsed = ""
   let messageParsed = ""
 
-  if (isCron == true) {
-    patternParsed = cronstrue.toString(job.pattern)
+  if (isCron) {
+    patternParsed = cronstrue.toString(jobPattern)
   } else {
-    patternParsed = formatDate(new Date(job.pattern))
+    patternParsed = formatDate(new Date(jobPattern))
   }
 
   if (showRoom) {
-    roomDisplayText = `(to ${getRoomNameFromId(robot, job.user.room)})`
+    roomDisplayText = `(to ${getRoomNameFromId(robot, jobRoom)})`
   }
 
-  if (!!job.message.length) {
-    messageParsed = job.message
+  if (!!jobMessage.length) {
+    messageParsed = jobMessage
     for (let orgText in config.list.replaceText) {
       const replacedText = config.list.replaceText[orgText]
       messageParsed = messageParsed.replace(
@@ -419,7 +455,7 @@ function formatJobListItem(robot, job, isCron, showRoom) {
     }
   }
 
-  text += `**${job.id}: [ ${patternParsed} ]** ${roomDisplayText}:\n>${messageParsed}\n\n`
+  text += `**${jobId}: [ ${patternParsed} ]** ${roomDisplayText}:\n>${messageParsed}\n\n`
   return text
 }
 
