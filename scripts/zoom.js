@@ -14,17 +14,15 @@ const zoom = require("../lib/zoom"),
 
 /** @type zoom.Session */
 let ZOOM_SESSION = null
-// temp numbers for testing
-const INTERVAL_DELAY = 5000 //30 * 1000 //
-const MEETING_START_TIMEOUT_DELAY = 1 * 60 * 1000 // 10 * 60 * 1000 // we'll only watch this long if meeting doesn't start
-const MEETING_DURATION_TIMEOUT_DELAY = 2 * 60 * 1000 // 60 * 60 * 1000 // approx max mtg duration
+
+const INTERVAL_DELAY = 15 * 1000
+const MEETING_START_TIMEOUT_DELAY = 10 * 60 * 1000 // we'll only watch this long if meeting doesn't start
+const MEETING_DURATION_TIMEOUT_DELAY = 60 * 60 * 1000 // max mtg watch duration
 
 function isMeetingStarted(meeting) {
   return zoom
     .getMeetingDetails(ZOOM_SESSION.token, meeting.id)
     .then(meetingDetail => {
-      console.log(`\n\n\n##############\nSTARTED? meetingDetail`)
-      console.log(require("util").inspect(meetingDetail))
       if ("status" in meetingDetail && meetingDetail.status === "started") {
         return true
       } else {
@@ -37,8 +35,6 @@ function isMeetingFinished(meeting, meetingDidStart) {
   return zoom
     .getMeetingDetails(ZOOM_SESSION.token, meeting.id)
     .then(meetingDetail => {
-      console.log(`\n\n\n##############\nENDED? meetingDetail`)
-      console.log(require("util").inspect(meetingDetail))
       if (
         "status" in meetingDetail &&
         meetingDetail.status == "waiting" &&
