@@ -69,12 +69,12 @@ function watchMeeting(meeting) {
     }, INTERVAL_DELAY)
     let startTimeoutId = setTimeout(() => {
       clearInterval(startIntervalId)
-      resolve("never started")
+      resolve(false)
     }, MEETING_START_TIMEOUT_DELAY)
   })
   return meetingStartedPromise.then(meetingStartStatus => {
     let meetingFinishedPromise = new Promise((resolve, reject) => {
-      if (meetingStartStatus === "never started") {
+      if (meetingStartStatus === false) {
         resolve("never started")
         return
       }
@@ -137,23 +137,7 @@ module.exports = function(robot) {
         robot.logger.info(`Start watching meeting: ${meeting.id}`)
         return watchMeeting(meeting)
           .then(finalMeetingStatus => {
-            if (finalMeetingStatus) {
-              if (finalMeetingStatus === "never started") {
-                // log, send flowdock note but no `@` mention
-                robot.logger.info(
-                  `This meeting looks like it never started: ${meeting.id}`,
-                )
-                res.send(
-                  `Looks like you didn't need this meeting, after all. If do you still need a zoom, please start a new one :)`,
-                )
-              } else {
-                // otherwise, send flowdock prompt
-                res.send(`@${res.message.user.name} Please post call notes!`)
-                robot.logger.info(
-                  `Stopped watching, meeting ended: ${meeting.id}`,
-                )
-              }
-            } else {
+            if (!finalMeetingStatus) {
               // if finalMeetingStatus is null, the meeting exceeded the timeout.
               // We assume the meeting still happened, so we still want to reply
               res.send(
@@ -161,6 +145,20 @@ module.exports = function(robot) {
               )
               robot.logger.info(
                 `Stopped watching, meeting still going: ${meeting.id}`,
+              )
+            } else if (finalMeetingStatus === "never started") {
+              // log, send flowdock note but no `@` mention
+              robot.logger.info(
+                `This meeting looks like it never started: ${meeting.id}`,
+              )
+              res.send(
+                `Looks like you didn't need this meeting, after all. If do you still need a zoom, please start a new one :)`,
+              )
+            } else {
+              // otherwise, send flowdock prompt
+              res.send(`@${res.message.user.name} Please post call notes!`)
+              robot.logger.info(
+                `Stopped watching, meeting ended: ${meeting.id}`,
               )
             }
           })
