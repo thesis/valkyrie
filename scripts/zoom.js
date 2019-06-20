@@ -48,7 +48,7 @@ function isMeetingFinished(meeting, meetingDidStart) {
 }
 
 function watchMeeting(meeting) {
-  let startIntervalIdPromise = new Promise((resolve, reject) => {
+  let meetingStartedPromise = new Promise((resolve, reject) => {
     let startIntervalId = setInterval(function() {
       isMeetingStarted(meeting)
         .then(isStarted => {
@@ -72,8 +72,8 @@ function watchMeeting(meeting) {
       resolve("never started")
     }, MEETING_START_TIMEOUT_DELAY)
   })
-  return startIntervalIdPromise.then(meetingStartStatus => {
-    let endIntervalIdPromise = new Promise((resolve, reject) => {
+  return meetingStartedPromise.then(meetingStartStatus => {
+    let meetingFinishedPromise = new Promise((resolve, reject) => {
       if (meetingStartStatus === "never started") {
         resolve("never started")
         return
@@ -101,7 +101,7 @@ function watchMeeting(meeting) {
         resolve(null)
       }, MEETING_DURATION_TIMEOUT_DELAY)
     })
-    return endIntervalIdPromise
+    return meetingFinishedPromise
   })
 }
 
@@ -136,9 +136,9 @@ module.exports = function(robot) {
       .then(meeting => {
         robot.logger.info(`Start watching meeting: ${meeting.id}`)
         return watchMeeting(meeting)
-          .then(fulfilledPromise => {
-            if (fulfilledPromise) {
-              if (fulfilledPromise === "never started") {
+          .then(finalMeetingStatus => {
+            if (finalMeetingStatus) {
+              if (finalMeetingStatus === "never started") {
                 // log, send flowdock note but no `@` mention
                 robot.logger.info(
                   `This meeting looks like it never started: ${meeting.id}`,
@@ -154,7 +154,7 @@ module.exports = function(robot) {
                 )
               }
             } else {
-              // if fulfilledPromise is null, the meeting exceeded the timeout.
+              // if finalMeetingStatus is null, the meeting exceeded the timeout.
               // We assume the meeting still happened, so we still want to reply
               res.send(
                 `@${res.message.user.name} Don't forget to post meeting notes when your call ends!`,
@@ -170,7 +170,9 @@ module.exports = function(robot) {
               util.inspect(err),
             )
             // We assume the meeting still happened, so reply (but without `@`)
-            res.send(`Don't forget to post meeting notes when your call ends!`)
+            res.send(
+              `Something went wrong watching the meeting; don't forget to post meeting notes when your call ends!`,
+            )
           })
       })
   })
