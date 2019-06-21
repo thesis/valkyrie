@@ -6,6 +6,7 @@ const API_BASE_URL = "https://api.zoom.us/v2",
   APP_BASE_URL = "zoommtg://zoom.us"
 const URLs = {
   meetings: `${API_BASE_URL}/users/{userId}/meetings`,
+  meetingDetail: `${API_BASE_URL}/meetings/{meetingId}`,
   users: `${API_BASE_URL}/users`,
   appJoin: `${APP_BASE_URL}/join?action=join&confno={meetingId}`,
 }
@@ -29,6 +30,18 @@ async function getSession(apiKey: string, apiSecret: string) {
     throw `Error looking up users: ${util.inspect(userResponse.data)}.`
   } else {
     return new Session(apiKey, apiSecret, userResponse.data.users)
+  }
+}
+
+async function getMeetingDetails(sessionToken: string, meetingId: string) {
+  try {
+    const response = await axios.get(
+      URLs.meetingDetail.replace(/{meetingId}/, meetingId),
+      { params: { access_token: sessionToken } },
+    )
+    return response.data
+  } catch (err) {
+    throw `Something went wrong getting meeting details: ${util.inspect(err)}.`
   }
 }
 
@@ -144,4 +157,4 @@ class Account {
   }
 }
 
-export { getSession, Session }
+export { getSession, Session, getMeetingDetails }
