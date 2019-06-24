@@ -126,7 +126,7 @@ module.exports = function(robot) {
       job = JOBS[id]
 
       if (showAll || rooms.includes(job.user.room)) {
-        if (job.pattern instanceof Date) {
+        if (!isCronPattern(job.pattern)) {
           dateJobs[id] = job
         } else {
           cronJobs[id] = job
@@ -142,11 +142,11 @@ module.exports = function(robot) {
       output += formatJobListItem(
         robot,
         job.pattern,
-        false, //not a cron job
+        (isCron = false),
         job.id,
         job.message,
         job.user.room,
-        showAll,
+        (showRoom = showAll),
       )
     }
 
@@ -155,11 +155,11 @@ module.exports = function(robot) {
       output += formatJobListItem(
         robot,
         job.pattern,
-        true,
+        (isCron = true),
         job.id,
         job.message,
         job.user.room,
-        showAll,
+        (showRoom = showAll),
       )
     }
 
@@ -199,12 +199,6 @@ function schedule(robot, msg, room, pattern, message) {
       message,
     )
     if (job) {
-      if (isCronPattern(pattern)) {
-        patternParsed = cronstrue.toString(pattern)
-      } else {
-        patternParsed = moment(pattern)
-      }
-
       formattedJob = formatJobListItem(
         robot,
         pattern,
@@ -277,8 +271,16 @@ function updateSchedule(robot, msg, id, message) {
 
   job.message = message
   robot.brain.get(STORE_KEY)[id] = job.serialize()
-  // TODO: update format here too
-  return msg.send(`${id}: Scheduled message updated`)
+  formattedJob = formatJobListItem(
+    robot,
+    job.pattern,
+    isCronPattern(job.pattern),
+    job.id,
+    job.message,
+    job.room,
+    job.room ? true : false,
+  )
+  return msg.send(`Schedule message updated:\n${formattedJob}`)
 }
 
 function cancelSchedule(robot, msg, id) {
@@ -298,8 +300,16 @@ function cancelSchedule(robot, msg, id) {
   job.cancel()
   delete JOBS[id]
   delete robot.brain.get(STORE_KEY)[id]
-  // TODO: update format here too
-  return msg.send(`${id}: Schedule canceled`)
+  formattedJob = formatJobListItem(
+    robot,
+    job.pattern,
+    isCronPattern(job.pattern),
+    job.id,
+    job.message,
+    job.room,
+    job.room ? true : false,
+  )
+  return msg.send(`Schedule canceled:\n${formattedJob}`)
 }
 
 function syncSchedules(robot) {
@@ -380,9 +390,12 @@ function difference(obj1, obj2) {
 }
 
 function isCronPattern(pattern) {
-  // TODO: update to work with patterns from either add or list command
-  const { errors } = cronParser.parseString(pattern)
-  return !Object.keys(errors).length
+  if (pattern instanceof Date) {
+    return false
+  } else {
+    const { errors } = cronParser.parseString(pattern)
+    return !Object.keys(errors).length
+  }
 }
 
 var isBlank = s => !(s ? s.trim() : undefined)
