@@ -23,11 +23,30 @@ const DEFAULT_TARGET_FLOW = "Bifrost"
 
 module.exports = function(robot) {
   const TARGET_FLOW = TARGET_FLOW_PER_ROBOT[robot.name] || DEFAULT_TARGET_FLOW
-  robot.respond(/suggest/, res => {
-    // get username of poster
+  robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
+    let user = res.message.user
+
+    // TODO: get source room ID, and let below be source room Name for message only
+    let sourceRoom = res.message.room || `Direct Message with ${robot.name}`
+    let comment = res.match[1] // optional name of room specified in msg
+
+    if (!comment) {
+      res.send(
+        "Yes? I'm listening.... \n(Please try again: this time add your suggestion after the `suggest` command)",
+      )
+      return
+    }
+
     // post suggestion message, username to TARGET_FLOW
-    // get link to new suggestion post in TARGET_FLOW
-    // respond in original suggestion thread with link to new post in TARGET_FLOW
-    res.send(`testing target flow: ${TARGET_FLOW}`)
+    let envelope = {
+      user: user,
+      room: TARGET_FLOW,
+    }
+    // TODO: include link to source thread in message
+    let message = `testing suggestion sent by ${user.name} from ${sourceRoom}: \n>${comment}`
+    // TODO: get link to this post
+    robot.messageRoom(TARGET_FLOW, message)
+
+    // then respond in original suggestion thread with link to new post in TARGET_FLOW
   })
 }
