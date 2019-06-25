@@ -14,6 +14,8 @@
 //   the suggestion and the name of the user who suggested it, replies to the
 //   command with a link to that post
 
+const { getRoomIdFromName } = require("../lib/flowdock-util")
+
 // NOTE: robot.name uses lowercase
 const TARGET_FLOW_PER_ROBOT = {
   valkyrie: "Playground",
@@ -26,8 +28,10 @@ module.exports = function(robot) {
   robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
     let user = res.message.user
 
-    // TODO: get source room ID, and let below be source room Name for message only
-    let sourceRoom = res.message.room || `Direct Message with ${robot.name}`
+    let sourceRoomId = res.message.room
+      ? getRoomIdFromName(robot, res.message.room)
+      : null
+    let sourceRoomName = res.message.room || `Direct Message with ${robot.name}`
     let comment = res.match[1] // optional name of room specified in msg
 
     if (!comment) {
@@ -43,9 +47,10 @@ module.exports = function(robot) {
       room: TARGET_FLOW,
     }
     // TODO: include link to source thread in message
-    let message = `testing suggestion sent by ${user.name} from ${sourceRoom}: \n>${comment}`
+    let message = `testing suggestion sent by ${user.name} from ${sourceRoomName}: \n>${comment}`
+
     // TODO: get link to this post
-    robot.messageRoom(TARGET_FLOW, message)
+    robot.send(envelope, message)
 
     // then respond in original suggestion thread with link to new post in TARGET_FLOW
   })
