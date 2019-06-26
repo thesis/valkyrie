@@ -97,6 +97,21 @@ class Session {
       ...message,
     })
   }
+
+  async postMessage(message: string, targetFlow: string) {
+    return this.postFn(
+      URLs.messages.concat(targetFlow),
+      {
+        event: "message",
+        content: message,
+      },
+      {
+        headers: {
+          Authorization: "Basic ".concat(this.apiToken),
+        },
+      },
+    )
+  }
 }
 
 export { Session, URLs, APP_BASE_URL }
