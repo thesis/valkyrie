@@ -14,7 +14,8 @@
 //   the suggestion and the name of the user who suggested it, replies to the
 //   command with a link to that post
 
-const { getRoomIdFromName } = require("../lib/flowdock-util")
+const { getRoomIdFromName } = require("../lib/flowdock-util"),
+  flowdock = require("../lib/flowdock")
 
 // NOTE: robot.name uses lowercase
 const TARGET_FLOW_PER_ROBOT = {
@@ -22,6 +23,10 @@ const TARGET_FLOW_PER_ROBOT = {
   heimdall: "Bifrost",
 }
 const DEFAULT_TARGET_FLOW = "Bifrost"
+
+const FLOWDOCK_SESSION = new flowdock.Session(
+  process.env["HUBOT_FLOWDOCK_API_TOKEN"],
+)
 
 module.exports = function(robot) {
   const TARGET_FLOW = TARGET_FLOW_PER_ROBOT[robot.name] || DEFAULT_TARGET_FLOW
@@ -57,6 +62,12 @@ module.exports = function(robot) {
 
     let message = `testing [link to source message](${sourceMessageLink})`
 
-    // then respond in original suggestion thread with link to new post in TARGET_FLOW
+    // TODO: get link to this post
+    return FLOWDOCK_SESSION.postMessage({
+      message,
+      TARGET_FLOW,
+    }).then(resp => {
+      // then respond in original suggestion thread with link to new post in TARGET_FLOW
+    })
   })
 }
