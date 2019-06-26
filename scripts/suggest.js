@@ -48,10 +48,14 @@ module.exports = function(robot) {
       room: TARGET_FLOW,
     }
     // TODO: include link to source thread in message
-    let message = `testing suggestion sent by ${user.name} from ${sourceRoomName}: \n>${comment}`
+    // let message = `testing suggestion sent by @${user.name} from ${res.message.room}: \n>${comment}`
+    sourceMessageLink =
+      "https://www.flowdock.com/app/cardforcoin/" +
+      res.message.room +
+      "/" +
+      sourceMessageId
 
-    // TODO: get link to this post
-    robot.send(envelope, message)
+    let message = `testing [link to source message](${sourceMessageLink})`
 
     // then respond in original suggestion thread with link to new post in TARGET_FLOW
   })
