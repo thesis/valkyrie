@@ -25,10 +25,12 @@ module.exports = function(robot) {
   const TARGET_FLOW = TARGET_FLOW_PER_ROBOT[robot.name] || DEFAULT_TARGET_FLOW
   robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
     let user = res.message.user
+    let comment = res.match[1]
 
-    // TODO: get source room ID, and let below be source room Name for message only
-    let sourceRoom = res.message.room || `Direct Message with ${robot.name}`
-    let comment = res.match[1] // optional name of room specified in msg
+    if (typeof res.message.room === "undefined") {
+      // TODO: actually check public vs private flow (this only tests for DMs)
+      return res.send("Sorry, this command only works from public flows")
+    }
 
     if (!comment) {
       res.send(
