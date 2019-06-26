@@ -5,7 +5,6 @@
 //
 //
 // Configuration:
-//  TARGET_FLOW - string - name of the flow in which to post suggestions
 //  TARGET_FLOW_PER_ROBOT - dict - collection of robot name: flow name to determine TARGET_FLOW
 //  DEFAULT_TARGET_FLOW - flow name to use if robot name not found in TARGET_FLOW_PER_ROBOT
 //
@@ -22,33 +21,50 @@ const TARGET_FLOW_PER_ROBOT = {
 const DEFAULT_TARGET_FLOW = "Bifrost"
 
 module.exports = function(robot) {
-  const TARGET_FLOW = TARGET_FLOW_PER_ROBOT[robot.name] || DEFAULT_TARGET_FLOW
+  const targetFlowName =
+    TARGET_FLOW_PER_ROBOT[robot.name] || DEFAULT_TARGET_FLOW
+  const targetFlowId = robot.adapter.findFlow(targetFlowName)
+
   robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
     let user = res.message.user
-    let comment = res.match[1]
+    let userSuggestion = res.match[1]
 
     if (typeof res.message.room === "undefined") {
       // TODO: actually check public vs private flow (this only tests for DMs)
       return res.send("Sorry, this command only works from public flows")
     }
 
-    if (!comment) {
+    if (!userSuggestion) {
       res.send(
         "Yes? I'm listening.... \n(Please try again: this time add your suggestion after the `suggest` command)",
       )
       return
     }
 
-    // post suggestion message, username to TARGET_FLOW
-    let envelope = {
-      user: user,
-      room: TARGET_FLOW,
-    }
-    // TODO: include link to source thread in message
-    let message = `testing suggestion sent by ${user.name} from ${sourceRoom}: \n>${comment}`
-    // TODO: get link to this post
-    robot.messageRoom(TARGET_FLOW, message)
+    let sourceFlow = res.message.room // TODO: get name
+    let sourceThreadId = res.message.metadata.thread_id
+    let sourceThreadLink =
+      "https://www.flowdock.com/app/cardforcoin/" +
+      "playground" + // sourceFlow
+      "/threads/" +
+      sourceThreadId
 
-    // then respond in original suggestion thread with link to new post in TARGET_FLOW
+    // post suggestion message & related info targetFlowName
+    let formattedSuggestion = `@${res.message.user.name} just made a suggestion in ${sourceFlow}:\n>${userSuggestion}\n\nSee [original thread](${sourceThreadLink})`
+    let envelope = {
+      user: "",
+      room: targetFlowId,
+    }
+    // TODO: get link to this post
+    robot.send(envelope, formattedSuggestion)
+
+    let targetFlowLink =
+      "https://www.flowdock.com/app/cardforcoin/" + targetFlowName.toLowerCase()
+
+    // then respond in source suggestion thread
+    // TODO: add link to post in TARGET_FLOW
+    res.send(
+      `Thanks for the suggestion! We'll be discussing it further in [${targetFlowName}](${targetFlowLink}), feel free to join us there.`,
+    )
   })
 }
