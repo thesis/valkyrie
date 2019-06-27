@@ -30,9 +30,16 @@ module.exports = function(robot) {
         // User is allowed access to this command
         next()
       } else {
-        // Restricted command, but flow isn't in whitelist
-        context.response.reply(`I'm sorry, but that command doesn't work here.`)
-        done()
+        if (!robot.adapter.flows) {
+          // we're not using the flowdock adapter/ rooms: allow the command
+          next()
+        } else {
+          // Restricted command, and flow isn't in whitelist
+          context.response.reply(
+            `I'm sorry, but that command doesn't work here.`,
+          )
+          done()
+        }
       }
     } else {
       next()
