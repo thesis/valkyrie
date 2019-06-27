@@ -14,12 +14,15 @@
 // Author:
 //   kb0rg
 
-var ALLOWED_ROOMS, DEV_ONLY_COMMANDS, RESTRICTED_COMMANDS
+var ALLOWED_ROOMS,
+  ALLOWED_BOTS,
+  BOT_RESTICTED_COMMANDS,
+  ROOM_RESTRICTED_COMMANDS
 
-DEV_ONLY_COMMANDS = ["reload-scripts.reload"] // String that matches the listener ID
+BOT_RESTICTED_COMMANDS = ["reload-scripts.reload"] // String that matches the listener ID
+ALLOWED_BOTS = ["valkyrie"]
 
-RESTRICTED_COMMANDS = ["badgers", "pod-bay-doors", "schedule"] // String that matches the listener ID
-
+ROOM_RESTRICTED_COMMANDS = ["badgers", "pod-bay-doors", "schedule"] // String that matches the listener ID
 ALLOWED_ROOMS = [
   "8cf540e9-9727-4a75-82d1-843575e61f1b", //bifrost
   "8dd97a6a-d6f0-4352-be7d-388d9afeea9f", //playground
@@ -27,34 +30,35 @@ ALLOWED_ROOMS = [
 
 module.exports = function(robot) {
   robot.listenerMiddleware(function(context, next, done) {
-    if (DEV_ONLY_COMMANDS.indexOf(context.listener.options.id) >= 0) {
-      if (robot.name === "valkyrie") {
-        // Valkyrie is our dev bot, allow the command
+    if (BOT_RESTICTED_COMMANDS.indexOf(context.listener.options.id) >= 0) {
+      if (ALLOWED_BOTS.indexOf(robot.name) >= 0) {
+        // Bot is allowed access to this command
         next()
       } else {
-        context.response.reply(`Sorry, only Valykrie can do that`)
+        // Restricted command, and bot isn't in whitelist
+        context.response.reply(`Sorry, only *some* bots are allowed to do that`)
         done()
       }
-    }
-
-    if (RESTRICTED_COMMANDS.indexOf(context.listener.options.id) >= 0) {
-      if (ALLOWED_ROOMS.indexOf(context.response.message.room) >= 0) {
-        // User is allowed access to this command
-        next()
-      } else {
-        if (!robot.adapter.flows) {
-          // we're not using the flowdock adapter/ rooms: allow the command
+    } else {
+      if (ROOM_RESTRICTED_COMMANDS.indexOf(context.listener.options.id) >= 0) {
+        if (ALLOWED_ROOMS.indexOf(context.response.message.room) >= 0) {
+          // User is allowed access to this command
           next()
         } else {
-          // Restricted command, and flow isn't in whitelist
-          context.response.reply(
-            `I'm sorry, but that command doesn't work here.`,
-          )
-          done()
+          if (!robot.adapter.flows) {
+            // we're not using the flowdock adapter/ rooms: allow the command
+            next()
+          } else {
+            // Restricted command, and flow isn't in whitelist
+            context.response.reply(
+              `I'm sorry, but that command doesn't work here.`,
+            )
+            done()
+          }
         }
+      } else {
+        next()
       }
-    } else {
-      next()
     }
   })
 }
