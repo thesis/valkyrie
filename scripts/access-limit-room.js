@@ -14,7 +14,9 @@
 // Author:
 //   kb0rg
 
-var ALLOWED_ROOMS, RESTRICTED_COMMANDS
+var ALLOWED_ROOMS, DEV_ONLY_COMMANDS, RESTRICTED_COMMANDS
+
+DEV_ONLY_COMMANDS = ["reload-scripts.reload"] // String that matches the listener ID
 
 RESTRICTED_COMMANDS = ["badgers", "pod-bay-doors", "schedule"] // String that matches the listener ID
 
@@ -25,6 +27,16 @@ ALLOWED_ROOMS = [
 
 module.exports = function(robot) {
   robot.listenerMiddleware(function(context, next, done) {
+    if (DEV_ONLY_COMMANDS.indexOf(context.listener.options.id) >= 0) {
+      if (robot.name === "valkyrie") {
+        // Valkyrie is our dev bot, allow the command
+        next()
+      } else {
+        context.response.reply(`Sorry, only Valykrie can do that`)
+        done()
+      }
+    }
+
     if (RESTRICTED_COMMANDS.indexOf(context.listener.options.id) >= 0) {
       if (ALLOWED_ROOMS.indexOf(context.response.message.room) >= 0) {
         // User is allowed access to this command
