@@ -9,9 +9,7 @@
 //  DEFAULT_TARGET_FLOW - flow name to use if robot name not found in TARGET_FLOW_PER_ROBOT
 //
 // Commands:
-//   hubot suggest - Posts a message to the specifed flow with the content of
-//   the suggestion and the name of the user who suggested it, replies to the
-//   command with a link to that post
+//   hubot suggest - Posts a message to the main hubot flow, with content of the suggestion & name of the user, and replies to the command with a link to that flow
 
 const {
   getRoomIdFromName,
