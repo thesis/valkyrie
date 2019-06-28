@@ -13,9 +13,13 @@
 //   the suggestion and the name of the user who suggested it, replies to the
 //   command with a link to that post
 
-const { getRoomIdFromName, getRoomNameFromId } = require("../lib/flowdock-util")
+const {
+  getRoomIdFromName,
+  getRoomNameFromId,
+  getRoomInfoFromIdOrName,
+} = require("../lib/flowdock-util")
 
-// NOTE: robot.name uses lowercase
+// NB: Capitalilzed names are for display. robot.name uses lowercase
 const TARGET_FLOW_PER_ROBOT = {
   valkyrie: "Playground",
   heimdall: "Bifrost",
@@ -34,8 +38,14 @@ module.exports = function(robot) {
     let userSuggestion = res.match[1]
 
     if (typeof res.message.room === "undefined") {
-      // TODO: actually check public vs private flow (this only tests for DMs)
-      return res.send("Sorry, this command only works from public flows")
+      return res.send("Sorry, this command only works from flows, not DMs")
+    }
+
+    let flowData = getRoomInfoFromIdOrName(robot, res.message.room)
+    if (flowData.access_mode === "invitation") {
+      return res.send(
+        "Sorry, this command only works from public flows, to protect the privacy of your invite-only flow",
+      )
     }
 
     if (!userSuggestion) {
@@ -60,7 +70,6 @@ module.exports = function(robot) {
     }
     // TODO: get link to this post
     robot.send(envelope, formattedSuggestion)
-
     let targetFlowLink = FLOW_URL.replace(
       /{flowName}/,
       targetFlowName.toLowerCase(),
