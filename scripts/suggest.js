@@ -13,17 +13,21 @@
 //   the suggestion and the name of the user who suggested it, replies to the
 //   command with a link to that post
 
+const { getRoomIdFromName, getRoomNameFromId } = require("../lib/flowdock-util")
+
 // NOTE: robot.name uses lowercase
 const TARGET_FLOW_PER_ROBOT = {
   valkyrie: "Playground",
   heimdall: "Bifrost",
 }
 const DEFAULT_TARGET_FLOW = "Bifrost"
+const FLOW_URL = `https://www.flowdock.com/app/cardforcoin/{flowName}`
+const THREAD_URL = `https://www.flowdock.com/app/cardforcoin/{flowName}/threads/{threadId}`
 
 module.exports = function(robot) {
   const targetFlowName =
     TARGET_FLOW_PER_ROBOT[robot.name] || DEFAULT_TARGET_FLOW
-  const targetFlowId = robot.adapter.findFlow(targetFlowName)
+  const targetFlowId = getRoomIdFromName(robot, targetFlowName)
 
   robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
     let user = res.message.user
@@ -41,13 +45,12 @@ module.exports = function(robot) {
       return
     }
 
-    let sourceFlow = res.message.room // TODO: get name
+    let sourceFlow = getRoomNameFromId(robot, res.message.room)
     let sourceThreadId = res.message.metadata.thread_id
-    let sourceThreadLink =
-      "https://www.flowdock.com/app/cardforcoin/" +
-      "playground" + // sourceFlow
-      "/threads/" +
-      sourceThreadId
+    let sourceThreadLink = THREAD_URL.replace(
+      /{flowName}/,
+      sourceFlow.toLowerCase(),
+    ).replace(/{threadId}/, sourceThreadId)
 
     // post suggestion message & related info targetFlowName
     let formattedSuggestion = `@${res.message.user.name} just made a suggestion in ${sourceFlow}:\n>${userSuggestion}\n\nSee [original thread](${sourceThreadLink})`
@@ -58,8 +61,10 @@ module.exports = function(robot) {
     // TODO: get link to this post
     robot.send(envelope, formattedSuggestion)
 
-    let targetFlowLink =
-      "https://www.flowdock.com/app/cardforcoin/" + targetFlowName.toLowerCase()
+    let targetFlowLink = FLOW_URL.replace(
+      /{flowName}/,
+      targetFlowName.toLowerCase(),
+    )
 
     // then respond in source suggestion thread
     // TODO: add link to post in TARGET_FLOW
