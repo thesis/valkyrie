@@ -47,6 +47,14 @@ const cronParser = require("cron-parser")
 const cronstrue = require("cronstrue")
 const moment = require("moment")
 const { TextMessage } = require("hubot")
+
+const {
+  getRoomIdFromName,
+  getRoomNameFromId,
+  getJoinedFlowIds,
+  robotIsInRoom,
+} = require("../lib/flowdock-util")
+
 const JOBS = {}
 const JOB_MAX_COUNT = 10000
 const STORE_KEY = "hubot_schedule"
@@ -67,7 +75,7 @@ module.exports = function(robot) {
       let targetRoomId = null
 
       if (!isBlank(targetRoom)) {
-        targetRoomId = getRoomIdFromName(msg, robot, targetRoom)
+        targetRoomId = getRoomIdFromName(robot, targetRoom)
 
         if (isRestrictedRoom(targetRoomId, robot, msg)) {
           return msg.send(
@@ -109,7 +117,8 @@ module.exports = function(robot) {
       showAll = true
       outputPrefix += "ALL flows:\n"
     } else {
-      targetRoomId = getRoomIdFromName(msg, robot, targetRoom)
+      targetRoomId = getRoomIdFromName(robot, targetRoom)
+
       if (!robotIsInRoom(robot, targetRoomId)) {
         return msg.send(
           `Sorry, I'm not in the ${targetRoom} flow - or maybe you mistyped?`,
@@ -470,38 +479,6 @@ function formatJobListItem(
 
   text += `**${jobId}: [ ${patternParsed} ]** ${roomDisplayText}:\n>${messageParsed}\n\n`
   return text
-}
-
-function getRoomIdFromName(msg, robot, roomName) {
-  if (!robot.adapter.findFlow) {
-    return roomName
-  } else {
-    return robot.adapter.findFlow(roomName)
-  }
-}
-
-function getRoomNameFromId(robot, roomId) {
-  if (!robot.adapter.flows) {
-    return roomId
-  } else {
-    for (let flow of robot.adapter.flows || []) {
-      if (roomId === flow.id) {
-        return flow.name
-      }
-    }
-  }
-}
-
-function getJoinedFlowIds(robot) {
-  if (!robot.adapter.flows) {
-    return []
-  } else {
-    return robot.adapter.joinedFlows().map(flow => flow.id)
-  }
-}
-
-function robotIsInRoom(robot, roomId) {
-  return getJoinedFlowIds(robot).indexOf(roomId) >= 0
 }
 
 class Job {
