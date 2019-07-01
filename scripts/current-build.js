@@ -46,23 +46,7 @@ function attachToStream(fn) {
 }
 
 module.exports = function(robot) {
-  // Adjust for Flowdock adapter dispatching the connected event too soon.
-  if (robot.adapter.bot && robot.adapter.bot.flows) {
-    robot.adapter.bot.flows(() => {
-      attachToStream(() => {
-        if (robot.adapter.stream) {
-          robot.adapter.stream.on("connected", () =>
-            sendReleaseNotification(robot.adapter),
-          )
-          return true
-        } else {
-          return false
-        }
-      })
-    })
-  } else {
-    sendReleaseNotification(robot)
-  }
+  sendReleaseNotification(robot)
 
   robot.respond(/flows/, response => {
     if (robot.adapter.flows != null) {
