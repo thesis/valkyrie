@@ -7,7 +7,7 @@
 //   ZOOM_API_KEY - API key for Zoom API, used to sign requests https://developer.zoom.us/me/
 //
 // Commands:
-//   hubot zoom - Responds with an available meeting from the registered accounts
+//   hubot zoom - Responds with an available meeting from the registered accounts, follows up with a prompt to post meeting notes
 
 const zoom = require("../lib/zoom"),
   util = require("util")

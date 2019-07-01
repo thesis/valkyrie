@@ -9,9 +9,9 @@
 //  DEFAULT_TARGET_FLOW - flow name to use if robot name not found in TARGET_FLOW_PER_ROBOT
 //
 // Commands:
-//   hubot suggest - Posts a message to the specifed flow with the content of
-//   the suggestion and the name of the user who suggested it, replies to the
-//   command with a link to that post
+//   hubot suggest - Posts a message to the main hubot flow, with content of the suggestion & name of the user, and replies to the command with a link to that flow
+
+const util = require("util")
 
 const {
   getRoomIdFromName,
@@ -69,6 +69,13 @@ module.exports = function(robot) {
         user: "",
         room: targetFlowId,
       }
+
+      // debug logging to try to see why next message is not sending
+      robot.logger.info(`SUGGEST command should now ping flow: ${targetFlowId}`)
+      robot.logger.info(
+        `SUGGEST command expected message: ${formattedSuggestion}`,
+      )
+
       // TODO: get link to this post
       robot.send(envelope, formattedSuggestion)
 
@@ -81,11 +88,9 @@ module.exports = function(robot) {
       res.send(
         `Thanks for the suggestion! We'll be discussing it further in [${targetFlowName}](${targetFlowLink}), feel free to join us there.`,
       )
-    } catch (error) {
-      console.log(`WTF?????\n${error}`)
+    } catch (err) {
       robot.logger.error(
-        `Failed to send user suggestion to target flow: `,
-        error,
+        `Failed to send user suggestion to target flow: ${util.inspect(err)}`,
       )
       return res.send(
         `Something went wrong trying to post your suggestion in [${targetFlowName}](${targetFlowLink}) - please pop over there and let us know!`,
