@@ -70,12 +70,6 @@ module.exports = function(robot) {
         room: targetFlowId,
       }
 
-      // debug logging to try to see why next message is not sending
-      robot.logger.info(`SUGGEST command should now ping flow: ${targetFlowId}`)
-      robot.logger.info(
-        `SUGGEST command expected message: ${formattedSuggestion}`,
-      )
-
       // TODO: get link to this post
       robot.send(envelope, formattedSuggestion)
 
