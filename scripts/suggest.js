@@ -5,8 +5,8 @@
 //
 //
 // Configuration:
-//  TARGET_FLOW_PER_ROBOT - dict - collection of robot name: flow name to determine TARGET_FLOW
-//  DEFAULT_TARGET_FLOW - flow name to use if robot name not found in TARGET_FLOW_PER_ROBOT
+//  RELEASE_NOTIFICATION_ROOM - id of flow to use for suggestion posts if robot name not found in TARGET_FLOW_PER_ROBOT
+//  FLOWDOCK_ORGANIZATION_NAME - name of flowdock organization for constructing urls
 //
 // Commands:
 //   hubot suggest - Posts a message to the main hubot flow, with content of the suggestion & name of the user, and replies to the command with a link to that flow
@@ -24,14 +24,17 @@ const TARGET_FLOW_PER_ROBOT = {
   valkyrie: "Playground",
   heimdall: "Bifrost",
 }
-const DEFAULT_TARGET_FLOW = "Bifrost"
-const FLOW_URL = `https://www.flowdock.com/app/cardforcoin/{flowName}`
-const THREAD_URL = `https://www.flowdock.com/app/cardforcoin/{flowName}/threads/{threadId}`
+
+const FLOW_URL = `https://www.flowdock.com/app/{orgName}/{flowName}`
+const THREAD_URL = `https://www.flowdock.com/app/{orgName}/{flowName}/threads/{threadId}`
 
 module.exports = function(robot) {
   const targetFlowName =
-    TARGET_FLOW_PER_ROBOT[robot.name] || DEFAULT_TARGET_FLOW
-  const targetFlowId = getRoomIdFromName(robot, targetFlowName)
+    TARGET_FLOW_PER_ROBOT[robot.name] ||
+    getRoomNameFromId(process.env["RELEASE_NOTIFICATION_ROOM"])
+  const targetFlowId = TARGET_FLOW_PER_ROBOT[robot.name]
+    ? getRoomIdFromName(robot, targetFlowName)
+    : process.env["RELEASE_NOTIFICATION_ROOM"]
 
   robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
     try {
@@ -39,9 +42,9 @@ module.exports = function(robot) {
       let userSuggestion = res.match[1]
 
       let targetFlowLink = FLOW_URL.replace(
-        /{flowName}/,
-        targetFlowName.toLowerCase(),
-      )
+        /{orgName}/,
+        process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
+      ).replace(/{flowName}/, targetFlowName.toLowerCase())
       let redirectToTargetFlowMessage = `You can try again from a public flow, or join us in [${targetFlowName}](${targetFlowLink}) and chat with us about your idea there.`
 
       if (typeof res.message.room === "undefined") {
@@ -67,9 +70,11 @@ module.exports = function(robot) {
       let sourceFlow = getRoomNameFromId(robot, res.message.room)
       let sourceThreadId = res.message.metadata.thread_id
       let sourceThreadLink = THREAD_URL.replace(
-        /{flowName}/,
-        sourceFlow.toLowerCase(),
-      ).replace(/{threadId}/, sourceThreadId)
+        /{orgName}/,
+        process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
+      )
+        .replace(/{flowName}/, sourceFlow.toLowerCase())
+        .replace(/{threadId}/, sourceThreadId)
 
       // post suggestion message & related info targetFlowName
       let formattedSuggestion = `@${res.message.user.name} just made a suggestion in ${sourceFlow}:\n>${userSuggestion}\n\nSee [original thread](${sourceThreadLink}).`

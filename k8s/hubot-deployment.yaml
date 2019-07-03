@@ -38,6 +38,11 @@ spec:
                 secretKeyRef:
                   name: heimdall-hubot
                   key: release_notification_room
+            - name: FLOWDOCK_ORGANIZATION_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: heimdall-hubot
+                  key: flowdock_organization_name
             - name: REDIS_URL
               value: $(HEIMDALL_REDIS_SERVICE_PORT)
             - name: GITHUB_CLIENT_ID
