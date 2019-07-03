@@ -79,7 +79,6 @@ module.exports = function(robot) {
       // post suggestion message & related info targetFlowName
       let formattedSuggestion = `@${res.message.user.name} just made a suggestion in ${sourceFlow}:\n>${userSuggestion}\n\nSee [original thread](${sourceThreadLink}).`
       let envelope = {
-        user: "",
         room: targetFlowId,
       }
 
