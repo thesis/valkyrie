@@ -9,7 +9,7 @@
 //  FLOWDOCK_ORGANIZATION_NAME - name of flowdock organization for constructing urls
 //
 // Commands:
-//   hubot suggest - Posts a message to the main hubot flow, with content of the suggestion & name of the user, and replies to the command with a link to that flow
+//   hubot suggest <your idea here> - Posts a message to the main hubot flow, with content of the suggestion & name of the user, and replies to the command with a link to that flow
 
 const util = require("util")
 
