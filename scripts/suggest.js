@@ -38,20 +38,28 @@ module.exports = function(robot) {
       let user = res.message.user
       let userSuggestion = res.match[1]
 
+      let targetFlowLink = FLOW_URL.replace(
+        /{flowName}/,
+        targetFlowName.toLowerCase(),
+      )
+      let redirectToTargetFlowMessage = `You can try again from a public flow, or join us in [${targetFlowName}](${targetFlowLink}) and chat with us about your idea there.`
+
       if (typeof res.message.room === "undefined") {
-        return res.send("Sorry, this command only works from flows, not DMs")
+        return res.send(
+          `Sorry, this command only works from flows, not DMs.\n${redirectToTargetFlowMessage}`,
+        )
       }
 
       let flowData = getRoomInfoFromIdOrName(robot, res.message.room)
       if (flowData.access_mode === "invitation") {
         return res.send(
-          "Sorry, this command only works from public flows, to protect the privacy of your invite-only flow",
+          `Sorry, this command only works from public flows, to protect the privacy of your invite-only flow.\n\n${redirectToTargetFlowMessage}`,
         )
       }
 
       if (!userSuggestion) {
         res.send(
-          "Yes? I'm listening.... \n(Please try again: this time add your suggestion after the `suggest` command)",
+          "Yes? I'm listening.... \n(Please try again: this time add your suggestion after the `suggest` command).",
         )
         return
       }
@@ -64,7 +72,7 @@ module.exports = function(robot) {
       ).replace(/{threadId}/, sourceThreadId)
 
       // post suggestion message & related info targetFlowName
-      let formattedSuggestion = `@${res.message.user.name} just made a suggestion in ${sourceFlow}:\n>${userSuggestion}\n\nSee [original thread](${sourceThreadLink})`
+      let formattedSuggestion = `@${res.message.user.name} just made a suggestion in ${sourceFlow}:\n>${userSuggestion}\n\nSee [original thread](${sourceThreadLink}).`
       let envelope = {
         user: "",
         room: targetFlowId,
@@ -73,10 +81,6 @@ module.exports = function(robot) {
       // TODO: get link to this post
       robot.send(envelope, formattedSuggestion)
 
-      let targetFlowLink = FLOW_URL.replace(
-        /{flowName}/,
-        targetFlowName.toLowerCase(),
-      )
       // then respond in source suggestion thread
       // TODO: add link to post in TARGET_FLOW
       res.send(
