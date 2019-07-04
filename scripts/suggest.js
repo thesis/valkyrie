@@ -37,6 +37,21 @@ module.exports = function(robot) {
     : process.env["RELEASE_NOTIFICATION_ROOM"]
 
   robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
+    let fallbackErrorMessage = `Please ask your friendly human robot-tender to look into it.`
+
+    if (
+      !process.env["RELEASE_NOTIFICATION_ROOM"] ||
+      !process.env["FLOWDOCK_ORGANIZATION_NAME"]
+    ) {
+      robot.logger.error(
+        `Missing essential configuration for the suggest command. Check your environment variables for RELEASE_NOTIFICATION_ROOM and FLOWDOCK_ORGANIZATION_NAME.`,
+      )
+      res.send(
+        `Sorry, something isn't set up correctly for this command to work. ${fallbackErrorMessage}`,
+      )
+      return
+    }
+
     try {
       let user = res.message.user
       let userSuggestion = res.match[1]
