@@ -19,23 +19,10 @@ const {
   getRoomInfoFromIdOrName,
 } = require("../lib/flowdock-util")
 
-// NB: Capitalilzed names are for display. robot.name uses lowercase
-const TARGET_FLOW_PER_ROBOT = {
-  valkyrie: "Playground",
-  heimdall: "Bifrost",
-}
-
 const FLOW_URL = `https://www.flowdock.com/app/{orgName}/{flowName}`
 const THREAD_URL = `https://www.flowdock.com/app/{orgName}/{flowName}/threads/{threadId}`
 
 module.exports = function(robot) {
-  const targetFlowName =
-    TARGET_FLOW_PER_ROBOT[robot.name] ||
-    getRoomNameFromId(process.env["RELEASE_NOTIFICATION_ROOM"])
-  const targetFlowId = TARGET_FLOW_PER_ROBOT[robot.name]
-    ? getRoomIdFromName(robot, targetFlowName)
-    : process.env["RELEASE_NOTIFICATION_ROOM"]
-
   robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
     let fallbackErrorMessage = `Please ask your friendly human robot-tender to look into it.`
 
@@ -52,6 +39,14 @@ module.exports = function(robot) {
       return
     }
 
+    // TODO: clean this up when we refactor all occurances of RELEASE_NOTIFICATION_ROOM to use name instead of ID
+    const targetFlow = getRoomInfoFromIdOrName(
+      robot,
+      process.env["RELEASE_NOTIFICATION_ROOM"],
+    )
+    const targetFlowName = targetFlow ? targetFlow.name : ""
+    const targetFlowId = targetFlow ? targetFlow.id : ""
+
     try {
       let user = res.message.user
       let userSuggestion = res.match[1]
@@ -60,6 +55,7 @@ module.exports = function(robot) {
         /{orgName}/,
         process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
       ).replace(/{flowName}/, targetFlowName.toLowerCase())
+
       let redirectToTargetFlowMessage = `You can try again from a public flow, or join us in [${targetFlowName}](${targetFlowLink}) and chat with us about your idea there.`
 
       if (typeof res.message.room === "undefined") {
@@ -110,7 +106,7 @@ module.exports = function(robot) {
         `Failed to send user suggestion to target flow: ${util.inspect(err)}`,
       )
       return res.send(
-        `Something went wrong trying to post your suggestion in [${targetFlowName}](${targetFlowLink}) - please pop over there and let us know!`,
+        `Something went wrong trying to post your suggestion. ${fallbackErrorMessage}`,
       )
     }
   })
