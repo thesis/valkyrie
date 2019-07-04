@@ -77,7 +77,7 @@ module.exports = function(robot) {
         .replace(/{threadId}/, sourceThreadId)
 
       // post suggestion message & related info targetFlowName
-      let formattedSuggestion = `@${res.message.user.name} just made a suggestion in ${sourceFlow}:\n>${userSuggestion}\n\nSee [original thread](${sourceThreadLink}).`
+      let formattedSuggestion = `@${res.message.user.name} just made a #suggestion in ${sourceFlow}:\n>${userSuggestion}\n\nSee [original thread](${sourceThreadLink}).`
       let envelope = {
         room: targetFlowId,
       }
