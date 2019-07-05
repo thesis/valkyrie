@@ -39,15 +39,15 @@ module.exports = function(robot) {
       return
     }
 
-    // TODO: clean this up when we refactor all occurances of RELEASE_NOTIFICATION_ROOM to use name instead of ID
-    const targetFlow = getRoomInfoFromIdOrName(
-      robot,
-      process.env["RELEASE_NOTIFICATION_ROOM"],
-    )
-    const targetFlowName = targetFlow ? targetFlow.name : ""
-    const targetFlowId = targetFlow ? targetFlow.id : ""
-
     try {
+      // TODO: clean this up when we refactor all occurances of RELEASE_NOTIFICATION_ROOM to use name instead of ID
+      const targetFlow = getRoomInfoFromIdOrName(
+        robot,
+        process.env["RELEASE_NOTIFICATION_ROOM"],
+      )
+      const targetFlowName = targetFlow ? targetFlow.name : ""
+      const targetFlowId = targetFlow ? targetFlow.id : ""
+
       let user = res.message.user
       let userSuggestion = res.match[1]
 
