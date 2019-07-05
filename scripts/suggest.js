@@ -78,7 +78,8 @@ module.exports = function(robot) {
         return
       }
 
-      let sourceFlow = getRoomNameFromId(robot, res.message.room)
+      let sourceFlow =
+        getRoomNameFromId(robot, res.message.room) || res.message.room
       let sourceThreadId = res.message.metadata.thread_id
       let sourceThreadLink = THREAD_URL.replace(
         /{orgName}/,
