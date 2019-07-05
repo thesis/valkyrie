@@ -48,6 +48,24 @@ module.exports = function(robot) {
       const targetFlowName = targetFlow ? targetFlow.name : ""
       const targetFlowId = targetFlow ? targetFlow.id : ""
 
+      if (typeof targetFlow == "undefined" || !targetFlow) {
+        // this is probably local dev, but let's log an error in case this ever happens in prod
+        releaseNotificationRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
+        robot.logger.info(
+          `Could not get flow data for: ${releaseNotificationRoom}.`,
+        )
+        // and fall back to a reference to the room name instead of a link
+        let targetFlowLinkFormatted = `${releaseNotificationRoom}`
+      } else {
+        let targetFlowName = targetFlow.name
+        let targetFlowId = targetFlow.id
+        let targetFlowLink = FLOW_URL.replace(
+          /{orgName}/,
+          process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
+        ).replace(/{flowName}/, targetFlowName.toLowerCase())
+        let targetFlowLinkFormatted = `[${targetFlowName}](${targetFlowLink})`
+      }
+
       let user = res.message.user
       let userSuggestion = res.match[1]
 
@@ -65,7 +83,7 @@ module.exports = function(robot) {
       }
 
       let flowData = getRoomInfoFromIdOrName(robot, res.message.room)
-      if (flowData.access_mode === "invitation") {
+      if (flowData && flowData.access_mode === "invitation") {
         return res.send(
           `Sorry, this command only works from public flows, to protect the privacy of your invite-only flow.\n\n${redirectToTargetFlowMessage}`,
         )
@@ -78,18 +96,30 @@ module.exports = function(robot) {
         return
       }
 
-      let sourceFlow =
-        getRoomNameFromId(robot, res.message.room) || res.message.room
-      let sourceThreadId = res.message.metadata.thread_id
-      let sourceThreadLink = THREAD_URL.replace(
-        /{orgName}/,
-        process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
-      )
-        .replace(/{flowName}/, sourceFlow.toLowerCase())
-        .replace(/{threadId}/, sourceThreadId)
+      let sourceFlow = getRoomNameFromId(robot, res.message.room)
+      let originalThreadReference = ""
 
-      // post suggestion message & related info targetFlowName
-      let formattedSuggestion = `@${res.message.user.name} just made a #suggestion in ${sourceFlow}:\n>${userSuggestion}\n\nSee [original thread](${sourceThreadLink}).`
+      if (!sourceFlow) {
+        // this is probably local dev, but let's log an error in case this ever happens in prod
+        robot.logger.info(
+          `Could not get room name from res.message.room: ${res.message.room}.`,
+        )
+        // and fall back to a reference to the room instead of a link
+        let sourceFlow = res.message.room
+        let originalThreadReference = `Can not create link for: ${res.message.room}.`
+      } else {
+        let sourceThreadId = res.message.metadata.thread_id
+        let sourceThreadLink = THREAD_URL.replace(
+          /{orgName}/,
+          process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
+        )
+          .replace(/{flowName}/, sourceFlow.toLowerCase())
+          .replace(/{threadId}/, sourceThreadId)
+        let originalThreadReference = `See [original thread](${sourceThreadLink}).`
+      }
+
+      // post suggestion message & related info
+      let formattedSuggestion = `@${res.message.user.name} just made a #suggestion in ${sourceFlow}:\n>${userSuggestion}\n\n${originalThreadReference}`
       let envelope = {
         room: targetFlowId,
       }
