@@ -15,7 +15,6 @@ const util = require("util")
 
 const fd = require("../lib/flowdock")
 const {
-  getRoomIdFromName,
   getRoomNameFromId,
   getRoomInfoFromIdOrName,
 } = require("../lib/flowdock-util")
