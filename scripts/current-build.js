@@ -29,7 +29,6 @@ function sendReleaseNotification(robot) {
   if (releaseNotificationRoom) {
     robot.send(
       {
-        user: "",
         room: releaseNotificationRoom,
       },
       `Released ${buildString}!`,

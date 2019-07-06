@@ -248,7 +248,6 @@ module.exports = function(robot) {
       if (alertRoom) {
         robot.send(
           {
-            user: "",
             room: alertRoom,
           },
           `Alert: ${logMessage}`,
