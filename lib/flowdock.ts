@@ -99,4 +99,4 @@ class Session {
   }
 }
 
-export { Session }
+export { Session, URLs }
