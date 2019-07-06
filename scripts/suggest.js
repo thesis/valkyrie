@@ -45,8 +45,9 @@ module.exports = function(robot) {
         robot,
         process.env["RELEASE_NOTIFICATION_ROOM"],
       )
-      const targetFlowName = targetFlow ? targetFlow.name : ""
-      const targetFlowId = targetFlow ? targetFlow.id : ""
+      let targetFlowName = ""
+      let targetFlowId = ""
+      let targetFlowReference = ""
 
       if (typeof targetFlow == "undefined" || !targetFlow) {
         // this is probably local dev, but let's log an error in case this ever happens in prod
@@ -55,26 +56,22 @@ module.exports = function(robot) {
           `Could not get flow data for: ${releaseNotificationRoom}.`,
         )
         // and fall back to a reference to the room name instead of a link
-        let targetFlowLinkFormatted = `${releaseNotificationRoom}`
+        targetFlowReference = `${releaseNotificationRoom}`
       } else {
-        let targetFlowName = targetFlow.name
-        let targetFlowId = targetFlow.id
+        targetFlowName = targetFlow.name
         let targetFlowLink = FLOW_URL.replace(
           /{orgName}/,
           process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
         ).replace(/{flowName}/, targetFlowName.toLowerCase())
-        let targetFlowLinkFormatted = `[${targetFlowName}](${targetFlowLink})`
+        targetFlowReference = `[${targetFlowName}](${targetFlowLink})`
+
+        targetFlowId = targetFlow.id
       }
 
       let user = res.message.user
       let userSuggestion = res.match[1]
 
-      let targetFlowLink = FLOW_URL.replace(
-        /{orgName}/,
-        process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
-      ).replace(/{flowName}/, targetFlowName.toLowerCase())
-
-      let redirectToTargetFlowMessage = `You can try again from a public flow, or join us in [${targetFlowName}](${targetFlowLink}) and chat with us about your idea there.`
+      let redirectToTargetFlowMessage = `You can try again from a public flow, or join us in ${targetFlowReference} and chat with us about your idea there.`
 
       if (typeof res.message.room === "undefined") {
         return res.send(
@@ -130,7 +127,7 @@ module.exports = function(robot) {
       // then respond in source suggestion thread
       // TODO: add link to post in TARGET_FLOW
       res.send(
-        `Thanks for the suggestion! We'll be discussing it further in [${targetFlowName}](${targetFlowLink}), feel free to join us there.`,
+        `Thanks for the suggestion! We'll be discussing it further in ${targetFlowReference}, feel free to join us there.`,
       )
     } catch (err) {
       robot.logger.error(
