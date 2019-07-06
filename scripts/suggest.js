@@ -13,14 +13,12 @@
 
 const util = require("util")
 
+const fd = require("../lib/flowdock")
 const {
   getRoomIdFromName,
   getRoomNameFromId,
   getRoomInfoFromIdOrName,
 } = require("../lib/flowdock-util")
-
-const FLOW_URL = `https://www.flowdock.com/app/{orgName}/{flowName}`
-const THREAD_URL = `https://www.flowdock.com/app/{orgName}/{flowName}/threads/{threadId}`
 
 module.exports = function(robot) {
   robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
@@ -59,10 +57,12 @@ module.exports = function(robot) {
         targetFlowReference = `${releaseNotificationRoom}`
       } else {
         targetFlowName = targetFlow.name
-        let targetFlowLink = FLOW_URL.replace(
-          /{orgName}/,
-          process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
-        ).replace(/{flowName}/, targetFlowName.toLowerCase())
+        let targetFlowLink = fd.URLs.flow
+          .replace(
+            /{orgName}/,
+            process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
+          )
+          .replace(/{flowName}/, targetFlowName.toLowerCase())
         targetFlowReference = `[${targetFlowName}](${targetFlowLink})`
 
         targetFlowId = targetFlow.id
@@ -106,10 +106,11 @@ module.exports = function(robot) {
         originalThreadReference = `Refer to original thread in: ${res.message.room}.`
       } else {
         let sourceThreadId = res.message.metadata.thread_id
-        let sourceThreadLink = THREAD_URL.replace(
-          /{orgName}/,
-          process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
-        )
+        let sourceThreadLink = fd.URLs.thread
+          .replace(
+            /{orgName}/,
+            process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
+          )
           .replace(/{flowName}/, sourceFlow.toLowerCase())
           .replace(/{threadId}/, sourceThreadId)
         originalThreadReference = `See [original thread](${sourceThreadLink}).`
