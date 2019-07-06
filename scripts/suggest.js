@@ -99,14 +99,14 @@ module.exports = function(robot) {
       let sourceFlow = getRoomNameFromId(robot, res.message.room)
       let originalThreadReference = ""
 
-      if (!sourceFlow) {
+      if (typeof sourceFlow === "undefined" || !sourceFlow) {
         // this is probably local dev, but let's log an error in case this ever happens in prod
         robot.logger.info(
           `Could not get room name from res.message.room: ${res.message.room}.`,
         )
         // and fall back to a reference to the room instead of a link
-        let sourceFlow = res.message.room
-        let originalThreadReference = `Can not create link for: ${res.message.room}.`
+        sourceFlow = res.message.room
+        originalThreadReference = `Refer to original thread in: ${res.message.room}.`
       } else {
         let sourceThreadId = res.message.metadata.thread_id
         let sourceThreadLink = THREAD_URL.replace(
@@ -115,7 +115,7 @@ module.exports = function(robot) {
         )
           .replace(/{flowName}/, sourceFlow.toLowerCase())
           .replace(/{threadId}/, sourceThreadId)
-        let originalThreadReference = `See [original thread](${sourceThreadLink}).`
+        originalThreadReference = `See [original thread](${sourceThreadLink}).`
       }
 
       // post suggestion message & related info
