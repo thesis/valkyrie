@@ -216,7 +216,7 @@ function checkForNotifications(logger, brain) {
           } catch (err) {
             logger.error(
               `Error handling notification [${action}]}]: ${util.inspect(err, {
-                depth: 4,
+                depth: 0,
               })}`,
             )
           }
