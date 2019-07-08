@@ -13,7 +13,7 @@
 
 const util = require("util")
 
-const fd = require("../lib/flowdock")
+const flowdock = require("../lib/flowdock")
 const {
   getRoomNameFromId,
   getRoomInfoFromIdOrName,
@@ -56,7 +56,7 @@ module.exports = function(robot) {
         suggestionAlertRoomReference = `${releaseNotificationRoom}`
       } else {
         suggestionAlertRoomName = suggestionAlertRoom.name
-        let suggestionAlertRoomLink = fd.URLs.flow
+        let suggestionAlertRoomLink = flowdock.URLs.flow
           .replace(
             /{orgName}/,
             process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
@@ -105,7 +105,7 @@ module.exports = function(robot) {
         originalThreadReference = `Refer to original thread in: ${res.message.room}.`
       } else {
         let sourceThreadId = res.message.metadata.thread_id
-        let sourceThreadLink = fd.URLs.thread
+        let sourceThreadLink = flowdock.URLs.thread
           .replace(
             /{orgName}/,
             process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
