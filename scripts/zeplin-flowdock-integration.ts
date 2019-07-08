@@ -239,9 +239,9 @@ function checkForNotifications(logger, brain) {
 }
 
 module.exports = function(robot) {
-  if (!(process.env["ZEPLIN_USERNAME"] && process.env["ZEPLIN_PASSWORD"])) {
+  if (!process.env["ZEPLIN_USERNAME"] || !process.env["ZEPLIN_PASSWORD"]) {
     let logMessage =
-      "Zeplin environment variables missing: Not running Zeplin Integration"
+      "Zeplin environment variables missing: not running Zeplin Integration."
     if (robot.name === "heimdall") {
       robot.logger.error(logMessage)
       let alertRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
