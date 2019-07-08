@@ -38,50 +38,50 @@ module.exports = function(robot) {
 
     try {
       // TODO: clean this up when we refactor all occurances of RELEASE_NOTIFICATION_ROOM to use name instead of ID
-      const targetFlow = getRoomInfoFromIdOrName(
+      const suggestionAlertRoom = getRoomInfoFromIdOrName(
         robot,
         process.env["RELEASE_NOTIFICATION_ROOM"],
       )
-      let targetFlowName = ""
-      let targetFlowId = ""
-      let targetFlowReference = ""
+      let suggestionAlertRoomName = ""
+      let suggestionAlertRoomId = ""
+      let suggestionAlertRoomReference = ""
 
-      if (typeof targetFlow == "undefined" || !targetFlow) {
+      if (typeof suggestionAlertRoom == "undefined" || !suggestionAlertRoom) {
         // this is probably local dev, but let's log an error in case this ever happens in prod
         releaseNotificationRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
         robot.logger.info(
           `Could not get flow data for: ${releaseNotificationRoom}.`,
         )
         // and fall back to a reference to the room name instead of a link
-        targetFlowReference = `${releaseNotificationRoom}`
+        suggestionAlertRoomReference = `${releaseNotificationRoom}`
       } else {
-        targetFlowName = targetFlow.name
-        let targetFlowLink = fd.URLs.flow
+        suggestionAlertRoomName = suggestionAlertRoom.name
+        let suggestionAlertRoomLink = fd.URLs.flow
           .replace(
             /{orgName}/,
             process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
           )
-          .replace(/{flowName}/, targetFlowName.toLowerCase())
-        targetFlowReference = `[${targetFlowName}](${targetFlowLink})`
+          .replace(/{flowName}/, suggestionAlertRoomName.toLowerCase())
+        suggestionAlertRoomReference = `[${suggestionAlertRoomName}](${suggestionAlertRoomLink})`
 
-        targetFlowId = targetFlow.id
+        suggestionAlertRoomId = suggestionAlertRoom.id
       }
 
       let user = res.message.user
       let userSuggestion = res.match[1]
 
-      let redirectToTargetFlowMessage = `You can try again from a public flow, or join us in ${targetFlowReference} and chat with us about your idea there.`
+      let redirectToSuggestionAlertRoomMessage = `You can try again from a public flow, or join us in ${suggestionAlertRoomReference} and chat with us about your idea there.`
 
       if (typeof res.message.room === "undefined") {
         return res.send(
-          `Sorry, this command only works from flows, not DMs.\n${redirectToTargetFlowMessage}`,
+          `Sorry, this command only works from flows, not DMs.\n${redirectToSuggestionAlertRoomMessage}`,
         )
       }
 
       let flowData = getRoomInfoFromIdOrName(robot, res.message.room)
       if (flowData && flowData.access_mode === "invitation") {
         return res.send(
-          `Sorry, this command only works from public flows, to protect the privacy of your invite-only flow.\n\n${redirectToTargetFlowMessage}`,
+          `Sorry, this command only works from public flows, to protect the privacy of your invite-only flow.\n\n${redirectToSuggestionAlertRoomMessage}`,
         )
       }
 
@@ -118,7 +118,7 @@ module.exports = function(robot) {
       // post suggestion message & related info
       let formattedSuggestion = `@${res.message.user.name} just made a #suggestion in ${sourceFlow}:\n>${userSuggestion}\n\n${originalThreadReference}`
       let envelope = {
-        room: targetFlowId,
+        room: suggestionAlertRoomId,
       }
 
       // TODO: get link to this post
@@ -127,7 +127,7 @@ module.exports = function(robot) {
       // then respond in source suggestion thread
       // TODO: add link to post in TARGET_FLOW
       res.send(
-        `Thanks for the suggestion! We'll be discussing it further in ${targetFlowReference}, feel free to join us there.`,
+        `Thanks for the suggestion! We'll be discussing it further in ${suggestionAlertRoomReference}, feel free to join us there.`,
       )
     } catch (err) {
       robot.logger.error(
