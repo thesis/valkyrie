@@ -45,8 +45,8 @@ module.exports = function(robot) {
           // User is allowed access to this command
           next()
         } else {
-          if (!robot.adapter.flows) {
-            // we're not using the flowdock adapter/ rooms: allow the command
+          if (robot.adapterName == "shell") {
+            // we're in the shell adapter: allow the command for local testing
             next()
           } else {
             // Restricted command, and flow isn't in whitelist
