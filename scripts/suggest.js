@@ -15,6 +15,7 @@ const util = require("util")
 
 const flowdock = require("../lib/flowdock")
 const {
+  getRoomIdFromName,
   getRoomNameFromId,
   getRoomInfoFromIdOrName,
 } = require("../lib/flowdock-util")
@@ -31,41 +32,34 @@ module.exports = function(robot) {
       `Missing environment variable: SUGGESTION_ALERT_ROOM or FLOWDOCK_ORGANIZATION_NAME.`,
     )
   }
+  const suggestionAlertRoomName = process.env["SUGGESTION_ALERT_ROOM"]
+  const suggestionAlertRoomId = getRoomIdFromName(
+    robot,
+    suggestionAlertRoomName,
+  )
+
+  let suggestionAlertRoomReference = ""
+
+  if (typeof suggestionAlertRoomId == "undefined" || !suggestionAlertRoomId) {
+    // this is probably local dev, but let's log an error in case this ever happens in prod
+    robot.logger.error(`Could not get flow id for: ${suggestionAlertRoomName}.`)
+
+    // and fall back to a reference to the room name instead of a link
+    suggestionAlertRoomReference = `${suggestionAlertRoomName}`
+  } else {
+    let suggestionAlertRoomLink = flowdock.URLs.flow
+      .replace(
+        /{orgName}/,
+        process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
+      )
+      .replace(/{flowName}/, suggestionAlertRoomName.toLowerCase())
+    suggestionAlertRoomReference = `[${suggestionAlertRoomName}](${suggestionAlertRoomLink})`
+  }
 
   robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
     let fallbackErrorMessage = `Please ask your friendly human robot-tender to look into it.`
 
     try {
-      // TODO: clean this up when we refactor all occurances of SUGGESTION_ALERT_ROOM to use name instead of ID
-      const suggestionAlertRoom = getRoomInfoFromIdOrName(
-        robot,
-        process.env["SUGGESTION_ALERT_ROOM"],
-      )
-      let suggestionAlertRoomName = ""
-      let suggestionAlertRoomId = ""
-      let suggestionAlertRoomReference = ""
-
-      if (typeof suggestionAlertRoom == "undefined" || !suggestionAlertRoom) {
-        // this is probably local dev, but let's log an error in case this ever happens in prod
-        releaseNotificationRoom = process.env["SUGGESTION_ALERT_ROOM"]
-        robot.logger.info(
-          `Could not get flow data for: ${releaseNotificationRoom}.`,
-        )
-        // and fall back to a reference to the room name instead of a link
-        suggestionAlertRoomReference = `${releaseNotificationRoom}`
-      } else {
-        suggestionAlertRoomName = suggestionAlertRoom.name
-        let suggestionAlertRoomLink = flowdock.URLs.flow
-          .replace(
-            /{orgName}/,
-            process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
-          )
-          .replace(/{flowName}/, suggestionAlertRoomName.toLowerCase())
-        suggestionAlertRoomReference = `[${suggestionAlertRoomName}](${suggestionAlertRoomLink})`
-
-        suggestionAlertRoomId = suggestionAlertRoom.id
-      }
-
       let user = res.message.user
       let userSuggestion = res.match[1]
 
