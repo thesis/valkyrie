@@ -5,7 +5,7 @@
 //
 //
 // Configuration:
-//  RELEASE_NOTIFICATION_ROOM - id of flow to use for suggestion posts if robot name not found in TARGET_FLOW_PER_ROBOT
+//  SUGGESTION_ALERT_ROOM - name of flow to use for suggestion posts if robot name not found in TARGET_FLOW_PER_ROBOT
 //  FLOWDOCK_ORGANIZATION_NAME - name of flowdock organization for constructing urls
 //
 // Commands:
@@ -20,27 +20,26 @@ const {
 } = require("../lib/flowdock-util")
 
 module.exports = function(robot) {
+  if (
+    !process.env["SUGGESTION_ALERT_ROOM"] ||
+    !process.env["FLOWDOCK_ORGANIZATION_NAME"]
+  ) {
+    robot.logger.error(
+      `Missing essential configuration for the suggest command.`,
+    )
+    throw new Error(
+      `Missing environment variable: SUGGESTION_ALERT_ROOM or FLOWDOCK_ORGANIZATION_NAME.`,
+    )
+  }
+
   robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
     let fallbackErrorMessage = `Please ask your friendly human robot-tender to look into it.`
 
-    if (
-      !process.env["RELEASE_NOTIFICATION_ROOM"] ||
-      !process.env["FLOWDOCK_ORGANIZATION_NAME"]
-    ) {
-      robot.logger.error(
-        `Missing essential configuration for the suggest command. Check your environment variables for RELEASE_NOTIFICATION_ROOM and FLOWDOCK_ORGANIZATION_NAME.`,
-      )
-      res.send(
-        `Sorry, something isn't set up correctly for this command to work. ${fallbackErrorMessage}`,
-      )
-      return
-    }
-
     try {
-      // TODO: clean this up when we refactor all occurances of RELEASE_NOTIFICATION_ROOM to use name instead of ID
+      // TODO: clean this up when we refactor all occurances of SUGGESTION_ALERT_ROOM to use name instead of ID
       const suggestionAlertRoom = getRoomInfoFromIdOrName(
         robot,
-        process.env["RELEASE_NOTIFICATION_ROOM"],
+        process.env["SUGGESTION_ALERT_ROOM"],
       )
       let suggestionAlertRoomName = ""
       let suggestionAlertRoomId = ""
@@ -48,7 +47,7 @@ module.exports = function(robot) {
 
       if (typeof suggestionAlertRoom == "undefined" || !suggestionAlertRoom) {
         // this is probably local dev, but let's log an error in case this ever happens in prod
-        releaseNotificationRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
+        releaseNotificationRoom = process.env["SUGGESTION_ALERT_ROOM"]
         robot.logger.info(
           `Could not get flow data for: ${releaseNotificationRoom}.`,
         )
