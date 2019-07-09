@@ -25,12 +25,17 @@ module.exports = function(robot) {
     !process.env["SUGGESTION_ALERT_ROOM"] ||
     !process.env["FLOWDOCK_ORGANIZATION_NAME"]
   ) {
-    robot.logger.error(
-      `Missing essential configuration for the suggest command.`,
-    )
-    throw new Error(
-      `Missing environment variable: SUGGESTION_ALERT_ROOM or FLOWDOCK_ORGANIZATION_NAME.`,
-    )
+    if (robot.adapterName != "shell") {
+      // fail build if not using shell adapter: alert won't work w/o this config
+      throw new Error(
+        `Missing environment variable: SUGGESTION_ALERT_ROOM or FLOWDOCK_ORGANIZATION_NAME.`,
+      )
+    } else {
+      // this is local dev: allow missing config, but log
+      robot.logger.error(
+        `Missing essential configuration for the suggest command.`,
+      )
+    }
   }
   const suggestionAlertRoomName = process.env["SUGGESTION_ALERT_ROOM"]
   const suggestionAlertRoomId = getRoomIdFromName(
@@ -40,12 +45,16 @@ module.exports = function(robot) {
 
   let suggestionAlertRoomReference = ""
 
-  if (typeof suggestionAlertRoomId == "undefined" || !suggestionAlertRoomId) {
-    // this is probably local dev, but let's log an error in case this ever happens in prod
-    robot.logger.error(`Could not get flow id for: ${suggestionAlertRoomName}.`)
-
-    // and fall back to a reference to the room name instead of a link
-    suggestionAlertRoomReference = `${suggestionAlertRoomName}`
+  if (!suggestionAlertRoomId) {
+    if (robot.adapterName != "shell") {
+      // fail build if not using shell adapter: alert won't work w/o room ID
+      throw new Error(
+        `Could not get flow id for SUGGESTION_ALERT_ROOM: ${suggestionAlertRoomName}`,
+      )
+    } else {
+      // this is local dev: fall back to a reference to the room name instead of a link
+      suggestionAlertRoomReference = `${suggestionAlertRoomName}`
+    }
   } else {
     let suggestionAlertRoomLink = flowdock.URLs.flow
       .replace(
@@ -57,8 +66,6 @@ module.exports = function(robot) {
   }
 
   robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
-    let fallbackErrorMessage = `Please ask your friendly human robot-tender to look into it.`
-
     try {
       let user = res.message.user
       let userSuggestion = res.match[1]
@@ -127,7 +134,7 @@ module.exports = function(robot) {
         `Failed to send user suggestion to target flow: ${util.inspect(err)}`,
       )
       return res.send(
-        `Something went wrong trying to post your suggestion. ${fallbackErrorMessage}`,
+        `Something went wrong trying to post your suggestion. Please ask your friendly human robot-tender to look into it.`,
       )
     }
   })
