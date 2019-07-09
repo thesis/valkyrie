@@ -22,7 +22,7 @@ var ALLOWED_ROOMS,
 BOT_RESTICTED_COMMANDS = ["reload-scripts.reload"] // String that matches the listener ID
 ALLOWED_BOTS = ["valkyrie"]
 
-ROOM_RESTRICTED_COMMANDS = ["badgers", "pod-bay-doors", "schedule"] // String that matches the listener ID
+ROOM_RESTRICTED_COMMANDS = ["badgers", "pod-bay-doors"] // String that matches the listener ID
 ALLOWED_ROOMS = [
   "8cf540e9-9727-4a75-82d1-843575e61f1b", //bifrost
   "8dd97a6a-d6f0-4352-be7d-388d9afeea9f", //playground
