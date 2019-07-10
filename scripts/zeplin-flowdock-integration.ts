@@ -242,19 +242,15 @@ module.exports = function(robot) {
   if (!process.env["ZEPLIN_USERNAME"] || !process.env["ZEPLIN_PASSWORD"]) {
     let logMessage =
       "Zeplin environment variables missing: not running Zeplin Integration."
-    if (robot.name === "heimdall") {
-      robot.logger.error(logMessage)
-      let alertRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
-      if (alertRoom) {
-        robot.send(
-          {
-            room: alertRoom,
-          },
-          `Alert: ${logMessage}`,
-        )
-      }
-    } else {
-      robot.logger.info(logMessage)
+    robot.logger.error(logMessage)
+    let alertRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
+    if (alertRoom) {
+      robot.send(
+        {
+          room: alertRoom,
+        },
+        `Alert: ${logMessage}`,
+      )
     }
     return
   }
