@@ -95,8 +95,9 @@ module.exports = function(robot) {
       let sourceFlow = getRoomNameFromId(robot, res.message.room)
       let originalThreadReference = ""
 
-      if (typeof sourceFlow === "undefined" || !sourceFlow) {
-        // this is probably local dev, but let's log an error in case this ever happens in prod
+      if (!sourceFlow) {
+        // this is probably local dev, but no special handling needed
+        // let's log an error in case this ever happens in prod
         robot.logger.info(
           `Could not get room name from res.message.room: ${res.message.room}.`,
         )
