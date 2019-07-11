@@ -27,14 +27,12 @@ let releaseNotificationRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
 
 function sendReleaseNotification(robot) {
   if (releaseNotificationRoom) {
-    if (robot.name != "valkyrie") {
-      robot.send(
-        {
-          room: releaseNotificationRoom,
-        },
-        `Released ${buildString}!`,
-      )
-    }
+    robot.send(
+      {
+        room: releaseNotificationRoom,
+      },
+      `Released ${buildString}!`,
+    )
   }
 }
 
