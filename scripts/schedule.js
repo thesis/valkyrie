@@ -272,9 +272,8 @@ function updateSchedule(robot, msg, id, message) {
 
   if (isRestrictedRoom(job.user.room, robot, msg)) {
     return msg.send(
-      `Updating schedule for the ${getRoomNameFromId(
-        job.user.room,
-      )} flow is restricted`,
+      `Updating schedule for the ${getRoomNameFromId(job.user.room) ||
+        job.user.room} flow is restricted`,
     )
   }
 
@@ -300,9 +299,8 @@ function cancelSchedule(robot, msg, id) {
 
   if (isRestrictedRoom(job.user.room, robot, msg)) {
     return msg.send(
-      `Canceling schedule for the ${getRoomNameFromId(
-        job.user.room,
-      )} flow is restricted`,
+      `Canceling schedule for the ${getRoomNameFromId(job.user.room) ||
+        job.user.room} flow is restricted`,
     )
   }
 
@@ -463,7 +461,7 @@ function formatJobListItem(
   }
 
   if (showRoom) {
-    roomDisplayText = `(to ${getRoomNameFromId(robot, jobRoom)})`
+    roomDisplayText = `(to ${getRoomNameFromId(robot, jobRoom) || jobRoom})`
   }
 
   if (!!jobMessage.length) {

@@ -1,7 +1,12 @@
 import { default as axios, AxiosResponse, AxiosRequestConfig } from "axios"
 
+const API_BASE_URL = "https://api.flowdock.com",
+  APP_BASE_URL = "https://www.flowdock.com/app"
+
 const URLs = {
-  messages: `https://api.flowdock.com/messages`,
+  messages: `${API_BASE_URL}/messages`,
+  flow: `${APP_BASE_URL}/{orgName}/{flowName}`,
+  thread: `${APP_BASE_URL}/{orgName}/{flowName}/threads/{threadId}`,
 }
 
 type Thread = {
@@ -94,4 +99,4 @@ class Session {
   }
 }
 
-export { Session }
+export { Session, URLs }
