@@ -42,7 +42,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: heimdall-hubot
-                  key: suggestion_alert_room
+                  key: heimdall_alert_flow
             - name: FLOWDOCK_ORGANIZATION_NAME
               valueFrom:
                 secretKeyRef:
