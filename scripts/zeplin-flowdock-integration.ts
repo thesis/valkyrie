@@ -3,6 +3,7 @@
 //   configured user.
 //
 // Configuration:
+//   RELEASE_NOTIFICATION_ROOM - Id of the room for release notifications.
 //   ZEPLIN_USERNAME Username to log in to Zeplin.
 //   ZEPLIN_PASSWORD Password to log in to Zeplin.
 //   ZEPLIN_FLOWDOCK_TOKEN Token for Flowdock integration.
