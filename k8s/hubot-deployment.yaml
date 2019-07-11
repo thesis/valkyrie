@@ -37,7 +37,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: heimdall-hubot
-                  key: release_notification_room
+                  key: heimdall_alert_flow
             - name: SUGGESTION_ALERT_ROOM
               valueFrom:
                 secretKeyRef:
