@@ -10,6 +10,8 @@
 // Author:
 //   shadowfiend
 
+const { isAlertRoomNameValid } = require("../lib/config")
+
 let fs = require("fs")
 
 let buildNumberBuffer = new Buffer("")
@@ -23,10 +25,9 @@ let buildString = buildNumber
   ? `build [${buildNumber}](https://circleci.com/gh/thesis/heimdall/${buildNumber})`
   : `unknown build`
 
-let releaseNotificationRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
-
 function sendReleaseNotification(robot) {
-  if (releaseNotificationRoom) {
+  let alertRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
+  if (isAlertRoomNameValid(alertRoom)) {
     robot.send(
       {
         room: releaseNotificationRoom,
