@@ -99,96 +99,148 @@ async function createFlowdockThread(
 
 const notificationHandlers = {
   CreateDot: async function(notification, logger) {
-    const project = await ZEPLIN_SESSION.getProject(
+    try {
+      const project = await ZEPLIN_SESSION.getProject(
         notification.params.project,
-      ),
-      screen = project.getScreen(
+      )
+      const screen = project.getScreen(
         notification.params.screen._id,
         notification.params.screen.name,
-      ),
-      notifiedCommentIds = notification.events.map(e => e.comment._id),
-      comments = await screen.getCommentsNewerThanOldestOf(notifiedCommentIds)
-
-    for (let comment of comments) {
-      await createFlowdockComment(
-        { name: comment.creatorName, email: comment.creatorEmail },
-        project.id,
-        screen.id,
-        comment.id,
-        screen.commentUrl(comment.dotId, comment.id),
-        comment.body,
       )
+      const notifiedCommentIds = notification.events.map(e => e.comment._id)
+      const comments = await screen.getCommentsNewerThanOldestOf(
+        notifiedCommentIds,
+      )
+
+      for (let comment of comments) {
+        await createFlowdockComment(
+          { name: comment.creatorName, email: comment.creatorEmail },
+          project.id,
+          screen.id,
+          comment.id,
+          screen.commentUrl(comment.dotId, comment.id),
+          comment.body,
+        )
+      }
+    } catch (err) {
+      throw {
+        message: `CreateDot Error: \n ${util.inspect(err, {
+          depth: ERROR_DEPTH,
+        })}`,
+        code: "not-found",
+      }
     }
   },
   CreateDotComment: async function(notification, logger) {
-    const project = await ZEPLIN_SESSION.getProject(
-        notification.params.project,
-      ),
-      screen = project.getScreen(
-        notification.params.screen._id,
-        notification.params.screen.name,
-      ),
-      notifiedCommentIds = notification.events.map(e => e.comment._id),
-      comments = await screen.getCommentsNewerThanOldestOf(notifiedCommentIds)
+    try {
+      const project = await ZEPLIN_SESSION.getProject(
+          notification.params.project,
+        ),
+        screen = project.getScreen(
+          notification.params.screen._id,
+          notification.params.screen.name,
+        ),
+        notifiedCommentIds = notification.events.map(e => e.comment._id),
+        comments = await screen.getCommentsNewerThanOldestOf(notifiedCommentIds)
 
-    for (let comment of comments) {
-      await createFlowdockComment(
-        { name: comment.creatorName, email: comment.creatorEmail },
-        project.id,
-        screen.id,
-        comment.id,
-        screen.dotUrl(comment.dotId),
-        comment.body,
-      )
+      for (let comment of comments) {
+        await createFlowdockComment(
+          { name: comment.creatorName, email: comment.creatorEmail },
+          project.id,
+          screen.id,
+          comment.id,
+          screen.dotUrl(comment.dotId),
+          comment.body,
+        )
+      }
+    } catch (err) {
+      throw {
+        message: `CreateDotComment Error: \n ${util.inspect(err, {
+          depth: ERROR_DEPTH,
+        })}`,
+        code: "not-found",
+      }
     }
   },
   ResolveDot: async function(notification, logger) {
-    let project = await ZEPLIN_SESSION.getProject(notification.params.project),
-      screen = project.getScreen(
-        notification.params.screen._id,
-        notification.params.screen.name,
-      )
+    try {
+      let project = await ZEPLIN_SESSION.getProject(
+          notification.params.project,
+        ),
+        screen = project.getScreen(
+          notification.params.screen._id,
+          notification.params.screen.name,
+        )
 
-    for (let event of notification.events) {
-      // The resolver may not be the same as the author.
-      let creatorName = event.source.username,
-        creatorEmail = event.source.email
+      for (let event of notification.events) {
+        // The resolver may not be the same as the author.
+        let creatorName = event.source.username,
+          creatorEmail = event.source.email
 
-      await createFlowdockActivity(
-        { name: creatorName, email: creatorEmail },
-        project.id,
-        screen.id,
-        event.dot._id,
-        screen.dotUrl(event.dot._id),
-        "resolved a comment",
-      )
+        await createFlowdockActivity(
+          { name: creatorName, email: creatorEmail },
+          project.id,
+          screen.id,
+          event.dot._id,
+          screen.dotUrl(event.dot._id),
+          "resolved a comment",
+        )
+      }
+    } catch (err) {
+      throw {
+        message: `ResolveDot Error: \n ${util.inspect(err, {
+          depth: ERROR_DEPTH,
+        })}`,
+        code: "not-found",
+      }
     }
   },
-  // CreateScreenVersion
-  // CreateComponent?
+
   CreateScreen: async function(notification, logger) {
-    const project = await ZEPLIN_SESSION.getProject({
-        id: notification.params.project._id,
-        name: notification.params.project.name,
-        type: notification.params.project.type,
-      }),
-      creator = notification.params.source.username,
-      creatorEmail = notification.params.source.email,
-      screensById = await project.screensById()
+    try {
+      const project = await ZEPLIN_SESSION.getProject({
+          id: notification.params.project._id,
+          name: notification.params.project.name,
+          type: notification.params.project.type,
+        }),
+        creator = notification.params.source.username,
+        creatorEmail = notification.params.source.email
 
-    for (let event of notification.events) {
-      let screenId = event.screen._id,
-        screen = screensById[screenId]
-
-      if (!screen) {
-        continue
+      try {
+        const screensById = await project.screensById()
+      } catch (err) {
+        throw {
+          message: `screensById Error: \n ${util.inspect(err, {
+            depth: ERROR_DEPTH,
+          })}`,
+          code: "not-found",
+        }
       }
 
-      await createFlowdockThread(
-        { name: creator, email: creatorEmail },
-        project,
-        screen,
-      )
+      for (let event of notification.events) {
+        let screenId = event.screen._id,
+          screen = screensById[screenId]
+
+        if (!screen) {
+          // we hit this condition when returning `{}` from a 404 at screensById
+
+          // how to handle here? was changed from `return` to `continue` at one point..
+          continue
+        }
+
+        await createFlowdockThread(
+          { name: creator, email: creatorEmail },
+          project,
+          screen,
+        )
+      }
+    } catch (err) {
+      throw {
+        message: `CreateScreen Error: \n ${util.inspect(err, {
+          depth: ERROR_DEPTH,
+        })}`,
+        code: "not-found",
+      }
     }
   },
 }

@@ -58,22 +58,47 @@ class Session {
   }
 
   async getNotifications() {
-    const headers = await this.apiHeaders(),
-      result = await axios.get(URLs.notifications, headers)
+    const headers = await this.apiHeaders()
 
-    if (result.status != 200) {
-      throw `failed to get Zeplin projects page: ${
-        result.statusText
-      } ${util.inspect(result)}`
-    } else {
+    try {
+      const result = await axios.get(URLs.notifications, headers)
       return result.data.notifications
+    } catch (err) {
+      if (err.response.status === 404) {
+        throw `getNotifications Error: ${util.inspect(err.response, {
+          depth: ERROR_DEPTH,
+        })}`
+        return
+      } else if (err.response.status != 200) {
+        throw `getNotifications Error: ${util.inspect(err.response, {
+          depth: ERROR_DEPTH,
+        })}`
+        return
+      } else {
+        return err.response.data.notifications
+      }
     }
   }
 
   async updateNotificationMarker() {
     const headers = await this.apiHeaders()
-
-    return await axios.put(URLs.notificationMarker, null, headers)
+    try {
+      return await axios.put(URLs.notificationMarker, null, headers)
+    } catch (err) {
+      if (err.response.status === 404) {
+        throw `updateNotificationMarker Error: ${util.inspect(err.response, {
+          depth: ERROR_DEPTH,
+        })}`
+        return
+      } else if (err.response.status != 200) {
+        throw `updateNotificationMarker Error: ${util.inspect(err.response, {
+          depth: ERROR_DEPTH,
+        })}`
+        return
+      } else {
+        return err.response.data.notifications
+      }
+    }
   }
 
   private async fetchers() {
@@ -193,8 +218,25 @@ class Screen {
       return this._apiData
     }
 
-    const screenResponse = await this.fetchers.html(this.url),
-      screenData: string = screenResponse.data,
+    try {
+      const screenResponse = await this.fetchers.html(this.url)
+    } catch (err) {
+      if (err.response.status === 404) {
+        throw `screenResponse Error: ${util.inspect(err.response, {
+          depth: ERROR_DEPTH,
+        })}`
+        return
+      } else if (err.response.status != 200) {
+        throw `screenResponse Error: ${util.inspect(err.response, {
+          depth: ERROR_DEPTH,
+        })}`
+        return
+      } else {
+        return err.response.data.notifications
+      }
+    }
+
+    const screenData: string = screenResponse.data,
       // Extract API data from expression.
       apiDataMatch = EMBEDDED_API_DATA_REGEXP.exec(screenData) || ["", ""],
       apiDataString = apiDataMatch[1]
@@ -206,7 +248,7 @@ class Screen {
       apiDataJson = JSON.parse(`"${apiDataString}"`)
 
     if (apiDataJson === "{}") {
-      throw { code: "not-found", error: "Screen no longer exists." }
+      throw { message: "Screen no longer exists.", code: "not-found" }
     }
 
     let parsedJson = JSON.parse(apiDataJson)
@@ -283,14 +325,36 @@ class Screen {
   // notification of a comment but not its replies, this function will still
   // return its replies as well.
   async getCommentsNewerThanOldestOf(commentIds) {
-    const allComments = await this.getComments(),
-      idSet = new Set(commentIds),
-      oldestCommentIndex = allComments.findIndex(c => idSet.has(c.id))
+    try {
+      const allComments = await this.getComments(),
+        idSet = new Set(commentIds),
+        oldestCommentIndex = allComments.findIndex(c => idSet.has(c.id))
 
-    if (oldestCommentIndex == -1) {
-      return []
-    } else {
-      return allComments.slice(oldestCommentIndex)
+      if (oldestCommentIndex == -1) {
+        return []
+      } else {
+        return allComments.slice(oldestCommentIndex)
+      }
+    } catch (err) {
+      if (err.response.status === 404) {
+        throw `getCommentsNewerThanOldestOf Error: ${util.inspect(
+          err.response,
+          {
+            depth: ERROR_DEPTH,
+          },
+        )}`
+        return
+      } else if (err.response.status != 200) {
+        throw `getCommentsNewerThanOldestOf Error: ${util.inspect(
+          err.response,
+          {
+            depth: ERROR_DEPTH,
+          },
+        )}`
+        return
+      } else {
+        return err.response.data.notifications
+      }
     }
   }
 }
@@ -314,27 +378,65 @@ class Project {
     return this.fields.type || ""
   }
 
+  // creates screen object from ...
   getScreen(id: string, name: string) {
-    return new Screen(id, this.id, this.fetchers, { name })
+    try {
+      const newScreen = new Screen(id, this.id, this.fetchers, { name })
+    } catch (err) {
+      if (err.response.status === 404) {
+      } else if (err.response.status != 200) {
+        throw `getScreen Error\n: ${util.inspect(err.response, {
+          depth: ERROR_DEPTH,
+        })}`
+        return
+      } else {
+        return response.data.notifications
+      }
+    }
+    return newScreen
   }
 
   async screensById() {
-    const apiProjectUrl = URLs.apiProject.replace(/{projectId}/, this.id),
-      projectResponse = await this.fetchers.api(apiProjectUrl),
-      screenData: any[] = projectResponse.data.screens
+    const apiProjectUrl = URLs.apiProject.replace(/{projectId}/, this.id)
+    try {
+      const projectResponse = await this.fetchers.api(apiProjectUrl)
+    } catch (err) {
+      if (err.response.status === 404) {
+        // TODO: log instead of throw?
+        // throw `screensById Error: ${util.inspect(
+        //   err.response,
+        //   {
+        //     depth: ERROR_DEPTH,
+        //   },
+        // )}`
+        return {}
+      } else if (err.response.status != 200) {
+        throw `screensById Error: ${util.inspect(err.response, {
+          depth: ERROR_DEPTH,
+        })}`
+        return {}
+      } else {
+        return err.response.data.notifications
+      }
+    }
+
+    // screenData: any[] = projectResponse.data.screens
+    const screenData = projectResponse.data.screens || []
 
     // FIXME Need to capture screen metadata: name, latestVersion.snapshot, ..?
     return screenData.reduce<{ [id: string]: Screen }>(
       (screensById, screen) => {
-        screensById[screen._id] = new Screen(
-          screen._id,
-          this.id,
-          this.fetchers,
-          {
-            name: screen.name,
-            snapshot: screen.snapshot,
-          },
-        )
+        if (screen) {
+          screensById[screen._id] = new Screen(
+            screen._id,
+            this.id,
+            this.fetchers,
+            {
+              name: screen.name,
+              snapshot: screen.snapshot,
+            },
+          )
+        }
         return screensById
       },
       {},
