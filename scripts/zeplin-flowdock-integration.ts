@@ -26,6 +26,8 @@ const FLOWDOCK_SESSION = new flowdock.Session(
     process.env["ZEPLIN_PASSWORD"],
   )
 
+const ERROR_DEPTH = zeplin.ERROR_DEPTH
+
 async function createFlowdockComment(
   creator,
   projectId,
@@ -218,7 +220,7 @@ function checkForNotifications(logger, brain) {
           } catch (err) {
             logger.error(
               `Error handling notification [${action}]}]: ${util.inspect(err, {
-                depth: 0,
+                depth: ERROR_DEPTH,
               })}`,
             )
           }

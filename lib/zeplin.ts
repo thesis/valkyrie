@@ -7,6 +7,8 @@ import * as util from "util"
 // Regexp that extracts the API data embedded in a Zeplin HTML page.
 const EMBEDDED_API_DATA_REGEXP = /.*window.Zeplin\["apiData"\] = JSON.parse\("(.*)"\);/
 
+const ERROR_DEPTH = 0
+
 const URLs = {
   login: "https://app.zeplin.io/login",
   loginApi: "https://api.zeplin.io/users/login",
