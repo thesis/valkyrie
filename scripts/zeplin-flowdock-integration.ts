@@ -38,7 +38,7 @@ async function createFlowdockComment(
 ) {
   return FLOWDOCK_SESSION.postDiscussion({
     uuid: `zeplin-${projectId}-${screenId}-comment-${commentId}`,
-    title: `<a href="${commentUrl}">commented</a>`,
+    title: `<a href="${commentUrl}">TEST: commented</a>`,
     body: commentBody,
     author: {
       name: creator.name,
@@ -58,7 +58,7 @@ async function createFlowdockActivity(
 ) {
   return await FLOWDOCK_SESSION.postActivity({
     uuid: `zeplin-${projectId}-${screenId}-activity-${activityId}`,
-    title: `<a href="${activityUrl}">${activityType}</a>`,
+    title: `<a href="${activityUrl}">TEST: ${activityType}</a>`,
     author: {
       name: creator.name,
       email: creator.email,
@@ -73,7 +73,7 @@ async function createFlowdockThread(
   screen: zeplin.Screen,
 ) {
   const projectLink = `<a href="${project.url}">${project.name}</a>`,
-    screenLink = `<a href="${screen.url}">${screen.name}</a>`,
+    screenLink = `<a href="${screen.url}">TEST: ${screen.name}</a>`,
     snapshotUrl = await screen.snapshotUrl()
 
   return await FLOWDOCK_SESSION.postActivity({
