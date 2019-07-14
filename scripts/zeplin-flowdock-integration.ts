@@ -9,7 +9,7 @@
 //   ZEPLIN_FLOWDOCK_TOKEN Token for Flowdock integration.
 //
 // Commands:
-//   hubot zeplin last seen <datetime string> - Sets the lastSeen key in hubot's brain to the new date
+//   hubot zeplin last seen <datetime string> - Resets the lastSeen key in hubot's brain to the given date, to resume notification checking from that date
 
 import * as config from "../lib/config"
 import * as flowdock from "../lib/flowdock"
@@ -311,26 +311,38 @@ module.exports = function(robot) {
     return
   }
 
-  // TODO update regex to take input datetime string
-  robot.respond(`/zeplin last seen/`, { id: "zeplin-last-seen" }, response => {
-    try {
-      // TODO parse and handle errors for input datetime string
-      let newLastSeen = new Date(0)
-      robot.brain.set("lastSeen", newLastSeen.toISOString())
-      let message = `Zeplin lastSeen date set to: ${newLastSeen}`
-      robot.logger.info(message)
-      response.send(message)
-    } catch (err) {
-      let errMessage = `Couldn't set new lastSeen date`
-      robot.logger.info(
-        errMessage,
-        `${util.inspect(err, {
-          depth: ERROR_DEPTH,
-        })}`,
-      )
-      response.send(errMessage)
-    }
-  })
+  robot.respond(
+    /zeplin last seen (.*?)$/i,
+    { id: "zeplin-last-seen" },
+    response => {
+      try {
+        let dateInput = response.match[1]
+        const newLastSeen = Date.parse(dateInput)
+        if (isNaN(newLastSeen)) {
+          response.send(
+            `Please enter a valid datetime string in the format: YYYY-MM-DDTHH:mm`,
+          )
+        }
+        const newLastSeenDate = new Date(dateInput)
+        if (newLastSeenDate > Date.now()) {
+          return response.send(`\"${dateInput}\" is in the future!`)
+        }
+        robot.brain.set("lastSeen", newLastSeenDate.toISOString())
+        let message = `Zeplin lastSeen date set to: ${newLastSeenDate}`
+        robot.logger.info(message)
+        response.send(message)
+      } catch (err) {
+        let errMessage = `Couldn't set new lastSeen date`
+        robot.logger.info(
+          errMessage,
+          `${util.inspect(err, {
+            depth: ERROR_DEPTH,
+          })}`,
+        )
+        response.send(errMessage)
+      }
+    },
+  )
 
   let SECONDS = 1000,
     MINUTES = 60 * SECONDS,
