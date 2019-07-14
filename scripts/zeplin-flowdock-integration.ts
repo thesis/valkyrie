@@ -9,7 +9,7 @@
 //   ZEPLIN_FLOWDOCK_TOKEN Token for Flowdock integration.
 //
 // Commands:
-//   None
+//   hubot zeplin last seen <datetime string> - Sets the lastSeen key in hubot's brain to the new date
 
 import * as config from "../lib/config"
 import * as flowdock from "../lib/flowdock"
@@ -310,6 +310,27 @@ module.exports = function(robot) {
     }
     return
   }
+
+  // TODO update regex to take input datetime string
+  robot.respond(`/zeplin last seen/`, { id: "zeplin-last-seen" }, response => {
+    try {
+      // TODO parse and handle errors for input datetime string
+      let newLastSeen = new Date(0)
+      robot.brain.set("lastSeen", newLastSeen.toISOString())
+      let message = `Zeplin lastSeen date set to: ${newLastSeen}`
+      robot.logger.info(message)
+      response.send(message)
+    } catch (err) {
+      let errMessage = `Couldn't set new lastSeen date`
+      robot.logger.info(
+        errMessage,
+        `${util.inspect(err, {
+          depth: ERROR_DEPTH,
+        })}`,
+      )
+      response.send(errMessage)
+    }
+  })
 
   let SECONDS = 1000,
     MINUTES = 60 * SECONDS,

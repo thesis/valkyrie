@@ -28,7 +28,7 @@ var ALLOWED_ROOMS,
 BOT_RESTICTED_COMMANDS = ["reload-scripts.reload"] // String that matches the listener ID
 ALLOWED_BOTS = ["valkyrie"]
 
-ROOM_RESTRICTED_COMMANDS = ["badgers", "pod-bay-doors"] // String that matches the listener ID
+ROOM_RESTRICTED_COMMANDS = ["badgers", "pod-bay-doors", "zeplin-last-seen"] // String that matches the listener ID
 ALLOWED_ROOMS = ["Bifrost", "Playground"] // String that matches the room name
 
 module.exports = function(robot) {
