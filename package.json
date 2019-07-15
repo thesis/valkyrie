@@ -6,7 +6,7 @@
   "description": "Heimdall can see and hear your every need, and keeps watch for the onset of Ragnarok",
   "dependencies": {
     "axios-debug-log": "0.4.0",
-    "cheerio": "^1.0.0-rc.2",
+    "cheerio": "^1.0.0-rc.3",
     "coffeescript": "^1.12.3",
     "cookie-parser": "^1.4.3",
     "cron-parser": "~1.0.1",
