@@ -294,6 +294,14 @@ function checkForNotifications(logger, brain) {
   }
 }
 
+// function updateLastSeenDate(logger, brain, datetime) {
+
+//   let apiUpdated = await FLOWDOCK_SESSION.updateNotificationMarker({
+
+//   })
+
+// }
+
 module.exports = function(robot) {
   if (!process.env["ZEPLIN_USERNAME"] || !process.env["ZEPLIN_PASSWORD"]) {
     let logMessage =
@@ -327,6 +335,7 @@ module.exports = function(robot) {
         if (newLastSeenDate > Date.now()) {
           return response.send(`\"${dateInput}\" is in the future!`)
         }
+        // TODO: updateNotificationMarker to update api in addition to brain
         robot.brain.set("lastSeen", newLastSeenDate.toISOString())
         let message = `Zeplin lastSeen date set to: ${newLastSeenDate}`
         robot.logger.info(message)
