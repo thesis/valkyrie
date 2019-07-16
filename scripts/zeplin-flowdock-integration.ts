@@ -11,8 +11,8 @@
 // Commands:
 //   None
 
-import * as config from "../lib/config"
 import * as flowdock from "../lib/flowdock"
+import isRoomNameValid from "../lib/flowdock-util"
 import * as zeplin from "../lib/zeplin"
 import * as util from "util"
 
@@ -246,7 +246,7 @@ module.exports = function(robot) {
       "Zeplin environment variables missing: not running Zeplin Integration."
     robot.logger.error(logMessage)
     let alertRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
-    if (config.isAlertRoomNameValid(alertRoom)) {
+    if (isRoomNameValid(alertRoom)) {
       robot.send(
         {
           room: alertRoom,

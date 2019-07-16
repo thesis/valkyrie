@@ -10,7 +10,7 @@
 // Author:
 //   shadowfiend
 
-const { isAlertRoomNameValid } = require("../lib/config")
+const { isRoomNameValid } = require("../lib/flowdock-utils")
 
 let fs = require("fs")
 
@@ -27,7 +27,7 @@ let buildString = buildNumber
 
 function sendReleaseNotification(robot) {
   let alertRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
-  if (isAlertRoomNameValid(alertRoom)) {
+  if (isRoomNameValid(alertRoom)) {
     robot.send(
       {
         room: releaseNotificationRoom,
