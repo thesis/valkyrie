@@ -15,7 +15,7 @@ const util = require("util")
 
 const {
   fetchConfigOrReportIssue,
-  fetchAlertRoomIdOrReportIssue,
+  fetchRoomIdOrReportIssue,
 } = require("../lib/config")
 
 const flowdock = require("../lib/flowdock")
@@ -34,7 +34,7 @@ module.exports = function(robot) {
     robot,
     "SUGGESTION_ALERT_ROOM",
   )
-  const suggestionAlertRoomId = fetchAlertRoomIdOrReportIssue(
+  const suggestionAlertRoomId = fetchRoomIdOrReportIssue(
     robot,
     suggestionAlertRoomName,
   )
