@@ -20,7 +20,6 @@ const {
 
 const flowdock = require("../lib/flowdock")
 const {
-  getRoomIdFromName,
   getRoomNameFromId,
   getRoomInfoFromIdOrName,
 } = require("../lib/flowdock-util")

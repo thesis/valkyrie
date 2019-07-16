@@ -51,7 +51,6 @@ const { TextMessage } = require("hubot")
 const {
   getRoomIdFromName,
   getRoomNameFromId,
-  getJoinedFlowIds,
   robotIsInRoom,
 } = require("../lib/flowdock-util")
 

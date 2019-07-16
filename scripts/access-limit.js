@@ -14,11 +14,7 @@
 // Author:
 //   kb0rg
 
-const {
-  getRoomIdFromName,
-  getRoomNameFromId,
-  getRoomInfoFromIdOrName,
-} = require("../lib/flowdock-util")
+const { getRoomNameFromId } = require("../lib/flowdock-util")
 
 var ALLOWED_ROOMS,
   ALLOWED_BOTS,
