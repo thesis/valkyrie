@@ -40,10 +40,10 @@ module.exports = function(robot) {
   )
   let suggestionAlertRoomReference = ""
 
-  if (!suggestionAlertRoomId || !flowdockOrgName) {
+  if (!suggestionAlertRoomName || !flowdockOrgName) {
     // this is local dev (the config utilities would have thrown if it weren't)
     // fall back to a reference to the room name instead of a link
-    suggestionAlertRoomReference = `${suggestionAlertRoomName}`
+    suggestionAlertRoomReference = `${suggestionAlertRoomName || "Shell"}`
   } else {
     let suggestionAlertRoomLink = flowdock.URLs.flow
       .replace(/{orgName}/, flowdockOrgName.toLowerCase())
