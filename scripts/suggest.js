@@ -80,7 +80,7 @@ module.exports = function(robot) {
       let sourceFlow = getRoomNameFromId(robot.adapter, res.message.room)
       let originalThreadReference = ""
 
-      if (!sourceFlow) {
+      if (!sourceFlow || !flowdockOrgName) {
         // this is probably local dev, but no special handling needed
         // let's log an error in case this ever happens in prod
         robot.logger.info(
