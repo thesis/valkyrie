@@ -64,7 +64,7 @@ module.exports = function(robot) {
         )
       }
 
-      let flowData = getRoomInfoFromIdOrName(robot, res.message.room)
+      let flowData = getRoomInfoFromIdOrName(robot.adapter, res.message.room)
       if (flowData && flowData.access_mode === "invitation") {
         return res.send(
           `Sorry, this command only works from public flows, to protect the privacy of your invite-only flow.\n\n${redirectToSuggestionAlertRoomMessage}`,
@@ -78,7 +78,7 @@ module.exports = function(robot) {
         return
       }
 
-      let sourceFlow = getRoomNameFromId(robot, res.message.room)
+      let sourceFlow = getRoomNameFromId(robot.adapter, res.message.room)
       let originalThreadReference = ""
 
       if (!sourceFlow) {

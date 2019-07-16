@@ -75,7 +75,7 @@ module.exports = function(robot) {
       let targetRoomId = null
 
       if (!isBlank(targetRoom)) {
-        targetRoomId = getRoomIdFromName(robot, targetRoom)
+        targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
 
         if (isRestrictedRoom(targetRoomId, robot, msg)) {
           return msg.send(
@@ -83,7 +83,7 @@ module.exports = function(robot) {
           )
         }
 
-        if (!robotIsInRoom(robot, targetRoomId)) {
+        if (!robotIsInRoom(robot.adapter, targetRoomId)) {
           return msg.send(
             `Can't create schedule for ${targetRoom}: I'm not in that flow, or there's a typo in the name`,
           )
@@ -117,9 +117,9 @@ module.exports = function(robot) {
       showAll = true
       outputPrefix += "ALL flows:\n"
     } else {
-      targetRoomId = getRoomIdFromName(robot, targetRoom)
+      targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
 
-      if (!robotIsInRoom(robot, targetRoomId)) {
+      if (!robotIsInRoom(robot.adapter, targetRoomId)) {
         return msg.send(
           `Sorry, I'm not in the ${targetRoom} flow - or maybe you mistyped?`,
         )
@@ -272,8 +272,10 @@ function updateSchedule(robot, msg, id, message) {
 
   if (isRestrictedRoom(job.user.room, robot, msg)) {
     return msg.send(
-      `Updating schedule for the ${getRoomNameFromId(job.user.room) ||
-        job.user.room} flow is restricted`,
+      `Updating schedule for the ${getRoomNameFromId(
+        robot.adapter,
+        job.user.room,
+      ) || job.user.room} flow is restricted`,
     )
   }
 
@@ -299,8 +301,10 @@ function cancelSchedule(robot, msg, id) {
 
   if (isRestrictedRoom(job.user.room, robot, msg)) {
     return msg.send(
-      `Canceling schedule for the ${getRoomNameFromId(job.user.room) ||
-        job.user.room} flow is restricted`,
+      `Canceling schedule for the ${getRoomNameFromId(
+        robot.adapter,
+        job.user.room,
+      ) || job.user.room} flow is restricted`,
     )
   }
 
@@ -461,7 +465,8 @@ function formatJobListItem(
   }
 
   if (showRoom) {
-    roomDisplayText = `(to ${getRoomNameFromId(robot, jobRoom) || jobRoom})`
+    roomDisplayText = `(to ${getRoomNameFromId(robot.adapter, jobRoom) ||
+      jobRoom})`
   }
 
   if (!!jobMessage.length) {

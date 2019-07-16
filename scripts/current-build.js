@@ -27,7 +27,7 @@ let buildString = buildNumber
 
 function sendReleaseNotification(robot) {
   let alertRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
-  if (isRoomNameValid(alertRoom)) {
+  if (isRoomNameValid(robot.adapter, alertRoom)) {
     robot.send(
       {
         room: releaseNotificationRoom,

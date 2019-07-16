@@ -246,7 +246,7 @@ module.exports = function(robot) {
       "Zeplin environment variables missing: not running Zeplin Integration."
     robot.logger.error(logMessage)
     let alertRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
-    if (isRoomNameValid(alertRoom)) {
+    if (isRoomNameValid(robot.adapter, alertRoom)) {
       robot.send(
         {
           room: alertRoom,

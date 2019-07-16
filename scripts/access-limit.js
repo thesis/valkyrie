@@ -53,7 +53,7 @@ module.exports = function(robot) {
         } else {
           if (
             ALLOWED_ROOMS.indexOf(
-              getRoomNameFromId(robot, context.response.message.room),
+              getRoomNameFromId(robot.adapter, context.response.message.room),
             ) >= 0
           ) {
             // User is allowed access to this command
