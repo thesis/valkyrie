@@ -10,7 +10,7 @@
 // Author:
 //   shadowfiend
 
-const { isRoomNameValid } = require("../lib/flowdock-utils")
+const { isRoomNameValid } = require("../lib/flowdock-util")
 
 let fs = require("fs")
 
@@ -30,7 +30,7 @@ function sendReleaseNotification(robot) {
   if (isRoomNameValid(robot.adapter, alertRoom)) {
     robot.send(
       {
-        room: releaseNotificationRoom,
+        room: alertRoom,
       },
       `Released ${buildString}!`,
     )
