@@ -3,6 +3,7 @@
 //   configured user.
 //
 // Configuration:
+//   RELEASE_NOTIFICATION_ROOM - Id of the room for release notifications.
 //   ZEPLIN_USERNAME Username to log in to Zeplin.
 //   ZEPLIN_PASSWORD Password to log in to Zeplin.
 //   ZEPLIN_FLOWDOCK_TOKEN Token for Flowdock integration.
@@ -11,6 +12,7 @@
 //   None
 
 import * as flowdock from "../lib/flowdock"
+import * as flowdockUtil from "../lib/flowdock-util"
 import * as zeplin from "../lib/zeplin"
 import * as util from "util"
 
@@ -239,23 +241,18 @@ function checkForNotifications(logger, brain) {
 }
 
 module.exports = function(robot) {
-  if (!(process.env["ZEPLIN_USERNAME"] && process.env["ZEPLIN_PASSWORD"])) {
+  if (!process.env["ZEPLIN_USERNAME"] || !process.env["ZEPLIN_PASSWORD"]) {
     let logMessage =
-      "Zeplin environment variables missing: Not running Zeplin Integration"
-    if (robot.name === "heimdall") {
-      robot.logger.error(logMessage)
-      let alertRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
-      if (alertRoom) {
-        robot.send(
-          {
-            user: "",
-            room: alertRoom,
-          },
-          `Alert: ${logMessage}`,
-        )
-      }
-    } else {
-      robot.logger.info(logMessage)
+      "Zeplin environment variables missing: not running Zeplin Integration."
+    robot.logger.error(logMessage)
+    let alertRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
+    if (flowdockUtil.isRoomNameValid(robot.adapter, alertRoom)) {
+      robot.send(
+        {
+          room: alertRoom,
+        },
+        `Alert: ${logMessage}`,
+      )
     }
     return
   }

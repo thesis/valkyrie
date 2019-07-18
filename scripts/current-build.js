@@ -10,6 +10,8 @@
 // Author:
 //   shadowfiend
 
+const { isRoomNameValid } = require("../lib/flowdock-util")
+
 let fs = require("fs")
 
 let buildNumberBuffer = new Buffer("")
@@ -23,14 +25,12 @@ let buildString = buildNumber
   ? `build [${buildNumber}](https://circleci.com/gh/thesis/heimdall/${buildNumber})`
   : `unknown build`
 
-let releaseNotificationRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
-
 function sendReleaseNotification(robot) {
-  if (releaseNotificationRoom) {
+  let alertRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
+  if (isRoomNameValid(robot.adapter, alertRoom)) {
     robot.send(
       {
-        user: "",
-        room: releaseNotificationRoom,
+        room: alertRoom,
       },
       `Released ${buildString}!`,
     )

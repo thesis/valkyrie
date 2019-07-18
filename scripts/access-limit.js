@@ -14,19 +14,18 @@
 // Author:
 //   kb0rg
 
+const { getRoomNameFromId } = require("../lib/flowdock-util")
+
 var ALLOWED_ROOMS,
   ALLOWED_BOTS,
   BOT_RESTICTED_COMMANDS,
   ROOM_RESTRICTED_COMMANDS
 
-BOT_RESTICTED_COMMANDS = ["reload-scripts.reload"] // String that matches the listener ID
+BOT_RESTICTED_COMMANDS = ["reload-scripts.reload"] // string that matches the listener ID
 ALLOWED_BOTS = ["valkyrie"]
 
-ROOM_RESTRICTED_COMMANDS = ["badgers", "pod-bay-doors", "schedule"] // String that matches the listener ID
-ALLOWED_ROOMS = [
-  "8cf540e9-9727-4a75-82d1-843575e61f1b", //bifrost
-  "8dd97a6a-d6f0-4352-be7d-388d9afeea9f", //playground
-] // String that matches the room ID
+ROOM_RESTRICTED_COMMANDS = ["badgers", "pod-bay-doors"] // string that matches the listener ID
+ALLOWED_ROOMS = ["Bifrost", "Playground"] // string that matches the room name
 
 module.exports = function(robot) {
   robot.listenerMiddleware(function(context, next, done) {
@@ -41,22 +40,35 @@ module.exports = function(robot) {
       }
     } else {
       if (ROOM_RESTRICTED_COMMANDS.indexOf(context.listener.options.id) >= 0) {
-        if (ALLOWED_ROOMS.indexOf(context.response.message.room) >= 0) {
-          // User is allowed access to this command
-          next()
+        if (typeof context.response.message.room === "undefined") {
+          // Restricted command, and this is a DM
+          context.response.reply(
+            `I'm sorry, but that command doesn't work in DMs.`,
+          )
+          done()
         } else {
-          if (!robot.adapter.flows) {
-            // we're not using the flowdock adapter/ rooms: allow the command
+          if (
+            ALLOWED_ROOMS.indexOf(
+              getRoomNameFromId(robot.adapter, context.response.message.room),
+            ) >= 0
+          ) {
+            // User is allowed access to this command
             next()
           } else {
-            // Restricted command, and flow isn't in whitelist
-            context.response.reply(
-              `I'm sorry, but that command doesn't work here.`,
-            )
-            done()
+            if (robot.adapterName == "shell") {
+              // we're in the shell adapter: allow the command for local testing
+              next()
+            } else {
+              // Restricted command, and flow isn't in whitelist
+              context.response.reply(
+                `I'm sorry, but that command doesn't work here.`,
+              )
+              done()
+            }
           }
         }
       } else {
+        // Not a restricted command
         next()
       }
     }

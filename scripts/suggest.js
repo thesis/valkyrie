@@ -13,54 +13,39 @@
 
 const util = require("util")
 
+const {
+  fetchConfigOrReportIssue,
+  fetchRoomIdOrReportIssue,
+} = require("../lib/config")
+
 const flowdock = require("../lib/flowdock")
 const {
-  getRoomIdFromName,
   getRoomNameFromId,
   getRoomInfoFromIdOrName,
 } = require("../lib/flowdock-util")
 
 module.exports = function(robot) {
-  if (
-    !process.env["SUGGESTION_ALERT_ROOM"] ||
-    !process.env["FLOWDOCK_ORGANIZATION_NAME"]
-  ) {
-    if (robot.adapterName != "shell") {
-      // fail build if not using shell adapter: alert won't work w/o this config
-      throw new Error(
-        `Missing environment variable: SUGGESTION_ALERT_ROOM or FLOWDOCK_ORGANIZATION_NAME.`,
-      )
-    } else {
-      // this is local dev: allow missing config, but log
-      robot.logger.error(
-        `Missing essential configuration for the suggest command.`,
-      )
-    }
-  }
-  const suggestionAlertRoomName = process.env["SUGGESTION_ALERT_ROOM"]
-  const suggestionAlertRoomId = getRoomIdFromName(
+  const flowdockOrgName = fetchConfigOrReportIssue(
+    robot,
+    "FLOWDOCK_ORGANIZATION_NAME",
+  )
+  const suggestionAlertRoomName = fetchConfigOrReportIssue(
+    robot,
+    "SUGGESTION_ALERT_ROOM",
+  )
+  const suggestionAlertRoomId = fetchRoomIdOrReportIssue(
     robot,
     suggestionAlertRoomName,
   )
-
   let suggestionAlertRoomReference = ""
 
-  if (!suggestionAlertRoomId) {
-    if (robot.adapterName != "shell") {
-      // fail build if not using shell adapter: alert won't work w/o room ID
-      throw new Error(
-        `Could not get flow id for SUGGESTION_ALERT_ROOM: ${suggestionAlertRoomName}`,
-      )
-    } else {
-      // this is local dev: fall back to a reference to the room name instead of a link
-      suggestionAlertRoomReference = `${suggestionAlertRoomName}`
-    }
+  if (!suggestionAlertRoomName || !flowdockOrgName) {
+    // this is local dev (the config utilities would have thrown if it weren't)
+    // fall back to a reference to the room name instead of a link
+    suggestionAlertRoomReference = `${suggestionAlertRoomName || "Shell"}`
   } else {
     let suggestionAlertRoomLink = flowdock.URLs.flow
-      .replace(
-        /{orgName}/,
-        process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
-      )
+      .replace(/{orgName}/, flowdockOrgName.toLowerCase())
       .replace(/{flowName}/, suggestionAlertRoomName.toLowerCase())
     suggestionAlertRoomReference = `[${suggestionAlertRoomName}](${suggestionAlertRoomLink})`
   }
@@ -78,7 +63,7 @@ module.exports = function(robot) {
         )
       }
 
-      let flowData = getRoomInfoFromIdOrName(robot, res.message.room)
+      let flowData = getRoomInfoFromIdOrName(robot.adapter, res.message.room)
       if (flowData && flowData.access_mode === "invitation") {
         return res.send(
           `Sorry, this command only works from public flows, to protect the privacy of your invite-only flow.\n\n${redirectToSuggestionAlertRoomMessage}`,
@@ -92,10 +77,10 @@ module.exports = function(robot) {
         return
       }
 
-      let sourceFlow = getRoomNameFromId(robot, res.message.room)
+      let sourceFlow = getRoomNameFromId(robot.adapter, res.message.room)
       let originalThreadReference = ""
 
-      if (!sourceFlow) {
+      if (!sourceFlow || !flowdockOrgName) {
         // this is probably local dev, but no special handling needed
         // let's log an error in case this ever happens in prod
         robot.logger.info(
