@@ -11,8 +11,19 @@
 //   shadowfiend
 //   kb0rg
 
+function notUsingFlowdock(robotAdapter, response) {
+  if (robotAdapter.constructor.name.toLowerCase() !== "flowdock") {
+    response.send("Not using flowdock, can't complete request.")
+    return true
+  }
+  return false
+}
+
 module.exports = function(robot) {
   robot.respond(/flows/, response => {
+    if (notUsingFlowdock(robot.adapter, response)) {
+      return
+    }
     if (robot.adapter.flows != null) {
       response.send(
         robot.adapter.flows
@@ -20,21 +31,20 @@ module.exports = function(robot) {
           .join("\n"),
       )
     } else {
-      response.send("Not using flowdock.")
+      response.send("No flows have been joined.")
     }
   })
 
   robot.respond(/users (robot|flowdock)/i, response => {
     let dataSource = response.match[1].toLowerCase()
     if (dataSource === "flowdock") {
-      // TODO: get users from Flowdock API
-      if (robot.adapterName.toLowerCase() === "flowdock") {
-        return response.send(
-          "TODO: get users from Flowdock API (turns out the adapter just gets it from the brain anyway)\n:shrug:",
-        )
-      } else {
-        return response.send("Not using flowdock.")
+      if (notUsingFlowdock(robot.adapter, response)) {
+        return
       }
+      // TODO: get users from Flowdock API
+      return response.send(
+        "TODO: get users from Flowdock API (turns out the adapter just gets it from the brain anyway)\n:shrug:",
+      )
     }
 
     if (robot.brain.users() != null) {
@@ -47,15 +57,14 @@ module.exports = function(robot) {
   })
 
   robot.respond(/reconnect ?((?:.|\s)*)$/i, response => {
+    console.log(`ROBOT ADAPTER CLASS NAME?: %o`, robot.adapter.constructor.name)
+    if (notUsingFlowdock(robot.adapter, response)) {
+      return
+    }
     let reason = response.match[1]
     if (!reason) {
       return response.send(
-        "Please provide a reason for the reconnect (for logging purposes)",
-      )
-    }
-    if (robot.adapterName.toLowerCase() !== "flowdock") {
-      return response.send(
-        `Not using flowdock. robot.adapterName.toLowerCase(): ${robot.adapterName.toLowerCase()}`,
+        "Please try again, providing a reason for the reconnect (for logging purposes)",
       )
     }
     try {
