@@ -45,4 +45,34 @@ module.exports = function(robot) {
       )
     }
   })
+
+  robot.respond(/reconnect ?((?:.|\s)*)$/i, response => {
+    let reason = response.match[1]
+    if (!reason) {
+      return response.send(
+        "Please provide a reason for the reconnect (for logging purposes)",
+      )
+    }
+    if (robot.adapterName.toLowerCase() !== "flowdock") {
+      return response.send(
+        `Not using flowdock. robot.adapterName.toLowerCase(): ${robot.adapterName.toLowerCase()}`,
+      )
+    }
+    try {
+      response.send("Trying to reconnect... please hold.")
+      robot.logger.info(
+        `Starting reconnect by request of user: ${response.message.user.name}, because: ${reason}.`,
+      )
+      robot.adapter.reconnect(`Initiated by flowdock command: ${reason}`)
+      return response.send("Reconnected")
+    } catch (err) {
+      robot.logger.error(
+        `Attempted reconnect initiated by user ${response.message.user.name} failed : %o`,
+        err,
+      )
+      return response.send(
+        "Something went wrong trying to reconnect, please check the logs for error.",
+      )
+    }
+  })
 }
