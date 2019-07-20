@@ -5,7 +5,9 @@
 // Configuration:
 //
 // Commands:
-//   hubot flows
+//   hubot flows - reponds with a list of flows as Flow Name: flow-id
+//   hubot reconnect <reason for reconnecting> reconnects to the flowdock stream
+//   hubot users [flowdock|robot] responds with a list of Flowdock users as User Name: user-id
 //
 // Author:
 //   shadowfiend
@@ -51,7 +53,6 @@ module.exports = function(robot) {
   })
 
   robot.respond(/reconnect ?((?:.|\s)*)$/i, response => {
-    console.log(`ROBOT ADAPTER CLASS NAME?: %o`, robot.adapter.constructor.name)
     if (notUsingFlowdock(robot.adapter, response)) {
       return
     }
