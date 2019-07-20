@@ -11,13 +11,7 @@
 //   shadowfiend
 //   kb0rg
 
-function notUsingFlowdock(robotAdapter, response) {
-  if (robotAdapter.constructor.name.toLowerCase() !== "flowdock") {
-    response.send("Not using flowdock, can't complete request.")
-    return true
-  }
-  return false
-}
+const { notUsingFlowdock } = require("../lib/flowdock-util")
 
 module.exports = function(robot) {
   robot.respond(/flows/, response => {
