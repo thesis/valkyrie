@@ -31,7 +31,7 @@ module.exports = function(robot) {
     }
   })
 
-  robot.respond(/users (robot|flowdock)/i, response => {
+  robot.respond(/users (robot|flowdock)/i, { id: "users" }, response => {
     let dataSource = response.match[1].toLowerCase()
     if (dataSource === "flowdock") {
       if (notUsingFlowdock(robot.adapter, response)) {
@@ -52,7 +52,7 @@ module.exports = function(robot) {
     }
   })
 
-  robot.respond(/reconnect ?((?:.|\s)*)$/i, response => {
+  robot.respond(/reconnect ?((?:.|\s)*)$/i, { id: "reconnect" }, response => {
     if (notUsingFlowdock(robot.adapter, response)) {
       return
     }
