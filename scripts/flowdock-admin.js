@@ -52,6 +52,26 @@ module.exports = function(robot) {
     }
   })
 
+  robot.respond(
+    /user update name (\d{1,10}) ((?:.|\s)*)/i,
+    { id: "user-update" },
+    response => {
+      // Flowdock doesn't give specs for length of id
+      // We currently see 4-6 digits, but allowing here for greater range of length
+      let userID = response.match[1]
+      let userNewName = response.match[2]
+      if (robot.brain.users() != null) {
+        // changeUserNick changes the user.name
+        robot.adapter.changeUserNick(userID, userNewName)
+        return response.send(
+          Object.values(robot.brain.users())
+            .map(user => ` - name: ${user.name}: id:${user.id}`)
+            .join("\n"),
+        )
+      }
+    },
+  )
+
   robot.respond(/reconnect ?((?:.|\s)*)$/i, { id: "reconnect" }, response => {
     if (notUsingFlowdock(robot.adapter, response)) {
       return
