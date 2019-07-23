@@ -46,20 +46,20 @@ module.exports = function(robot) {
       const session = new flowdock.Session(apiToken)
       session.get("/users/", {}, (err, body, usersResponse) => {
         if (err == null) {
-          return response.send(
+          response.send(
             body.map(user => ` - ${user.nick}: ${user.id}`).join("\n"),
           )
         } else {
           robot.logger.error("Flowdock users error: %o", err)
-          return response.send(
+          response.send(
             "Something went wrong trying to get users from Flowdock.",
           )
         }
       })
     }
 
-    if (robot.brain.users() != null) {
-      return response.send(
+    if (dataSource === "robot" && robot.brain.users() != null) {
+      response.send(
         Object.values(robot.brain.users())
           .map(user => ` - ${user.name}: ${user.id}`)
           .join("\n"),
@@ -88,11 +88,11 @@ module.exports = function(robot) {
         let userUpdated = Object.values(robot.brain.users()).find(user => {
           return user.id == userId
         })
-        return response.send(
+        response.send(
           `Updated user!\nname: ${userUpdated.name}: id:${userUpdated.id}`,
         )
       } else {
-        return response.send(`User not found.`)
+        response.send(`User not found.`)
       }
     },
   )
@@ -113,13 +113,13 @@ module.exports = function(robot) {
         `Starting reconnect by request of user: ${response.message.user.name}, because: ${reason}.`,
       )
       robot.adapter.reconnect(`Initiated by flowdock command: ${reason}`)
-      return response.send("Reconnected")
+      response.send("Reconnected")
     } catch (err) {
       robot.logger.error(
         `Attempted reconnect initiated by user ${response.message.user.name} failed : %o`,
         err,
       )
-      return response.send(
+      response.send(
         "Something went wrong trying to reconnect, please check the logs for error.",
       )
     }
