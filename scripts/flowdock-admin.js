@@ -3,6 +3,7 @@
 //   related to flowdock usage.
 //
 // Configuration:
+//   HUBOT_FLOWDOCK_API_TOKEN
 //
 // Commands:
 //   hubot flows - reponds with a list of flows as Flow Name: flow-id
@@ -14,9 +15,13 @@
 //   shadowfiend
 //   kb0rg
 
-const { notUsingFlowdock } = require("../lib/flowdock-util")
+const { notUsingFlowdock } = require("../lib/flowdock-util"),
+  { fetchConfigOrReportIssue } = require("../lib/config"),
+  flowdock = require("@reloaddk/flowdock")
 
 module.exports = function(robot) {
+  const apiToken = fetchConfigOrReportIssue(robot, "HUBOT_FLOWDOCK_API_TOKEN")
+
   robot.respond(/flows/, response => {
     if (notUsingFlowdock(robot.adapter, response)) {
       return
@@ -38,10 +43,19 @@ module.exports = function(robot) {
       if (notUsingFlowdock(robot.adapter, response)) {
         return
       }
-      // TODO: get users from Flowdock API
-      return response.send(
-        "TODO: get users from Flowdock API (turns out the adapter just gets it from the brain anyway)\n:shrug:",
-      )
+      const session = new flowdock.Session(apiToken)
+      session.get("/users/", {}, (err, body, usersResponse) => {
+        if (err == null) {
+          return response.send(
+            body.map(user => ` - ${user.nick}: ${user.id}`).join("\n"),
+          )
+        } else {
+          robot.logger.error("Flowdock users error: %o", err)
+          return response.send(
+            "Something went wrong trying to get users from Flowdock.",
+          )
+        }
+      })
     }
 
     if (robot.brain.users() != null) {
@@ -61,6 +75,11 @@ module.exports = function(robot) {
       // We currently see 4-6 digits, but allowing here for greater range of length
       let userId = response.match[1]
       let userNewName = response.match[2]
+      if (!userId || !userNewName) {
+        return response.send(
+          "Try again; you need to send both user id and new user name.",
+        )
+      }
       if (robot.brain.users() != null) {
         let user = robot.brain.users()[userId]
         user.name = userNewName
