@@ -7,7 +7,7 @@
 //
 // Commands:
 //   hubot flows - reponds with a list of flows as Flow Name: flow-id
-//   hubot reconnect <reason for reconnecting> - reconnects to the flowdock stream
+//   hubot reconnect <optional reason for reconnecting> - reconnects to the flowdock stream
 //   hubot users [flowdock|robot] - responds with a list of Flowdock users as User Name: user-id
 //   hubot user update <user id> <new user name>- updates the user's name in hubot's brain
 //
@@ -97,18 +97,13 @@ module.exports = function(robot) {
     if (notUsingFlowdock(robot.adapter, response)) {
       return
     }
-    let reason = response.match[1]
-    if (!reason) {
-      return response.send(
-        "Please try again, providing a reason for the reconnect (for logging purposes)",
-      )
-    }
+    let reason = response.match[1] || ""
+
     try {
-      response.send("Trying to reconnect... please hold.")
       robot.logger.info(
-        `Starting reconnect by request of user: ${response.message.user.name}, because: ${reason}.`,
+        `Starting reconnect by request of user: ${response.message.user.name}. ${reason}`,
       )
-      robot.adapter.reconnect(`Initiated by flowdock command: ${reason}`)
+      robot.adapter.reconnect(`Initiated by flowdock command. ${reason}`)
       response.send("Reconnected")
     } catch (err) {
       robot.logger.error(
