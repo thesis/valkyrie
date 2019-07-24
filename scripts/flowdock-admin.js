@@ -58,7 +58,7 @@ module.exports = function(robot) {
       })
     }
 
-    if (dataSource === "robot" && robot.brain.users() != null) {
+    if (dataSource === "robot") {
       response.send(
         Object.values(robot.brain.users())
           .map(user => ` - ${user.name}: ${user.id}`)
@@ -76,8 +76,8 @@ module.exports = function(robot) {
       let userId = response.match[1]
       let userNewName = response.match[2]
 
-      if (robot.brain.users() != null) {
-        let user = robot.brain.users()[userId]
+      let user = robot.brain.users()[userId]
+      if (user != null) {
         user.name = userNewName
         robot.brain.set(userId, user)
         robot.brain.save()
