@@ -12,6 +12,7 @@
     "cookie-parser": "^1.4.3",
     "cron-parser": "~1.0.1",
     "cronstrue": "^1.68.0",
+    "crontalk": "^0.0.24",
     "decode-html": "^2.0.0",
     "github-api": "^3.2.2",
     "hubot": "^3.1.1",
