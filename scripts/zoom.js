@@ -118,11 +118,6 @@ module.exports = function(robot) {
       res.send("Zoom session failed to set up properly!")
       return
     }
-    // TODO: remove this logging after user name issue is resolved
-    robot.logger.info(
-      `Debugging new user issue in Zoom command. User: %o`,
-      res.message.user,
-    )
     ZOOM_SESSION.nextAvailableMeeting()
       .then(meeting => {
         res.send(
