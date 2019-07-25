@@ -74,6 +74,9 @@ module.exports = function(robot) {
     robot.brain.set(REMINDER_KEY, {})
   }
 
+  // TODO: clarify desired syntax, clean up pattern
+  // any symbols we can use to help parse?
+  // --> remind (me|@username) (in <flowname>) (when|how often) (what)
   robot.respond(/remind (?:new|add)(?: (.*))? "(.*?)" ((?:.|\s)*)$/i, function(
     msg,
   ) {
@@ -104,6 +107,7 @@ module.exports = function(robot) {
     )
   })
 
+  // TODO: do not list reminders in DMs unless called from the DM reminder is in
   robot.respond(/remind list(?: (all|.*))?/i, function(msg) {
     let id, job, rooms, showAll, outputPrefix
     const targetRoom = msg.match[1]
@@ -206,18 +210,21 @@ function createReminderJob(robot, msg, room, pattern, message) {
 
   try {
     // TODO: parse pattern before trying to create job
-    // ? accept *only* natural language, or still support datetime and cron pattern input?
+    // TODO: determine whether to accept *only* natural language, or still support datetime and cron pattern input?
 
     // TESTING packages that use NLP to output cron patterns
     if (pattern.indexOf("every") > -1) {
-      // let pattern1 = getCronString(pattern, CRON_PATTERN_FORMAT)
-      // let pattern2 = crontalk.parse(pattern)
-      // let pattern3 = friendlyCron(pattern)
-      // return msg.send(
-      //   `The @darkeyedevelopers/natural-cron.js package outputs: ${pattern1}\nThe crontalk package outputs ${pattern2}\nThe friendly-cron package outputs ${pattern3}`,
-      // )
+      let pattern1 = getCronString(pattern, CRON_PATTERN_FORMAT)
+      let pattern2 = crontalk.parse(pattern)
+      let pattern3 = friendlyCron(pattern)
+      return msg.send(
+        `The @darkeyedevelopers/natural-cron.js package outputs: ${pattern1}`,
+        `The crontalk package outputs ${require("util").inspect(pattern2)}`,
+        `The friendly-cron package outputs ${pattern3}`,
+      )
 
-      // TODO: strip seconds from pattern?
+      // TODO: strip seconds from pattern, or leave that option?
+      // TODO: do strip whitespace after pattern so no implied seconds are created..
       pattern = friendlyCron(pattern)
     } else {
       let refDate = Date.now()
