@@ -48,18 +48,6 @@ function attachToStream(fn) {
 module.exports = function(robot) {
   sendReleaseNotification(robot)
 
-  robot.respond(/flows/, response => {
-    if (robot.adapter.flows != null) {
-      response.send(
-        robot.adapter.flows
-          .map(flow => ` - ${flow.name}: ${flow.id}`)
-          .join("\n"),
-      )
-    } else {
-      response.send("Not using flowdock.")
-    }
-  })
-
   robot.respond(/current build/, response =>
     response.send(`I'm on ${buildString}!`),
   )
