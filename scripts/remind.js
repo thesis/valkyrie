@@ -16,6 +16,8 @@
 // Commands:
 //   hubot remind [add|new] "<datetime pattern>" <message> - Schedule a reminder that runs on a specific date and time. "YYYY-MM-DDTHH:mm" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
 //   hubot remind [add|new] "<cron pattern>" <message> - Schedule a reminder that runs recurrently. For the wizards only. See http://crontab.org/ for cron pattern syntax.
+//   hubot remind [add|new] "<day or date in English>" <message> - Schedule a reminder that runs on a specific date and time. "YYYY-MM-DDTHH:mm" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
+//   hubot remind [add|new] "every <day or date in English>" <message> - Schedule a reminder that runs recurrently. For the wizards only. See http://crontab.org/ for cron pattern syntax.
 //   hubot remind [add|new] <flow> "<datetime pattern>" <message> - Schedule a reminder to a specific flow that runs on a specific date and time.
 //   hubot remind [add|new] <flow> "<cron pattern>" <message> - Schedule a reminder to a specific flow that runs recurrently
 //   hubot remind [cancel|del|delete|remove] <id> - Cancel the reminder
@@ -47,6 +49,8 @@ const cronParser = require("cron-parser")
 const cronstrue = require("cronstrue")
 const moment = require("moment")
 const { TextMessage } = require("hubot")
+const chrono = require("chrono-node")
+const getCronString = require("@darkeyedevelopers/natural-cron.js")
 
 const {
   getRoomIdFromName,
@@ -57,6 +61,7 @@ const {
 const REMINDER_JOBS = {}
 const JOB_MAX_COUNT = 10000
 const REMINDER_KEY = "hubot_reminders"
+const CRON_PATTERN_FORMAT = "MIN HOR DOM MON WEK"
 
 module.exports = function(robot) {
   robot.brain.on("loaded", () => {
@@ -196,7 +201,20 @@ function createReminderJob(robot, msg, room, pattern, message) {
   while (id == null || REMINDER_JOBS[id]) {
     id = Math.floor(Math.random() * JOB_MAX_COUNT)
   }
+
   try {
+    // TODO: parse pattern before trying to create job
+    // ? accept *only* natural language, or still support datetime and cron pattern input?
+
+    // TESTING packages that use NLP to output cron patterns
+    if (pattern.indexOf("every") > -1) {
+      pattern = getCronString(pattern, CRON_PATTERN_FORMAT)
+    } else {
+      let refDate = Date.now()
+      pattern = chrono.parseDate(pattern, refDate, { forwardDate: true })
+    }
+
+    // console.log(`(pattern.indexOf("every")): ${(pattern.indexOf("every"))}`)
     const job = createReminder(
       robot,
       id,

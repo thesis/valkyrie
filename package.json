@@ -7,6 +7,7 @@
   "dependencies": {
     "axios-debug-log": "0.4.0",
     "cheerio": "^1.0.0-rc.2",
+    "chrono-node": "^1.3.11",
     "coffeescript": "^1.12.3",
     "cookie-parser": "^1.4.3",
     "cron-parser": "~1.0.1",
@@ -26,6 +27,7 @@
     "hubot-shipit": "github:takouhai/hubot-shipit#955703ae5e00412bedec5eea0070d4a66e10fc93",
     "jsonwebtoken": "~8.3.0",
     "moment": "^2.24.0",
+    "@darkeyedevelopers/natural-cron.js": "^1.0.2",
     "node-schedule": "~1.0.0",
     "passport": "^0.4.0",
     "passport-github2": "^0.1.11",
