@@ -14,17 +14,15 @@
 //   HUBOT_REMINDER_LIST_REPLACE_TEXT - set JSON object like '{"@":"[at]"}' to configure text replacement used when listing scheduled messages
 //
 // Commands:
-//   hubot remind [add|new] "<datetime pattern>" <message> - Schedule a reminder that runs on a specific date and time. "YYYY-MM-DDTHH:mm" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
-//   hubot remind [add|new] "<cron pattern>" <message> - Schedule a reminder that runs recurrently. For the wizards only. See http://crontab.org/ for cron pattern syntax or test out your pattern at https://crontab.guru/.
-//   hubot remind [add|new] "<day or date in English>" <message> - Schedule a reminder that runs on a specific date and time. "YYYY-MM-DDTHH:mm" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
-//   hubot remind [add|new] "every <day or date in English>" <message> - Schedule a reminder that runs recurrently. For the wizards only. See http://crontab.org/ for cron pattern syntax.
-//   hubot remind [add|new] <flow> "<datetime pattern>" <message> - Schedule a reminder to a specific flow that runs on a specific date and time.
-//   hubot remind [add|new] <flow> "<cron pattern>" <message> - Schedule a reminder to a specific flow that runs recurrently
-//   hubot remind [cancel|del|delete|remove] <id> - Cancel the reminder
-//   hubot remind [upd|update] <id> <message> - Update reminder message
-//   hubot remind list - List all scheduled reminders for current flow. NOTE all times are listed in UTC
-//   hubot remind list <flow> - List all scheduled reminders for specified flow. NOTE all times are listed in UTC
-//   hubot remind list all - List all scheduled reminders for any flows. NOTE all times are listed in UTC
+//   hubot remind "<day or date in English>" <message> - Schedule a reminder that runs on a specific date and time. "YYYY-MM-DDTHH:mm" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
+//   hubot remind "every <day or date in English>" <message> - Schedule a reminder that runs recurrently. For the wizards only. See http://crontab.org/ for cron pattern syntax.
+//   hubot remind <flow> "<datetime pattern>" <message> - Schedule a reminder to a specific flow that runs on a specific date and time.
+//   hubot remind <flow> "<cron pattern>" <message> - Schedule a reminder to a specific flow that runs recurrently
+//   hubot reminder [cancel|del|delete|remove] <id> - Cancel the reminder
+//   hubot reminder [upd|update] <id> <message> - Update reminder message
+//   hubot reminder list - List all scheduled reminders for current flow. NOTE all times are listed in UTC
+//   hubot reminder list <flow> - List all scheduled reminders for specified flow. NOTE all times are listed in UTC
+//   hubot reminder list all - List all scheduled reminders for any flows. NOTE all times are listed in UTC
 //
 // Author:
 //   kb0rg
@@ -77,9 +75,7 @@ module.exports = function(robot) {
   // TODO: clarify desired syntax, clean up pattern
   // any symbols we can use to help parse?
   // --> remind (me|@username) (in <flowname>) (when|how often) (what)
-  robot.respond(/remind (?:new|add)(?: (.*))? "(.*?)" ((?:.|\s)*)$/i, function(
-    msg,
-  ) {
+  robot.respond(/remind (?: (.*))? "(.*?)" ((?:.|\s)*)$/i, function(msg) {
     let targetRoom = msg.match[1] // optional name of room specified in msg
     let targetRoomId = null
 
@@ -108,7 +104,7 @@ module.exports = function(robot) {
   })
 
   // TODO: do not list reminders in DMs unless called from the DM reminder is in
-  robot.respond(/remind list(?: (all|.*))?/i, function(msg) {
+  robot.respond(/reminder list(?: (all|.*))?/i, function(msg) {
     let id, job, rooms, showAll, outputPrefix
     const targetRoom = msg.match[1]
     const roomId = msg.message.user.room
@@ -189,11 +185,11 @@ module.exports = function(robot) {
     }
   })
 
-  robot.respond(/remind (?:upd|update) (\d+) ((?:.|\s)*)/i, msg =>
+  robot.respond(/reminder (?:upd|update) (\d+) ((?:.|\s)*)/i, msg =>
     updateReminder(robot, msg, msg.match[1], msg.match[2]),
   )
 
-  return robot.respond(/remind (?:del|delete|remove|cancel) (\d+)/i, msg =>
+  return robot.respond(/reminder (?:del|delete|remove|cancel) (\d+)/i, msg =>
     cancelSchedule(robot, msg, msg.match[1]),
   )
 }
