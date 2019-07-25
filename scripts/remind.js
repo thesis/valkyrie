@@ -15,7 +15,7 @@
 //
 // Commands:
 //   hubot remind [add|new] "<datetime pattern>" <message> - Schedule a reminder that runs on a specific date and time. "YYYY-MM-DDTHH:mm" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
-//   hubot remind [add|new] "<cron pattern>" <message> - Schedule a reminder that runs recurrently. For the wizards only. See http://crontab.org/ for cron pattern syntax.
+//   hubot remind [add|new] "<cron pattern>" <message> - Schedule a reminder that runs recurrently. For the wizards only. See http://crontab.org/ for cron pattern syntax or test out your pattern at https://crontab.guru/.
 //   hubot remind [add|new] "<day or date in English>" <message> - Schedule a reminder that runs on a specific date and time. "YYYY-MM-DDTHH:mm" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
 //   hubot remind [add|new] "every <day or date in English>" <message> - Schedule a reminder that runs recurrently. For the wizards only. See http://crontab.org/ for cron pattern syntax.
 //   hubot remind [add|new] <flow> "<datetime pattern>" <message> - Schedule a reminder to a specific flow that runs on a specific date and time.
@@ -237,7 +237,7 @@ function createReminderJob(robot, msg, room, pattern, message) {
     } else {
       return msg.send(`\
 \"${pattern}\" is an invalid pattern.
-See http://crontab.org/ for cron-style format pattern.
+See http://crontab.org/ or https://crontab.guru/ for cron-style format pattern.
 See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for datetime-based format pattern.\
 `)
     }
