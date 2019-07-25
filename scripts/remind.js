@@ -48,6 +48,7 @@ const scheduler = require("node-schedule")
 const cronParser = require("cron-parser")
 const cronstrue = require("cronstrue")
 const crontalk = require("crontalk")
+const friendlyCron = require("friendly-cron")
 const moment = require("moment")
 const { TextMessage } = require("hubot")
 const chrono = require("chrono-node")
@@ -209,11 +210,15 @@ function createReminderJob(robot, msg, room, pattern, message) {
 
     // TESTING packages that use NLP to output cron patterns
     if (pattern.indexOf("every") > -1) {
-      let pattern1 = getCronString(pattern, CRON_PATTERN_FORMAT)
-      let pattern2 = crontalk.parse(pattern)
-      return msg.send(
-        `The @darkeyedevelopers/natural-cron.js package outputs: ${pattern1}\nThe crontalk package outputs ${pattern2}`,
-      )
+      // let pattern1 = getCronString(pattern, CRON_PATTERN_FORMAT)
+      // let pattern2 = crontalk.parse(pattern)
+      // let pattern3 = friendlyCron(pattern)
+      // return msg.send(
+      //   `The @darkeyedevelopers/natural-cron.js package outputs: ${pattern1}\nThe crontalk package outputs ${pattern2}\nThe friendly-cron package outputs ${pattern3}`,
+      // )
+
+      // TODO: strip seconds from pattern?
+      pattern = friendlyCron(pattern)
     } else {
       let refDate = Date.now()
       pattern = chrono.parseDate(pattern, refDate, { forwardDate: true })
