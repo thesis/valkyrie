@@ -33,14 +33,12 @@ const {
   getAndFormatScheduledJobList,
 } = require("../lib/schedule-util")
 
-// TODO: Update lib functions to accept these as params?
 const JOBS = {}
-const JOB_MAX_COUNT = 10000
 const STORE_KEY = "hubot_schedule"
 
 module.exports = function(robot) {
   robot.brain.on("loaded", () => {
-    return syncSchedules(robot)
+    return syncSchedules(robot, STORE_KEY, JOBS)
   })
 
   if (!robot.brain.get(STORE_KEY)) {
@@ -70,6 +68,8 @@ module.exports = function(robot) {
       }
       return createScheduledJob(
         robot,
+        JOBS,
+        STORE_KEY,
         msg,
         targetRoomId || targetRoom,
         msg.match[2],
@@ -107,7 +107,13 @@ module.exports = function(robot) {
       outputPrefix += `the ${targetRoom} flow:\n`
     }
 
-    output = getAndFormatScheduledJobList(robot.adapter, JOBS, showAll, rooms)
+    output = getAndFormatScheduledJobList(
+      robot.adapter,
+      JOBS,
+      STORE_KEY,
+      showAll,
+      rooms,
+    )
 
     if (!!output.length) {
       output = outputPrefix + "===\n" + output
@@ -118,10 +124,10 @@ module.exports = function(robot) {
   })
 
   robot.respond(/schedule (?:upd|update) (\d+) ((?:.|\s)*)/i, msg =>
-    updateScheduledJob(robot, msg, msg.match[1], msg.match[2]),
+    updateScheduledJob(robot, JOBS, STORE_KEY, msg, msg.match[1], msg.match[2]),
   )
 
   return robot.respond(/schedule (?:del|delete|remove|cancel) (\d+)/i, msg =>
-    cancelScheduledJob(robot, msg, msg.match[1]),
+    cancelScheduledJob(robot, JOBS, STORE_KEY, msg, msg.match[1]),
   )
 }
