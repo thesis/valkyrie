@@ -30,7 +30,8 @@ const {
   isCronPattern,
   updateScheduledJob,
   cancelScheduledJob,
-  getAndFormatScheduledJobList,
+  getScheduledJobList,
+  formatJobsForListMessage,
 } = require("../lib/schedule-util")
 
 const JOBS = {}
@@ -107,13 +108,10 @@ module.exports = function(robot) {
       outputPrefix += `the ${targetRoom} flow:\n`
     }
 
-    output = getAndFormatScheduledJobList(
-      robot.adapter,
-      JOBS,
-      STORE_KEY,
-      showAll,
-      rooms,
-    )
+    const [dateJobs, cronJobs] = getScheduledJobList(JOBS, showAll, rooms)
+
+    output = formatJobsForListMessage(robot.adapter, dateJobs, false, showAll)
+    output += formatJobsForListMessage(robot.adapter, cronJobs, true, showAll)
 
     if (!!output.length) {
       output = outputPrefix + "===\n" + output
