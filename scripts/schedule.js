@@ -25,12 +25,12 @@ const {
   CONFIG,
   syncSchedules,
   isRestrictedRoom,
-  schedule,
+  createScheduledJob,
   isBlank,
   isCronPattern,
   formatJobListItem,
-  updateSchedule,
-  cancelSchedule,
+  updateScheduledJob,
+  cancelScheduledJob,
 } = require("../lib/schedule-util")
 
 // TODO: Update lib functions to accept these as params?
@@ -68,7 +68,7 @@ module.exports = function(robot) {
           )
         }
       }
-      return schedule(
+      return createScheduledJob(
         robot,
         msg,
         targetRoomId || targetRoom,
@@ -160,10 +160,10 @@ module.exports = function(robot) {
   })
 
   robot.respond(/schedule (?:upd|update) (\d+) ((?:.|\s)*)/i, msg =>
-    updateSchedule(robot, msg, msg.match[1], msg.match[2]),
+    updateScheduledJob(robot, msg, msg.match[1], msg.match[2]),
   )
 
   return robot.respond(/schedule (?:del|delete|remove|cancel) (\d+)/i, msg =>
-    cancelSchedule(robot, msg, msg.match[1]),
+    cancelScheduledJob(robot, msg, msg.match[1]),
   )
 }
