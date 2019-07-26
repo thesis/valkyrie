@@ -28,9 +28,9 @@ const {
   createScheduledJob,
   isBlank,
   isCronPattern,
-  formatJobListItem,
   updateScheduledJob,
   cancelScheduledJob,
+  getAndFormatScheduledJobList,
 } = require("../lib/schedule-util")
 
 // TODO: Update lib functions to accept these as params?
@@ -107,49 +107,7 @@ module.exports = function(robot) {
       outputPrefix += `the ${targetRoom} flow:\n`
     }
 
-    // split jobs into date and cron pattern jobs
-    const dateJobs = {}
-    const cronJobs = {}
-    for (id in JOBS) {
-      job = JOBS[id]
-
-      if (showAll || rooms.includes(job.user.room)) {
-        if (!isCronPattern(job.pattern)) {
-          dateJobs[id] = job
-        } else {
-          cronJobs[id] = job
-        }
-      }
-    }
-
-    // sort by date in ascending order
-    for (id of Object.keys(dateJobs).sort(
-      (a, b) => new Date(dateJobs[a].pattern) - new Date(dateJobs[b].pattern),
-    )) {
-      job = dateJobs[id]
-      output += formatJobListItem(
-        robot,
-        job.pattern,
-        (isCron = false),
-        job.id,
-        job.message,
-        job.user.room,
-        (showRoom = showAll),
-      )
-    }
-
-    for (id in cronJobs) {
-      job = cronJobs[id]
-      output += formatJobListItem(
-        robot,
-        job.pattern,
-        (isCron = true),
-        job.id,
-        job.message,
-        job.user.room,
-        (showRoom = showAll),
-      )
-    }
+    output = getAndFormatScheduledJobList(robot.adapter, JOBS, showAll, rooms)
 
     if (!!output.length) {
       output = outputPrefix + "===\n" + output
