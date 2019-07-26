@@ -75,7 +75,8 @@ module.exports = function(robot) {
   // TODO: clarify desired syntax, clean up pattern
   // any symbols we can use to help parse?
   // --> remind (me|@username) (in <flowname>) (when|how often) (what)
-  robot.respond(/remind (?: (.*))? "(.*?)" ((?:.|\s)*)$/i, function(msg) {
+  robot.respond(/remind ([^"]*?)"(.*?)" ((?:.|\s)*)$/i, function(msg) {
+    let isPrivate = false
     let targetRoom = msg.match[1] // optional name of room specified in msg
     let targetRoomId = null
 
@@ -93,13 +94,22 @@ module.exports = function(robot) {
           `Can't create reminder for ${targetRoom}: I'm not in that flow, or there's a typo in the name`,
         )
       }
+    } else {
+      if (typeof msg.user.room === "undefined") {
+        isPrivate = true
+      }
     }
+    // TODO: add isPrivate here, or lower in the chain?
+    console.log(
+      `->->->->->->-> about to CreateReminderJob -> targetRoomId: ${targetRoomId} ------- targetRoom: ${targetRoom}`,
+    )
     return createReminderJob(
       robot,
       msg,
       targetRoomId || targetRoom,
       msg.match[2],
       msg.match[3],
+      isPrivate,
     )
   })
 
@@ -194,7 +204,7 @@ module.exports = function(robot) {
   )
 }
 
-function createReminderJob(robot, msg, room, pattern, message) {
+function createReminderJob(robot, msg, room, pattern, message, isPrivate) {
   let id
   if (JOB_MAX_COUNT <= Object.keys(REMINDER_JOBS).length) {
     return msg.send("Too many scheduled reminders")
@@ -213,7 +223,8 @@ function createReminderJob(robot, msg, room, pattern, message) {
       let pattern1 = getCronString(pattern, CRON_PATTERN_FORMAT)
       let pattern2 = crontalk.parse(pattern)
       let pattern3 = friendlyCron(pattern)
-      return msg.send(
+      // return msg.send(
+      console.log(
         `The @darkeyedevelopers/natural-cron.js package outputs: ${pattern1}`,
         `The crontalk package outputs ${require("util").inspect(pattern2)}`,
         `The friendly-cron package outputs ${pattern3}`,
@@ -221,13 +232,18 @@ function createReminderJob(robot, msg, room, pattern, message) {
 
       // TODO: strip seconds from pattern, or leave that option?
       // TODO: do strip whitespace after pattern so no implied seconds are created..
-      pattern = friendlyCron(pattern)
+      pattern = pattern3
     } else {
       let refDate = Date.now()
       pattern = chrono.parseDate(pattern, refDate, { forwardDate: true })
     }
 
     // console.log(`(pattern.indexOf("every")): ${(pattern.indexOf("every"))}`)
+    // TODO: set isPrivate here??
+    console.log(
+      `->->->->->->-> about to CreateReminder -> sending room: ${room}`,
+    )
+
     const job = createReminder(
       robot,
       id,
@@ -259,9 +275,22 @@ See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for datetime-b
   }
 }
 
-function createReminder(robot, id, pattern, user, room, message) {
+function createReminder(robot, id, pattern, user, room, message, isPrivate) {
+  // TODO: do I have a room here?
+  console.log(
+    `<<<<<<<<<< createReminder > room/ user.room: ${room}/ ${user.room}`,
+  )
+
   if (isCronPattern(pattern)) {
-    return createCronReminder(robot, id, pattern, user, room, message)
+    return createCronReminder(
+      robot,
+      id,
+      pattern,
+      user,
+      room,
+      message,
+      isPrivate,
+    )
   }
 
   const date = Date.parse(pattern)
@@ -269,25 +298,56 @@ function createReminder(robot, id, pattern, user, room, message) {
     if (date < Date.now()) {
       throw new Error(`\"${pattern}\" has already passed`)
     }
-    return createDatetimeReminder(robot, id, pattern, user, room, message)
+    return createDatetimeReminder(
+      robot,
+      id,
+      pattern,
+      user,
+      room,
+      message,
+      isPrivate,
+    )
   }
 }
 
-var createCronReminder = (robot, id, pattern, user, room, message) =>
-  startReminder(robot, id, pattern, user, room, message)
+var createCronReminder = (robot, id, pattern, user, room, message, isPrivate) =>
+  startReminder(robot, id, pattern, user, room, message, isPrivate)
 
-var createDatetimeReminder = (robot, id, pattern, user, room, message) =>
-  startReminder(robot, id, new Date(pattern), user, room, message, function() {
-    delete REMINDER_JOBS[id]
-    return delete robot.brain.get(REMINDER_KEY)[id]
-  })
+var createDatetimeReminder = (
+  robot,
+  id,
+  pattern,
+  user,
+  room,
+  message,
+  isPrivate,
+) =>
+  startReminder(
+    robot,
+    id,
+    new Date(pattern),
+    user,
+    room,
+    message,
+    isPrivate,
+    function() {
+      delete REMINDER_JOBS[id]
+      return delete robot.brain.get(REMINDER_KEY)[id]
+    },
+  )
 
-function startReminder(robot, id, pattern, user, room, message, cb) {
+function startReminder(robot, id, pattern, user, room, message, isPrivate, cb) {
   if (!room) {
     // if a targetRoom isn't specified, send to current room
+    // TODO: what is current room in a DM?
+    // TODO: differentiate between a DM and a job w no room specified?
+    console.log(
+      `>>>>>>> startReminder > room/ user.room: ${room}/ ${user.room}`,
+    )
+    // TODO: set isPrivate here
     room = user.room
   }
-  const job = new Job(id, pattern, user, room, message, cb)
+  const job = new Job(id, pattern, user, room, message, isPrivate, cb)
   job.start(robot)
   REMINDER_JOBS[id] = job
   return (robot.brain.get(REMINDER_KEY)[id] = job.serialize())
@@ -520,7 +580,7 @@ function formatJobListItem(
 }
 
 class Job {
-  constructor(id, pattern, user, room, message, cb) {
+  constructor(id, pattern, user, room, message, isPrivate, cb) {
     this.id = id
     this.pattern = pattern
     this.user = {
@@ -533,6 +593,7 @@ class Job {
       }
     } // copy only needed properties
     this.message = message
+    this.isPrivate = isPrivate
     this.cb = cb
     this.job
   }
