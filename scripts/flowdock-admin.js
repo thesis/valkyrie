@@ -9,7 +9,6 @@
 //   hubot flows - reponds with a list of flows as Flow Name: flow-id
 //   hubot reconnect <optional reason for reconnecting> - reconnects to the flowdock stream
 //   hubot users [flowdock|robot] - responds with a list of Flowdock users as User Name: user-id
-//   hubot user update <user id> <new user name>- updates the user's name in hubot's brain
 //
 // Author:
 //   shadowfiend
@@ -66,32 +65,6 @@ module.exports = function(robot) {
       )
     }
   })
-
-  robot.respond(
-    /user update (\d{1,10}) ((?:.|\s)*)/i,
-    { id: "user-update" },
-    response => {
-      // Flowdock doesn't give specs for length of id
-      // We currently see 4-6 digits, but allowing here for greater range of length
-      let userId = response.match[1]
-      let userNewName = response.match[2]
-
-      let user = robot.brain.users()[userId]
-      if (user != null) {
-        user.name = userNewName
-        robot.brain.set(userId, user)
-        robot.brain.save()
-        let userUpdated = Object.values(robot.brain.users()).find(user => {
-          return user.id == userId
-        })
-        response.send(
-          `Updated user!\nname: ${userUpdated.name}: id:${userUpdated.id}`,
-        )
-      } else {
-        response.send(`User not found.`)
-      }
-    },
-  )
 
   robot.respond(/reconnect ?((?:.|\s)*)$/i, { id: "reconnect" }, response => {
     if (notUsingFlowdock(robot.adapter, response)) {
