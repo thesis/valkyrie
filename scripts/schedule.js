@@ -49,6 +49,14 @@ const moment = require("moment")
 const { TextMessage } = require("hubot")
 
 const {
+  createReminderJob,
+  cancelSchedule,
+  updateReminder,
+  isBlank,
+  syncJobs,
+} = require("../lib/schedule-utils")
+
+const {
   getRoomIdFromName,
   getRoomNameFromId,
   robotIsInRoom,
@@ -60,7 +68,7 @@ const STORE_KEY = "hubot_schedule"
 
 module.exports = function(robot) {
   robot.brain.on("loaded", () => {
-    return syncSchedules(robot)
+    return syncJobs(robot, STORE_KEY)
   })
 
   if (!robot.brain.get(STORE_KEY)) {
@@ -290,59 +298,6 @@ function updateSchedule(robot, msg, id, message) {
     job.room ? true : false,
   )
   return msg.send(`Schedule message updated:\n${formattedJob}`)
-}
-
-function cancelSchedule(robot, msg, id) {
-  const job = JOBS[id]
-  if (!job) {
-    return msg.send(`${id}: Schedule not found`)
-  }
-
-  if (isRestrictedRoom(job.user.room, robot, msg)) {
-    return msg.send(
-      `Canceling schedule for the ${getRoomNameFromId(
-        robot.adapter,
-        job.user.room,
-      ) || job.user.room} flow is restricted`,
-    )
-  }
-
-  job.cancel()
-  delete JOBS[id]
-  delete robot.brain.get(STORE_KEY)[id]
-  formattedJob = formatJobListItem(
-    robot,
-    job.pattern,
-    isCronPattern(job.pattern),
-    job.id,
-    job.message,
-    job.room,
-    job.room ? true : false,
-  )
-  return msg.send(`Schedule canceled:\n${formattedJob}`)
-}
-
-function syncSchedules(robot) {
-  let id, job
-  if (!robot.brain.get(STORE_KEY)) {
-    robot.brain.set(STORE_KEY, {})
-  }
-
-  const nonCachedSchedules = difference(robot.brain.get(STORE_KEY), JOBS)
-  for (id of Object.keys(nonCachedSchedules || {})) {
-    job = nonCachedSchedules[id]
-    scheduleFromBrain(robot, id, ...job)
-  }
-
-  const nonStoredSchedules = difference(JOBS, robot.brain.get(STORE_KEY))
-  return (() => {
-    const result = []
-    for (id of Object.keys(nonStoredSchedules || {})) {
-      job = nonStoredSchedules[id]
-      result.push(storeScheduleInBrain(robot, id, job))
-    }
-    return result
-  })()
 }
 
 function scheduleFromBrain(robot, id, pattern, user, message) {
