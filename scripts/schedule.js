@@ -2,16 +2,6 @@
 //   Schedule a message in both cron-style and datetime-based format pattern
 //   Modified for flowdock, and converted to JS
 //
-// Dependencies:
-//   "node-schedule" : "~1.0.0",
-//   "cron-parser"   : "~1.0.1",
-//   "cronstrue"     : "^1.68.0"
-//
-// Configuration:
-//   HUBOT_SCHEDULE_DEBUG - set "1" for debug
-//   HUBOT_SCHEDULE_DONT_RECEIVE - set "1" if you don't want hubot to be processed by scheduled message
-//   HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL - set "1" if you want to deny scheduling from other rooms
-//   HUBOT_SCHEDULE_LIST_REPLACE_TEXT - set JSON object like '{"@":"[at]"}' to configure text replacement used when listing scheduled messages
 //
 // Commands:
 //   hubot schedule [add|new] "<datetime pattern>" <message> - Schedule a message that runs on a specific date and time. "YYYY-MM-DDTHH:mm" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
@@ -28,33 +18,11 @@
 //   kb0rg
 //   matsukaz <matsukaz@gmail.com>
 //
-// configuration settings
-const config = {
-  debug: process.env.HUBOT_SCHEDULE_DEBUG,
-  dontReceive: process.env.HUBOT_SCHEDULE_DONT_RECEIVE,
-  denyExternalControl: process.env.HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL,
-  list: {
-    replaceText: JSON.parse(
-      process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
-        ? process.env.HUBOT_SCHEDULE_LIST_REPLACE_TEXT
-        : '{"(@@?)":"[$1]","```":"\\n```\\n","#":"[#]","\\n":"\\n>"}',
-    ),
-  },
-}
 
-const scheduler = require("node-schedule")
-const cronParser = require("cron-parser")
-const cronstrue = require("cronstrue")
-const moment = require("moment")
-const { TextMessage } = require("hubot")
+const { getRoomIdFromName, robotIsInRoom } = require("../lib/flowdock-util")
 
 const {
-  getRoomIdFromName,
-  getRoomNameFromId,
-  robotIsInRoom,
-} = require("../lib/flowdock-util")
-
-const {
+  CONFIG,
   syncSchedules,
   isRestrictedRoom,
   schedule,
@@ -65,6 +33,7 @@ const {
   cancelSchedule,
 } = require("../lib/schedule-util")
 
+// TODO: Update lib functions to accept these as params?
 const JOBS = {}
 const JOB_MAX_COUNT = 10000
 const STORE_KEY = "hubot_schedule"
@@ -118,7 +87,7 @@ module.exports = function(robot) {
 
     outputPrefix = "Showing scheduled jobs for "
 
-    if (isBlank(targetRoom) || config.denyExternalControl === "1") {
+    if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
       // if targetRoom is undefined or blank, show schedule for current room
       // room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
       rooms = [roomId]
