@@ -57,25 +57,31 @@ module.exports = function(robot) {
 
         if (isRestrictedRoom(targetRoomId, robot, msg)) {
           return msg.send(
-            `Creating schedule for the ${targetRoom} flow is restricted`,
+            `Creating schedule for the ${targetRoom} flow is restricted.`,
           )
         }
 
         if (!robotIsInRoom(robot.adapter, targetRoomId)) {
           return msg.send(
-            `Can't create schedule for ${targetRoom}: I'm not in that flow, or there's a typo in the name`,
+            `Can't create schedule for ${targetRoom}: I'm not in that flow, or there's a typo in the name.`,
           )
         }
       }
-      return createScheduledJob(
-        robot,
-        JOBS,
-        STORE_KEY,
-        msg,
-        targetRoomId || targetRoom,
-        msg.match[2],
-        msg.match[3],
-      )
+      try {
+        let resp = createScheduledJob(
+          robot,
+          JOBS,
+          STORE_KEY,
+          msg.message.user,
+          targetRoomId || targetRoom,
+          msg.match[2],
+          msg.match[3],
+        )
+        msg.send(resp)
+      } catch (error) {
+        robot.logger.error(`createScheduledJob Error: ${error.message}`)
+        msg.send("Something went wrong.")
+      }
     },
   )
 
