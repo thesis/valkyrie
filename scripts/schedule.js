@@ -114,16 +114,24 @@ module.exports = function(robot) {
       outputPrefix += `the ${targetRoom} flow:\n`
     }
 
-    const [dateJobs, cronJobs] = getScheduledJobList(JOBS, showAll, rooms)
+    try {
+      let [dateJobs, cronJobs] = getScheduledJobList(JOBS, showAll, rooms)
 
-    output = formatJobsForListMessage(robot.adapter, dateJobs, false, showAll)
-    output += formatJobsForListMessage(robot.adapter, cronJobs, true, showAll)
+      output = formatJobsForListMessage(robot.adapter, dateJobs, false, showAll)
+      output += formatJobsForListMessage(robot.adapter, cronJobs, true, showAll)
 
-    if (!!output.length) {
-      output = outputPrefix + "===\n" + output
-      return msg.send(output)
-    } else {
-      return msg.send("No messages have been scheduled")
+      if (!!output.length) {
+        output = outputPrefix + "===\n" + output
+        return msg.send(output)
+      } else {
+        return msg.send("No messages have been scheduled")
+      }
+    } catch (error) {
+      robot.logger.error(
+        `Error getting or formatting job list: ${error.message}\nFull error: %o`,
+        error,
+      )
+      msg.send("Something went wrong.")
     }
   })
 
