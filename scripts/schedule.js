@@ -19,7 +19,11 @@
 //   matsukaz <matsukaz@gmail.com>
 //
 
-const { getRoomIdFromName, robotIsInRoom } = require("../lib/flowdock-util")
+const {
+  getRoomIdFromName,
+  isRoomInviteOnly,
+  robotIsInRoom,
+} = require("../lib/flowdock-util")
 
 const {
   CONFIG,
@@ -97,9 +101,11 @@ module.exports = function(robot) {
     if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
       // if targetRoom is undefined or blank, show schedule for current room
       // room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
+      // TODO handle ensuring we don't show other user's DMs
       rooms = [roomId]
       outputPrefix += "THIS flow:\n"
     } else if (targetRoom === "all") {
+      // TODO: filter public flows here and add to room list
       showAll = true
       outputPrefix += "ALL flows:\n"
     } else {
@@ -109,6 +115,13 @@ module.exports = function(robot) {
         return msg.send(
           `Sorry, I'm not in the ${targetRoom} flow - or maybe you mistyped?`,
         )
+      }
+      if (isRoomInviteOnly(robot.adapter, robot.adapterName, targetRoomId)) {
+        if (msg.message.user.room != targetRoomId) {
+          return msg.send(
+            `Sorry, that's a private flow. I can only show jobs scheduled from that flow from within the flow.`,
+          )
+        }
       }
       rooms = [targetRoomId]
       outputPrefix += `the ${targetRoom} flow:\n`
