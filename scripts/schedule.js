@@ -135,11 +135,30 @@ module.exports = function(robot) {
     }
   })
 
-  robot.respond(/schedule (?:upd|update) (\d+) ((?:.|\s)*)/i, msg =>
-    updateScheduledJob(robot, JOBS, STORE_KEY, msg, msg.match[1], msg.match[2]),
-  )
+  robot.respond(/schedule (?:upd|update) (\d+) ((?:.|\s)*)/i, msg => {
+    try {
+      let resp = updateScheduledJob(
+        robot,
+        JOBS,
+        STORE_KEY,
+        msg,
+        msg.match[1],
+        msg.match[2],
+      )
+      msg.send(resp)
+    } catch (error) {
+      robot.logger.error(`updateScheduledJob Error: ${error.message}`)
+      msg.send("Something went wrong updating this schedule.")
+    }
+  })
 
-  return robot.respond(/schedule (?:del|delete|remove|cancel) (\d+)/i, msg =>
-    cancelScheduledJob(robot, JOBS, STORE_KEY, msg, msg.match[1]),
-  )
+  robot.respond(/schedule (?:del|delete|remove|cancel) (\d+)/i, msg => {
+    try {
+      let resp = cancelScheduledJob(robot, JOBS, STORE_KEY, msg, msg.match[1])
+      msg.send(resp)
+    } catch (error) {
+      robot.logger.error(`updateScheduledJob Error: ${error.message}`)
+      msg.send("Something went wrong deleting this schedule.")
+    }
+  })
 }
