@@ -21,6 +21,7 @@
 
 const {
   getRoomIdFromName,
+  getPublicJoinedFlowIds,
   isRoomInviteOnly,
   robotIsInRoom,
 } = require("../lib/flowdock-util")
@@ -105,9 +106,17 @@ module.exports = function(robot) {
       rooms = [roomId]
       outputPrefix += "THIS flow:\n"
     } else if (targetRoom === "all") {
-      // TODO: filter public flows here and add to room list
+      rooms = getPublicJoinedFlowIds(robot.adapter)
       showAll = true
-      outputPrefix += "ALL flows:\n"
+      outputPrefix += "all public flows:\n"
+      // If called from a private room, add this room to list
+      if (rooms.indexOf(roomId) < 0) {
+        rooms.push(roomId)
+        outputPrefix = outputPrefix.replace(
+          "all public flows",
+          "all public flows plus THIS one",
+        )
+      }
     } else {
       targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
 
@@ -128,7 +137,7 @@ module.exports = function(robot) {
     }
 
     try {
-      let [dateJobs, cronJobs] = getScheduledJobList(JOBS, showAll, rooms)
+      let [dateJobs, cronJobs] = getScheduledJobList(JOBS, rooms)
 
       output = formatJobsForListMessage(robot.adapter, dateJobs, false, showAll)
       output += formatJobsForListMessage(robot.adapter, cronJobs, true, showAll)
