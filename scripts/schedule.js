@@ -93,23 +93,26 @@ module.exports = function(robot) {
   robot.respond(/schedule list(?: (all|.*))?/i, function(msg) {
     let id, job, rooms, showAll, outputPrefix
     const targetRoom = msg.match[1]
-    const roomId = msg.message.user.room
+    const roomId = msg.message.user.room // room command is called from
     let targetRoomId = null
     let output = ""
+
+    // only get DMs from user who called list, if user calls list from a DM
+    let userIdForDMs = typeof roomId === undefined ? msg.message.user.id : null
 
     outputPrefix = "Showing scheduled jobs for "
 
     if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
-      // if targetRoom is undefined or blank, show schedule for current room
-      // room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
-      // TODO handle ensuring we don't show other user's DMs
+      // If targetRoom is undefined or blank, show schedule for current room.
+      // Room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
       rooms = [roomId]
       outputPrefix += "THIS flow:\n"
     } else if (targetRoom === "all") {
+      // If targetRoom is all, get list of all public rooms. If called from a
+      // private room, add this room to list
       rooms = getPublicJoinedFlowIds(robot.adapter)
       showAll = true
       outputPrefix += "all public flows:\n"
-      // If called from a private room, add this room to list
       if (rooms.indexOf(roomId) < 0) {
         rooms.push(roomId)
         outputPrefix = outputPrefix.replace(
@@ -118,8 +121,8 @@ module.exports = function(robot) {
         )
       }
     } else {
+      // If targetRoom is specified, show jobs for that room if allowed.
       targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
-
       if (!robotIsInRoom(robot.adapter, targetRoomId)) {
         return msg.send(
           `Sorry, I'm not in the ${targetRoom} flow - or maybe you mistyped?`,
@@ -137,8 +140,7 @@ module.exports = function(robot) {
     }
 
     try {
-      let [dateJobs, cronJobs] = getScheduledJobList(JOBS, rooms)
-
+      let [dateJobs, cronJobs] = getScheduledJobList(JOBS, rooms, userIdForDMs)
       output = formatJobsForListMessage(robot.adapter, dateJobs, false, showAll)
       output += formatJobsForListMessage(robot.adapter, cronJobs, true, showAll)
 
