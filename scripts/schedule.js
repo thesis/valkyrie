@@ -7,7 +7,7 @@
 //   hubot schedule [add|new] "<datetime pattern>" <message> - Schedule a message that runs on a specific date and time. "YYYY-MM-DDTHH:mm" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
 //   hubot schedule [add|new] "<cron pattern>" <message> - Schedule a message that runs recurrently. For the wizards only. See http://crontab.org/ for cron pattern syntax.
 //   hubot schedule [add|new] <flow> "<datetime pattern>" <message> - Schedule a message to a specific flow that runs on a specific date and time.
-//   hubot schedule [add|new] <flow> "<cron pattern>" <message> - Schedule a message to a specific flow that runs recurrently
+//   hubot schedule [add|new] "<cron pattern>" <message> - Schedule a message that runs recurrently. For the wizards only. See https://crontab.guru/ or http://crontab.org/ for cron pattern syntax.
 //   hubot schedule [cancel|del|delete|remove] <id> - Cancel the schedule
 //   hubot schedule [upd|update] <id> <message> - Update scheduled message
 //   hubot schedule list - List all scheduled messages for current flow. NOTE all times are listed in UTC
@@ -85,7 +85,7 @@ module.exports = function(robot) {
         msg.send(resp)
       } catch (error) {
         robot.logger.error(`createScheduledJob Error: ${error.message}`)
-        msg.send("Something went wrong.")
+        msg.send("Something went wrong adding this schedule.")
       }
     },
   )
@@ -100,25 +100,22 @@ module.exports = function(robot) {
     // only get DMs from user who called list, if user calls list from a DM
     let userIdForDMs = typeof roomId === undefined ? msg.message.user.id : null
 
+    // Construct params for getting and formatting job list
     outputPrefix = "Showing scheduled jobs for "
-
     if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
       // If targetRoom is undefined or blank, show schedule for current room.
       // Room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
       rooms = [roomId]
       outputPrefix += "THIS flow:\n"
     } else if (targetRoom === "all") {
-      // If targetRoom is all, get list of all public rooms. If called from a
-      // private room, add this room to list
+      // Get list of public rooms. If called from a private room, add to list.
       rooms = getPublicJoinedFlowIds(robot.adapter)
       showAll = true
-      outputPrefix += "all public flows:\n"
       if (rooms.indexOf(roomId) < 0) {
         rooms.push(roomId)
-        outputPrefix = outputPrefix.replace(
-          "all public flows",
-          "all public flows plus THIS one",
-        )
+        outputPrefix += "all public flows plus THIS one:\n"
+      } else {
+        outputPrefix += "all public flows:\n"
       }
     } else {
       // If targetRoom is specified, show jobs for that room if allowed.
@@ -155,7 +152,7 @@ module.exports = function(robot) {
         `Error getting or formatting job list: ${error.message}\nFull error: %o`,
         error,
       )
-      msg.send("Something went wrong.")
+      msg.send("Something went wrong getting the schedule list.")
     }
   })
 
