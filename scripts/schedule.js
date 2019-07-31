@@ -90,7 +90,7 @@ module.exports = function(robot) {
   )
 
   robot.respond(/schedule list(?: (all|.*))?/i, function(msg) {
-    let id, job, rooms, showAll, outputPrefix
+    let id, job, rooms, outputPrefix
     const targetRoom = msg.match[1]
     const roomId = msg.message.user.room // room command is called from
     let targetRoomId = null
@@ -109,7 +109,6 @@ module.exports = function(robot) {
     } else if (targetRoom === "all") {
       // Get list of public rooms. If called from a private room, add to list.
       rooms = getPublicJoinedFlowIds(robot.adapter)
-      showAll = true
       if (rooms.indexOf(roomId) < 0) {
         rooms.push(roomId)
         outputPrefix += "all public flows plus THIS one:\n"
@@ -137,8 +136,8 @@ module.exports = function(robot) {
 
     try {
       let [dateJobs, cronJobs] = getScheduledJobList(JOBS, rooms, userIdForDMs)
-      output = formatJobsForListMessage(robot.adapter, dateJobs, false, showAll)
-      output += formatJobsForListMessage(robot.adapter, cronJobs, true, showAll)
+      output = formatJobsForListMessage(robot.adapter, dateJobs, false)
+      output += formatJobsForListMessage(robot.adapter, cronJobs, true)
 
       if (!!output.length) {
         output = outputPrefix + "===\n" + output
