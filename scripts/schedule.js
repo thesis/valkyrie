@@ -96,6 +96,23 @@ module.exports = function(robot) {
     let targetRoomId = null
     let output = ""
 
+    // If targetRoom is specified, check whether list for is permitted.
+    if (!isBlank(targetRoom) && targetRoom != "all") {
+      targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
+      if (!robotIsInRoom(robot.adapter, targetRoomId)) {
+        return msg.send(
+          `Sorry, I'm not in the ${targetRoom} flow - or maybe you mistyped?`,
+        )
+      }
+      if (isRoomInviteOnly(robot.adapter, robot.adapterName, targetRoomId)) {
+        if (msg.message.user.room != targetRoomId) {
+          return msg.send(
+            `Sorry, that's a private flow. I can only show jobs scheduled from that flow from within the flow.`,
+          )
+        }
+      }
+    }
+
     // only get DMs from user who called list, if user calls list from a DM
     let userIdForDMs = typeof roomId === undefined ? msg.message.user.id : null
 
@@ -111,20 +128,7 @@ module.exports = function(robot) {
         rooms.push(roomId)
       }
     } else {
-      // If targetRoom is specified, show jobs for that room if allowed.
-      targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
-      if (!robotIsInRoom(robot.adapter, targetRoomId)) {
-        return msg.send(
-          `Sorry, I'm not in the ${targetRoom} flow - or maybe you mistyped?`,
-        )
-      }
-      if (isRoomInviteOnly(robot.adapter, robot.adapterName, targetRoomId)) {
-        if (msg.message.user.room != targetRoomId) {
-          return msg.send(
-            `Sorry, that's a private flow. I can only show jobs scheduled from that flow from within the flow.`,
-          )
-        }
-      }
+      // If targetRoom is specified, show jobs for that room.
       rooms = [targetRoomId]
       outputPrefix += `the ${targetRoom} flow:\n`
     }
