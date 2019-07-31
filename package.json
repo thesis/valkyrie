@@ -5,6 +5,7 @@
   "author": "Antonio Salazar Cardozo <antonio@thesis.co>",
   "description": "Heimdall can see and hear your every need, and keeps watch for the onset of Ragnarok",
   "dependencies": {
+    "chrono-node": "^1.3.11",
     "coffeescript": "^1.12.3",
     "cookie-parser": "^1.4.3",
     "cron-parser": "~1.0.1",
