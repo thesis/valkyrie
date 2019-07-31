@@ -100,20 +100,15 @@ module.exports = function(robot) {
     let userIdForDMs = typeof roomId === undefined ? msg.message.user.id : null
 
     // Construct params for getting and formatting job list
-    outputPrefix = "Showing scheduled jobs for "
     if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
       // If targetRoom is undefined or blank, show schedule for current room.
       // Room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
       rooms = [roomId]
-      outputPrefix += "THIS flow:\n"
     } else if (targetRoom === "all") {
       // Get list of public rooms. If called from a private room, add to list.
       rooms = getPublicJoinedFlowIds(robot.adapter)
       if (rooms.indexOf(roomId) < 0) {
         rooms.push(roomId)
-        outputPrefix += "all public flows plus THIS one:\n"
-      } else {
-        outputPrefix += "all public flows:\n"
       }
     } else {
       // If targetRoom is specified, show jobs for that room if allowed.
@@ -131,6 +126,22 @@ module.exports = function(robot) {
         }
       }
       rooms = [targetRoomId]
+      outputPrefix += `the ${targetRoom} flow:\n`
+    }
+
+    // Construct message string prefix
+    outputPrefix = "Showing scheduled jobs for "
+    if (rooms == [roomId]) {
+      outputPrefix += "THIS flow:\n"
+    } else if (targetRoom === "all") {
+      // If called from a private room, add to list.
+      if (isRoomInviteOnly(robot.adapter, robot.adapterName, roomId)) {
+        outputPrefix += "all public flows plus THIS one:\n"
+      } else {
+        outputPrefix += "all public flows:\n"
+      }
+    } else {
+      // If targetRoom is specified, show jobs for that room if allowed.
       outputPrefix += `the ${targetRoom} flow:\n`
     }
 
