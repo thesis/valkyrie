@@ -33,6 +33,8 @@ spec:
                 secretKeyRef:
                   name: heimdall-hubot
                   key: host
+            - name: HUBOT_SCHEDULE_DEBUG
+              value: 1
             - name: RELEASE_NOTIFICATION_ROOM
               valueFrom:
                 secretKeyRef:
