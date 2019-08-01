@@ -63,8 +63,8 @@ module.exports = function(robot) {
         )
       }
 
-      let flowData = getRoomInfoFromIdOrName(robot.adapter, res.message.room)
-      if (flowData && flowData.access_mode === "invitation") {
+      let sourceFlow = getRoomInfoFromIdOrName(robot.adapter, res.message.room)
+      if (sourceFlow && sourceFlow.access_mode === "invitation") {
         return res.send(
           `Sorry, this command only works from public flows, to protect the privacy of your invite-only flow.\n\n${redirectToSuggestionAlertRoomMessage}`,
         )
@@ -77,21 +77,21 @@ module.exports = function(robot) {
         return
       }
 
-      let sourceFlowName = getRoomNameFromId(robot.adapter, res.message.room)
+      let sourceFlowName = ""
       let originalThreadReference = ""
 
-      if (!robot.adapter.flowPath) {
+      if (!sourceFlow) {
         // this is probably local dev, but no special handling needed
         // let's log an error in case this ever happens in prod
-        robot.logger.info(
+        robot.logger.error(
           `Could not get room name from res.message.room: ${res.message.room}.`,
         )
         // and fall back to a reference to the room instead of a link
         sourceFlowName = res.message.room
         originalThreadReference = `Refer to original thread in: ${res.message.room}.`
       } else {
+        sourceFlowName = sourceFlow.name
         let sourceThreadId = res.message.metadata.thread_id
-        let sourceFlow = getRoomInfoFromIdOrName(robot.adapter, sourceFlowName)
         let sourceThreadPath = `${robot.adapter.flowPath(
           sourceFlow,
         )}/${sourceThreadId}`
