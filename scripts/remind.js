@@ -18,8 +18,6 @@
 //   kb0rg
 //
 
-const chrono = require("chrono-node")
-
 const {
   getRoomIdFromName,
   getPublicJoinedFlowIds,
@@ -38,6 +36,7 @@ const {
   cancelScheduledJob,
   getScheduledJobList,
   formatJobsForListMessage,
+  convertNaturalLanguageDatePattern,
 } = require("../lib/schedule-util")
 
 const REMINDER_JOBS = {}
@@ -74,11 +73,7 @@ module.exports = function(robot) {
       }
     }
 
-    let pattern = msg.match[2]
-
-    // convert natural language to datetime pattern
-    let refDate = Date.now()
-    pattern = chrono.parseDate(pattern, refDate, { forwardDate: true })
+    let pattern = convertNaturalLanguageDatePattern(msg.match[2])
 
     try {
       let resp = createScheduledJob(
