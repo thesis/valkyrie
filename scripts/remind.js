@@ -9,13 +9,13 @@
 //   the `schedule`` command for that.
 //
 // Commands:
-//   hubot remind "<day or date in English>" <message> - Create a reminder that runs on a specific date and time.
-//   hubot remind <flow> "<day or date in English>" <message> - Create a reminder to a specific flow.
+//   hubot remind "<day or date in English>" <message> - Create a reminder that runs on a specific date and time, using regular English syntax to describe the date/time. See https://www.npmjs.com/package/chrono-node for examples of accepted date formats. Note: you CAN include a timezone in your request, but all times will be Displayed in UTC.
+//   hubot remind <flow> "<day or date in English>" <message> - Create a reminder to a specific flow. See above for info on date/ time syntax.
 //   hubot reminder [cancel|del|delete|remove] <id> - Cancel the reminder
 //   hubot reminder [upd|update] <id> <message> - Update reminder message
-//   hubot reminder list - List all reminders for current flow. NOTE all times are listed in UTC
-//   hubot reminder list <flow> - List all reminders for specified flow. NOTE all times are listed in UTC
-//   hubot reminder list all - List all reminders for any flows. NOTE all times are listed in UTC
+//   hubot reminder list - List all reminders for current flow. NOTE all times are displayed in UTC
+//   hubot reminder list <flow> - List all reminders for specified flow. NOTE all times are displayed in UTC
+//   hubot reminder list all - List all reminders for any flows. NOTE all times are displayed in UTC
 //
 // Author:
 //   kb0rg
