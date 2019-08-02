@@ -21,6 +21,8 @@
 //   kb0rg
 //
 
+const _ = require("lodash")
+
 const {
   getRoomIdFromName,
   getPublicJoinedFlowIds,
@@ -57,7 +59,7 @@ module.exports = function(robot) {
   // TODO: update pattern/ help to use improved syntax
   // --> remind [me|@username] [in <flowname>] [when|how often] <what>
   robot.respond(/remind (.*)?"(.*?)" ((?:.|\s)*)$/i, function(msg) {
-    let targetRoom = msg.match[1] // optional name of room specified in msg
+    let targetRoom = _.trim(msg.match[1]) // optional name of room specified in msg
     let targetRoomId = null
 
     if (!isBlank(targetRoom)) {
