@@ -18,6 +18,8 @@
 //   kb0rg
 //
 
+const chrono = require("chrono-node")
+
 const {
   getRoomIdFromName,
   getPublicJoinedFlowIds,
@@ -71,6 +73,13 @@ module.exports = function(robot) {
         )
       }
     }
+
+    let pattern = msg.match[2]
+
+    // convert natural language to datetime pattern
+    let refDate = Date.now()
+    pattern = chrono.parseDate(pattern, refDate, { forwardDate: true })
+
     try {
       let resp = createScheduledJob(
         robot,
@@ -78,7 +87,7 @@ module.exports = function(robot) {
         REMINDER_KEY,
         msg.message.user,
         targetRoomId || targetRoom,
-        msg.match[2],
+        pattern,
         msg.match[3],
       )
       msg.send(resp)
