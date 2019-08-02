@@ -1,18 +1,21 @@
 // Description:
-//   Schedule a reminder message in both cron-style and datetime-based format
-//   pattern
+//   Create a reminder message
+//
 //   Based on hubot-schedule by matsukaz <matsukaz@gmail.com>
 //   Modified for flowdock, converted to JS, and updated to accept natural
 //   language input for date patterns
 //
+//   Currently not supporting recurring events/ cron patterns. Continue using
+//   the `schedule`` command for that.
+//
 // Commands:
-//   hubot remind "<day or date in English>" <message> - Schedule a reminder that runs on a specific date and time.
-//   hubot remind <flow> "<day or date in English>" <message> - Schedule a reminder to a specific flow.
+//   hubot remind "<day or date in English>" <message> - Create a reminder that runs on a specific date and time.
+//   hubot remind <flow> "<day or date in English>" <message> - Create a reminder to a specific flow.
 //   hubot reminder [cancel|del|delete|remove] <id> - Cancel the reminder
 //   hubot reminder [upd|update] <id> <message> - Update reminder message
-//   hubot reminder list - List all scheduled reminders for current flow. NOTE all times are listed in UTC
-//   hubot reminder list <flow> - List all scheduled reminders for specified flow. NOTE all times are listed in UTC
-//   hubot reminder list all - List all scheduled reminders for any flows. NOTE all times are listed in UTC
+//   hubot reminder list - List all reminders for current flow. NOTE all times are listed in UTC
+//   hubot reminder list <flow> - List all reminders for specified flow. NOTE all times are listed in UTC
+//   hubot reminder list all - List all reminders for any flows. NOTE all times are listed in UTC
 //
 // Author:
 //   kb0rg
