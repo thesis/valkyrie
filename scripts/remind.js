@@ -6,9 +6,8 @@
 //   language input for date patterns
 //
 // Commands:
-//   hubot remind "<day or date in English>" <message> - Schedule a reminder that runs on a specific date and time. "YYYY-MM-DDTHH:mm" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
-//   hubot remind "every <day or date in English>" <message> - Schedule a reminder that runs recurrently.
-//   hubot remind <flow> "[every ]<day or date in English>" <message> - Schedule a reminder to a specific flow.
+//   hubot remind "<day or date in English>" <message> - Schedule a reminder that runs on a specific date and time.
+//   hubot remind <flow> "<day or date in English>" <message> - Schedule a reminder to a specific flow.
 //   hubot reminder [cancel|del|delete|remove] <id> - Cancel the reminder
 //   hubot reminder [upd|update] <id> <message> - Update reminder message
 //   hubot reminder list - List all scheduled reminders for current flow. NOTE all times are listed in UTC
@@ -53,9 +52,7 @@ module.exports = function(robot) {
 
   // TODO: update pattern/ help to use improved syntax
   // --> remind [me|@username] [in <flowname>] [when|how often] <what>
-  robot.respond(/remind (?:new|add)(?: (.*))? "(.*?)" ((?:.|\s)*)$/i, function(
-    msg,
-  ) {
+  robot.respond(/remind (.*)?"(.*?)" ((?:.|\s)*)$/i, function(msg) {
     let targetRoom = msg.match[1] // optional name of room specified in msg
     let targetRoomId = null
 
