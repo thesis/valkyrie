@@ -18,6 +18,8 @@
 //   matsukaz <matsukaz@gmail.com>
 //
 
+const _ = require("lodash")
+
 const {
   getRoomIdFromName,
   getPublicJoinedFlowIds,
@@ -78,7 +80,7 @@ module.exports = function(robot) {
           STORE_KEY,
           msg.message.user,
           targetRoomId || targetRoom,
-          msg.match[2],
+          _.trim(msg.match[2]),
           msg.match[3],
         )
         msg.send(resp)
