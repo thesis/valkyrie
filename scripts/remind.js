@@ -78,9 +78,16 @@ module.exports = function(robot) {
       }
     }
 
-    let pattern = convertNaturalLanguageDatePattern(msg.match[2])
-
     try {
+      let pattern = convertNaturalLanguageDatePattern(msg.match[2])
+      if (!pattern) {
+        return msg.send(`\"${msg.match[2]}\" is an invalid date format.
+          See https://www.npmjs.com/package/chrono-node for examples of accepted date formats.
+          If you're trying to schedule a recurring reminder, try using the \`schedule\` command:
+          See \`help schedule\` for more information.
+          `)
+      }
+
       let resp = createScheduledJob(
         robot,
         REMINDER_JOBS,
