@@ -1,5 +1,7 @@
 import { default as axios, AxiosResponse, AxiosRequestConfig } from "axios"
 
+import { Base64 } from "js-base64"
+
 const API_BASE_URL = "https://api.flowdock.com",
   APP_BASE_URL = "https://www.flowdock.com/app"
 
@@ -98,18 +100,28 @@ class Session {
     })
   }
 
-  async postMessage(message: string, targetFlow: string) {
+  async postMessage(message: string) {
+    return this.postFn(URLs.messages, {
+      flow_token: this.apiToken,
+      event: "message",
+      content: `${message}`,
+    })
+  }
+
+  async postBasicAuthMessage(message: string, targetFlowId: string) {
+    let apiToken = Base64.encode(this.apiToken)
+    let authHeader = {
+      AUTHORIZATION: `Basic ${apiToken}`,
+      "X-flowdock-wait-for-message": true,
+    }
     return this.postFn(
-      URLs.messages.concat(targetFlow),
+      URLs.messages,
       {
         event: "message",
-        content: message,
+        content: `${message}`,
+        flow: targetFlowId,
       },
-      {
-        headers: {
-          Authorization: "Basic ".concat(this.apiToken),
-        },
-      },
+      { headers: authHeader },
     )
   }
 }
