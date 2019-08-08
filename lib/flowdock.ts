@@ -49,8 +49,10 @@ type DiscussionMessage = {
 }
 
 /**
- * FlowdockSession represents a session of interactions with a Flowdock server.
+ * Flowdock Session represents a session of interactions with a Flowdock server.
  * This session is authenticated by the `apiToken` passed to the constructor.
+ * In this Session type, the apiToken must be a flow_token generated within an
+ * integration for a third-party app.
  */
 class Session {
   private postFn: (
@@ -107,8 +109,21 @@ class Session {
       content: `${message}`,
     })
   }
+}
 
-  async postBasicAuthMessage(message: string, targetFlowId: string) {
+/**
+ * Flowdock BasicAuthSession represents a session of interactions with a
+ * Flowdock server, using Basic Auth.
+ * This session is authenticated by the `apiToken` passed to the constructor.
+ * In a BasicAuthSession, the apiToken is the Personal API token for Hubot's
+ * Flowdock account.
+ */
+class BasicAuthSession extends Session {
+  constructor(private apiToken: string, doPost: boolean = true) {
+    super("BasicAuthSession")
+  }
+
+  async postMessage(message: string, targetFlowId: string) {
     let apiToken = Base64.encode(this.apiToken)
     let authHeader = {
       AUTHORIZATION: `Basic ${apiToken}`,
@@ -126,4 +141,4 @@ class Session {
   }
 }
 
-export { Session, URLs, APP_BASE_URL }
+export { BasicAuthSession, Session, URLs, APP_BASE_URL }
