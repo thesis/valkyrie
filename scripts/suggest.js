@@ -45,10 +45,12 @@ module.exports = function(robot) {
     // fall back to a reference to the room name instead of a link
     suggestionAlertRoomReference = `${suggestionAlertRoomName || "Shell"}`
   } else {
+    // TODO: reconfigure this to be a template string that only needs thread id
     let suggestionAlertRoom = getRoomInfoFromIdOrName(
       robot.adapter,
       suggestionAlertRoomName,
     )
+
     let suggestionAlertRoomLink = `${
       flowdock.APP_BASE_URL
     }/${robot.adapter.flowPath(suggestionAlertRoom)}`
@@ -88,6 +90,7 @@ module.exports = function(robot) {
       let originalThreadReference = ""
 
       let sourceFlow = getRoomInfoFromIdOrName(robot.adapter, res.message.room)
+      // TODO: this should maybe throw now, since posting via API requires a flowId
       if (!sourceFlow) {
         // this is probably local dev, but no special handling needed
         // let's log an error in case this ever happens in prod
@@ -117,16 +120,27 @@ module.exports = function(robot) {
         let postResponse = FLOWDOCK_SESSION.postMessage(
           formattedSuggestion,
           suggestionAlertRoomId,
-        )
-        // TODO: get thread id from postResponse, construct link to this post
+        ).then((response, suggestionAlertRoomLink) => {
+          var AlertThreadId = response.data.thread_id
+          if (AlertThreadId) {
+            let alertThreadLink = `${suggestionAlertRoomLink}/${AlertThreadId}`
+            alertThreadReference = `[${suggestionAlertRoomName}]](${alertThreadLink}).`
+            return alertThreadReference
+          } else {
+            robot.logger.error(
+              `Did not get thread id from post message response: %o`,
+              response,
+            )
+          }
+        })
       } catch (err) {
         robot.logger.error(`Suggestion failed to post: ${err.message}`)
         // TODO: bubble this error to the next catch instead of returning?
         return res.send(`Something went wrong sending your suggestion.`)
       }
 
+      // construct link to this post, editing suggestionAlertRoomReference with thread id from postResponse
       // then respond in source suggestion thread
-      // TODO: replace suggestionAlertRoomReference with link from postResponse
       res.send(
         `Thanks for the suggestion! We'll be discussing it further in ${suggestionAlertRoomReference}, feel free to join us there.`,
       )
