@@ -6,7 +6,6 @@
 //
 // Configuration:
 //  SUGGESTION_ALERT_ROOM - name of flow to use for suggestion posts if robot name not found in TARGET_FLOW_PER_ROBOT
-//  FLOWDOCK_ORGANIZATION_NAME - name of flowdock organization for constructing urls
 //
 // Commands:
 //   hubot suggest <your idea here> - Posts a message to the main hubot flow, with content of the suggestion & name of the user, and replies to the command with a link to that flow
@@ -25,10 +24,6 @@ const {
 } = require("../lib/flowdock-util")
 
 module.exports = function(robot) {
-  const flowdockOrgName = fetchConfigOrReportIssue(
-    robot,
-    "FLOWDOCK_ORGANIZATION_NAME",
-  )
   const suggestionAlertRoomName = fetchConfigOrReportIssue(
     robot,
     "SUGGESTION_ALERT_ROOM",
@@ -39,14 +34,19 @@ module.exports = function(robot) {
   )
   let suggestionAlertRoomReference = ""
 
-  if (!suggestionAlertRoomName || !flowdockOrgName) {
+  if (!robot.adapter.flowPath) {
     // this is local dev (the config utilities would have thrown if it weren't)
     // fall back to a reference to the room name instead of a link
     suggestionAlertRoomReference = `${suggestionAlertRoomName || "Shell"}`
   } else {
-    let suggestionAlertRoomLink = flowdock.URLs.flow
-      .replace(/{orgName}/, flowdockOrgName.toLowerCase())
-      .replace(/{flowName}/, suggestionAlertRoomName.toLowerCase())
+    let suggestionAlertRoom = getRoomInfoFromIdOrName(
+      robot.adapter,
+      suggestionAlertRoomName,
+    )
+    let suggestionAlertRoomLink = `${
+      flowdock.APP_BASE_URL
+    }/${robot.adapter.flowPath(suggestionAlertRoom)}`
+
     suggestionAlertRoomReference = `[${suggestionAlertRoomName}](${suggestionAlertRoomLink})`
   }
 
@@ -63,8 +63,8 @@ module.exports = function(robot) {
         )
       }
 
-      let flowData = getRoomInfoFromIdOrName(robot.adapter, res.message.room)
-      if (flowData && flowData.access_mode === "invitation") {
+      let sourceFlow = getRoomInfoFromIdOrName(robot.adapter, res.message.room)
+      if (sourceFlow && sourceFlow.access_mode === "invitation") {
         return res.send(
           `Sorry, this command only works from public flows, to protect the privacy of your invite-only flow.\n\n${redirectToSuggestionAlertRoomMessage}`,
         )
@@ -77,32 +77,30 @@ module.exports = function(robot) {
         return
       }
 
-      let sourceFlow = getRoomNameFromId(robot.adapter, res.message.room)
+      let sourceFlowName = ""
       let originalThreadReference = ""
 
-      if (!sourceFlow || !flowdockOrgName) {
+      if (!sourceFlow) {
         // this is probably local dev, but no special handling needed
         // let's log an error in case this ever happens in prod
-        robot.logger.info(
+        robot.logger.error(
           `Could not get room name from res.message.room: ${res.message.room}.`,
         )
         // and fall back to a reference to the room instead of a link
-        sourceFlow = res.message.room
+        sourceFlowName = res.message.room
         originalThreadReference = `Refer to original thread in: ${res.message.room}.`
       } else {
+        sourceFlowName = sourceFlow.name
         let sourceThreadId = res.message.metadata.thread_id
-        let sourceThreadLink = flowdock.URLs.thread
-          .replace(
-            /{orgName}/,
-            process.env["FLOWDOCK_ORGANIZATION_NAME"].toLowerCase(),
-          )
-          .replace(/{flowName}/, sourceFlow.toLowerCase())
-          .replace(/{threadId}/, sourceThreadId)
+        let sourceThreadPath = `${robot.adapter.flowPath(
+          sourceFlow,
+        )}/${sourceThreadId}`
+        let sourceThreadLink = `${flowdock.APP_BASE_URL}/${sourceThreadPath}`
         originalThreadReference = `See [original thread](${sourceThreadLink}).`
       }
 
       // post suggestion message & related info
-      let formattedSuggestion = `@${res.message.user.name} just made a #suggestion in ${sourceFlow}:\n>${userSuggestion}\n\n${originalThreadReference}`
+      let formattedSuggestion = `@${res.message.user.name} just made a #suggestion in ${sourceFlowName}:\n>${userSuggestion}\n\n${originalThreadReference}`
       let envelope = {
         room: suggestionAlertRoomId,
       }
