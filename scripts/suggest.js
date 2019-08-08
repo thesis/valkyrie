@@ -95,10 +95,10 @@ module.exports = function(robot) {
       } else {
         sourceFlowName = sourceFlow.name
         let sourceThreadId = res.message.metadata.thread_id
-        let sourceThreadPath = `${robot.adapter.flowPath(
-          sourceFlow,
-        )}/${sourceThreadId}`
-        let sourceThreadLink = `${flowdock.APP_BASE_URL}/${sourceThreadPath}`
+        let sourceThreadPath = robot.adapter.flowPath(sourceFlow)
+        let sourceThreadLink = `${flowdock.URLs.thread}`
+          .replace(/{flowPath}/, sourceThreadPath)
+          .replace(/{threadId}/, sourceThreadId)
         originalThreadReference = `See [original thread](${sourceThreadLink}).`
       }
 
