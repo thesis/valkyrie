@@ -5,7 +5,7 @@
 //
 //
 // Configuration:
-//  SUGGESTION_ALERT_ROOM - name of flow to use for suggestion posts if robot name not found in TARGET_FLOW_PER_ROBOT
+//  SUGGESTION_ALERT_ROOM - name of flow in which to posts suggestions
 //
 // Commands:
 //   hubot suggest <your idea here> - Posts a message to the main hubot flow, with content of the suggestion & name of the user, and replies to the command with a link to that flow
