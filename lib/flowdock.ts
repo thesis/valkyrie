@@ -125,7 +125,9 @@ class BasicAuthSession extends Session {
 
   async postMessage(message: string, targetFlowId: string) {
     let apiToken = Base64.encode(this.apiToken)
-    let authHeader = {
+    let header = {
+      "Content-type": "application/json",
+      Accept: "application/json",
       AUTHORIZATION: `Basic ${apiToken}`,
       "X-flowdock-wait-for-message": true,
     }
@@ -136,7 +138,7 @@ class BasicAuthSession extends Session {
         content: `${message}`,
         flow: targetFlowId,
       },
-      { headers: authHeader },
+      { headers: header },
     )
   }
 }
