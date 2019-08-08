@@ -6,6 +6,7 @@
 //
 // Configuration:
 //  SUGGESTION_ALERT_ROOM - name of flow in which to posts suggestions
+//  HUBOT_FLOWDOCK_API_TOKEN - Api token for hubot to post messages on Flowdock via API instead of using adapter
 //
 // Commands:
 //   hubot suggest <your idea here> - Posts a message to the main hubot flow, with content of the suggestion & name of the user, and replies to the command with a link to that flow
@@ -23,6 +24,10 @@ const {
   getRoomInfoFromIdOrName,
   isRoomInviteOnly,
 } = require("../lib/flowdock-util")
+
+const FLOWDOCK_SESSION = new flowdock.BasicAuthSession(
+  process.env["HUBOT_FLOWDOCK_API_TOKEN"],
+)
 
 module.exports = function(robot) {
   const suggestionAlertRoomName = fetchConfigOrReportIssue(
@@ -108,11 +113,20 @@ module.exports = function(robot) {
         room: suggestionAlertRoomId,
       }
 
-      // TODO: get link to this post
-      robot.send(envelope, formattedSuggestion)
+      try {
+        let postResponse = FLOWDOCK_SESSION.postMessage(
+          formattedSuggestion,
+          suggestionAlertRoomId,
+        )
+        // TODO: get thread id from postResponse, construct link to this post
+      } catch (err) {
+        robot.logger.error(`Suggestion failed to post: ${err.message}`)
+        // TODO: bubble this error to the next catch instead of returning?
+        return res.send(`Something went wrong sending your suggestion.`)
+      }
 
       // then respond in source suggestion thread
-      // TODO: add link to post in TARGET_FLOW
+      // TODO: replace suggestionAlertRoomReference with link from postResponse
       res.send(
         `Thanks for the suggestion! We'll be discussing it further in ${suggestionAlertRoomReference}, feel free to join us there.`,
       )
