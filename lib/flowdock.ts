@@ -119,6 +119,12 @@ class Session {
  * Flowdock account.
  */
 class BasicAuthSession extends Session {
+  private postFn: (
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig,
+  ) => Promise<AxiosResponse>
+
   constructor(private apiToken: string, doPost: boolean = true) {
     super("BasicAuthSession")
   }
