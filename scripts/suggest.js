@@ -40,12 +40,14 @@ module.exports = function(robot) {
   )
   let suggestionAlertRoomReference = ""
 
+  // TODO: reformat or move this into the command block: since we're switching
+  // to posting a direct thread link, need to get threadId when suggestion is posted
+  // Note we may still need this if keeping redirectToSuggestionAlertRoomMessage
   if (!robot.adapter.flowPath) {
     // this is local dev (the config utilities would have thrown if it weren't)
     // fall back to a reference to the room name instead of a link
     suggestionAlertRoomReference = `${suggestionAlertRoomName || "Shell"}`
   } else {
-    // TODO: reconfigure this to be a template string that only needs thread id
     let suggestionAlertRoom = getRoomInfoFromIdOrName(
       robot.adapter,
       suggestionAlertRoomName,
@@ -116,34 +118,36 @@ module.exports = function(robot) {
         room: suggestionAlertRoomId,
       }
 
-      try {
-        let postResponse = FLOWDOCK_SESSION.postMessage(
-          formattedSuggestion,
-          suggestionAlertRoomId,
-        ).then((response, suggestionAlertRoomLink) => {
-          var AlertThreadId = response.data.thread_id
-          if (AlertThreadId) {
-            let alertThreadLink = `${suggestionAlertRoomLink}/${AlertThreadId}`
-            alertThreadReference = `[${suggestionAlertRoomName}]](${alertThreadLink}).`
-            return alertThreadReference
+      let postResponse = FLOWDOCK_SESSION.postMessage(
+        formattedSuggestion,
+        suggestionAlertRoomId,
+      )
+        .then(response => {
+          var alertThreadId = response.data.thread_id
+          if (alertThreadId) {
+            return alertThreadId
           } else {
             robot.logger.error(
               `Did not get thread id from post message response: %o`,
               response,
             )
+            throw new Error("Did not get thread id from post message response")
           }
         })
-      } catch (err) {
-        robot.logger.error(`Suggestion failed to post: ${err.message}`)
-        // TODO: bubble this error to the next catch instead of returning?
-        return res.send(`Something went wrong sending your suggestion.`)
-      }
+        .then(threadId => {
+          // TODO reconstruct suggestionAlertRoomReference with threadId
+          // then respond in source suggestion thread with formatted thread link
+          return res.send(
+            `Thanks for the suggestion! We'll be discussing it further in ${suggestionAlertRoomReference}, feel free to join us there.`,
+          )
+        })
+        .catch(err => {
+          robot.logger.error(`Suggestion failed to post: ${err.message}`)
+          // TODO: bubble this error to the next catch instead of returning?
+          return res.send(`Something went wrong sending your suggestion.`)
+        })
 
-      // construct link to this post, editing suggestionAlertRoomReference with thread id from postResponse
-      // then respond in source suggestion thread
-      res.send(
-        `Thanks for the suggestion! We'll be discussing it further in ${suggestionAlertRoomReference}, feel free to join us there.`,
-      )
+      // TODO: does this still work or does it all need to be `then()` blocks?
     } catch (err) {
       robot.logger.error(
         `Failed to send user suggestion to target flow: ${util.inspect(err)}`,
