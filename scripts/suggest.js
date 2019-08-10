@@ -30,33 +30,27 @@ const FLOWDOCK_SESSION = new flowdock.BasicAuthSession(
 )
 
 module.exports = function(robot) {
-  const suggestionAlertRoomName = fetchConfigOrReportIssue(
-    robot,
-    "SUGGESTION_ALERT_ROOM",
-  )
-  const suggestionAlertRoom = fetchRoomOrReportIssue(
-    robot,
-    suggestionAlertRoomName,
-  )
-  // used for both suggestionAlertRoomLink, used in redirect messages, and in
+  const alertRoomName = fetchConfigOrReportIssue(robot, "SUGGESTION_ALERT_ROOM")
+  const alertRoom = fetchRoomOrReportIssue(robot, alertRoomName)
+  // used for both alertRoomLink, used in redirect messages, and in
   // thread links used in reply to user suggestion
-  let suggestionAlertRoomPath = ""
+  let alertRoomPath = ""
   // used for redirect messages
-  let suggestionAlertRoomReference = ""
+  let alertRoomReference = ""
 
-  if (!suggestionAlertRoom) {
+  if (!alertRoom) {
     // this is local dev (the config utilities would have thrown if it weren't)
     // fall back to a reference to the room name instead of a link
-    suggestionAlertRoomReference = `${suggestionAlertRoomName || "Shell"}`
+    alertRoomReference = `${alertRoomName || "Shell"}`
   } else {
-    let suggestionAlertRoomPath = robot.adapter.flowPath(suggestionAlertRoom)
+    let alertRoomPath = robot.adapter.flowPath(alertRoom)
 
-    let suggestionAlertRoomLink = `${flowdock.URLs.flow}`.replace(
+    let alertRoomLink = `${flowdock.URLs.flow}`.replace(
       /{flowPath}/,
-      suggestionAlertRoomPath,
+      alertRoomPath,
     )
 
-    suggestionAlertRoomReference = `[${suggestionAlertRoomName}](${suggestionAlertRoomLink})`
+    alertRoomReference = `[${alertRoomName}](${alertRoomLink})`
   }
 
   robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
@@ -64,7 +58,7 @@ module.exports = function(robot) {
       let user = res.message.user
       let userSuggestion = res.match[1]
 
-      let redirectToSuggestionAlertRoomMessage = `You can try again from a public flow, or join us in ${suggestionAlertRoomReference} and chat with us about your idea there.`
+      let redirectToSuggestionAlertRoomMessage = `You can try again from a public flow, or join us in ${alertRoomReference} and chat with us about your idea there.`
 
       if (typeof res.message.room === "undefined") {
         return res.send(
@@ -114,21 +108,18 @@ module.exports = function(robot) {
       // post suggestion message & related info
       let formattedSuggestion = `@${res.message.user.name} just made a #suggestion in ${sourceFlowName}:\n>${userSuggestion}\n\n${originalThreadReference}`
 
-      if (!suggestionAlertRoom) {
+      if (!alertRoom) {
         // this is probably local dev in the shell adapter
         // let's log an error in case this ever happens in prod
         robot.logger.error(
-          `Could not get room name for: ${suggestionAlertRoom}. Falling back to posting message without link to thread in alert room.`,
+          `Could not get room name for: ${alertRoom}. Falling back to posting message without link to thread in alert room.`,
         )
         // and post without the API (will that work w/o flow id?)
-        return robot.send(
-          { room: suggestionAlertRoomName },
-          formattedSuggestion,
-        )
+        return robot.send({ room: alertRoomName }, formattedSuggestion)
       } else {
         let postResponse = FLOWDOCK_SESSION.postMessage(
           formattedSuggestion,
-          suggestionAlertRoom.id,
+          alertRoom.id,
         )
           .then(response => {
             var alertThreadId = response.data.thread_id
@@ -146,12 +137,12 @@ module.exports = function(robot) {
           })
           .then(threadId => {
             // construct formatted thread link
-            let suggestionAlertThreadReference = `[${suggestionAlertRoomName}](${flowdock.URLs.thread})`
-              .replace(/{flowPath}/, suggestionAlertRoomPath)
+            let alertThreadReference = `[${alertRoomName}](${flowdock.URLs.thread})`
+              .replace(/{flowPath}/, alertRoomPath)
               .replace(/{threadId}/, threadId)
             // then respond in source suggestion thread with formatted thread link
             return res.send(
-              `Thanks for the suggestion! We'll be discussing it further in ${suggestionAlertThreadReference}, feel free to join us there.`,
+              `Thanks for the suggestion! We'll be discussing it further in ${alertThreadReference}, feel free to join us there.`,
             )
           })
           .catch(err => {
