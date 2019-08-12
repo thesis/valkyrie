@@ -43,7 +43,7 @@ module.exports = function(robot) {
     // fall back to a reference to the room name instead of a link
     alertRoomReference = `${alertRoomName || "Shell"}`
   } else {
-    let alertRoomPath = robot.adapter.flowPath(alertRoom)
+    alertRoomPath = robot.adapter.flowPath(alertRoom)
 
     let alertRoomLink = `${flowdock.URLs.flow}`.replace(
       /{flowPath}/,
