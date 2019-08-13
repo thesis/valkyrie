@@ -137,6 +137,7 @@ class Account {
     const response = await axios.post(
         URLs.meetings.replace(/{userId}/, this.email),
         {
+          topic: "Heimdall-initiated Zoom meeting",
           settings: {
             join_before_host: true,
             host_video: true,
