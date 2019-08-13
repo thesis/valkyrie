@@ -10,6 +10,7 @@ const URLs = {
   users: `${API_BASE_URL}/users`,
   appJoin: `${APP_BASE_URL}/join?action=join&confno={meetingId}`,
 }
+const MEETING_BUFFER = 60 * 60 * 1000
 
 function tokenFrom(apiKey: string, apiSecret: string) {
   const payload = {
@@ -58,6 +59,14 @@ type User = {
   timezone: string
 }
 
+function isDatetimeWithinRange(
+  datetimeToCheck: datetime,
+  rangeStart: datetime,
+  rangeEnd: datetime,
+) {
+  return datetimeToCheck > rangeStart && datetimeToCheck < rangeEnd
+}
+
 class Session {
   constructor(
     private apiKey: string,
@@ -66,14 +75,43 @@ class Session {
   ) {}
 
   // Checks all available session accounts and creates a meeting on an
-  // account that has no other meeting currently running.
+  // account that has no other meeting currently running, or scheduled to start
+  // withing the next hour.
   async nextAvailableMeeting() {
+    let now = new Date()
+    let bufferExpiryTime = new Date(now + MEETING_BUFFER)
     const accountMeetings = await Promise.all(
       Array.from(this.users.map(u => u.email))
         .map(email => this.accountForEmail(email))
         .map(async function(accountSession): Promise<[Account, boolean]> {
-          let meetings = await accountSession.getMeetings("live")
-          return [accountSession, meetings.length == 0]
+          let liveMeetings = await accountSession.getMeetings("live")
+          // filter out any upcoming or scheduled meetings starting in next hour:
+          let upcomingMeetings = await accountSession.getMeetings("scheduled")
+          let upcomingMeetingsInBuffer = upcomingMeetings.filter(meeting =>
+            meeting.start_time
+              ? isDatetimeWithinRange(
+                  new Date(meeting.start_time),
+                  now,
+                  bufferExpiryTime,
+                )
+              : false,
+          )
+          let scheduledMeetings = await accountSession.getMeetings("upcoming")
+          let scheduledMeetingsInBuffer = scheduledMeetings.filter(meeting =>
+            meeting.start_time
+              ? isDatetimeWithinRange(
+                  new Date(meeting.start_time),
+                  now,
+                  bufferExpiryTime,
+                )
+              : false,
+          )
+          return [
+            accountSession,
+            liveMeetings.length == 0 &&
+              upcomingMeetingsInBuffer.length == 0 &&
+              scheduledMeetingsInBuffer.length == 0,
+          ]
         }),
     )
 
@@ -81,7 +119,6 @@ class Session {
       .filter(([, availableForMeeting]) => availableForMeeting)
       .map(([session]) => session)
     const chosenIndex = Math.floor(Math.random() * availableSessions.length)
-
     return await availableSessions[chosenIndex].createMeeting()
   }
 
