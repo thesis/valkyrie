@@ -10,6 +10,7 @@
 // Commands:
 //   hubot zoom - Responds with an available meeting from the registered accounts, follows up with a prompt to post meeting notes
 
+const { fetchConfigOrReportIssue } = require("../lib/config")
 const zoom = require("../lib/zoom"),
   util = require("util")
 
@@ -108,6 +109,8 @@ function watchMeeting(meeting) {
 }
 
 module.exports = function(robot) {
+  fetchConfigOrReportIssue(robot, "ZOOM_MEETING_DURATION")
+
   zoom
     .getSession(process.env["ZOOM_API_KEY"], process.env["ZOOM_API_SECRET"])
     .then(session => (ZOOM_SESSION = session))
