@@ -5,8 +5,8 @@ const API_BASE_URL = "https://api.flowdock.com",
 
 const URLs = {
   messages: `${API_BASE_URL}/messages`,
-  flow: `${APP_BASE_URL}/{orgName}/{flowName}`,
-  thread: `${APP_BASE_URL}/{orgName}/{flowName}/threads/{threadId}`,
+  flow: `${APP_BASE_URL}/{flowPath}`,
+  thread: `${APP_BASE_URL}/{flowPath}/threads/{threadId}`,
 }
 
 type Thread = {

@@ -21,6 +21,7 @@ const flowdock = require("../lib/flowdock")
 const {
   getRoomNameFromId,
   getRoomInfoFromIdOrName,
+  isRoomInviteOnly,
 } = require("../lib/flowdock-util")
 
 module.exports = function(robot) {
@@ -63,8 +64,9 @@ module.exports = function(robot) {
         )
       }
 
-      let sourceFlow = getRoomInfoFromIdOrName(robot.adapter, res.message.room)
-      if (sourceFlow && sourceFlow.access_mode === "invitation") {
+      if (
+        isRoomInviteOnly(robot.adapter, robot.adapterName, res.message.room)
+      ) {
         return res.send(
           `Sorry, this command only works from public flows, to protect the privacy of your invite-only flow.\n\n${redirectToSuggestionAlertRoomMessage}`,
         )
@@ -80,6 +82,7 @@ module.exports = function(robot) {
       let sourceFlowName = ""
       let originalThreadReference = ""
 
+      let sourceFlow = getRoomInfoFromIdOrName(robot.adapter, res.message.room)
       if (!sourceFlow) {
         // this is probably local dev, but no special handling needed
         // let's log an error in case this ever happens in prod
@@ -92,10 +95,10 @@ module.exports = function(robot) {
       } else {
         sourceFlowName = sourceFlow.name
         let sourceThreadId = res.message.metadata.thread_id
-        let sourceThreadPath = `${robot.adapter.flowPath(
-          sourceFlow,
-        )}/${sourceThreadId}`
-        let sourceThreadLink = `${flowdock.APP_BASE_URL}/${sourceThreadPath}`
+        let sourceThreadPath = robot.adapter.flowPath(sourceFlow)
+        let sourceThreadLink = `${flowdock.URLs.thread}`
+          .replace(/{flowPath}/, sourceThreadPath)
+          .replace(/{threadId}/, sourceThreadId)
         originalThreadReference = `See [original thread](${sourceThreadLink}).`
       }
 
