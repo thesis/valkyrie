@@ -10,7 +10,7 @@ const URLs = {
   users: `${API_BASE_URL}/users`,
   appJoin: `${APP_BASE_URL}/join?action=join&confno={meetingId}`,
 }
-const MEETING_BUFFER = 60 * 60 * 1000
+const MEETING_BUFFER = +process.env["ZOOM_MEETING_DURATION"] * 60 * 1000
 
 function tokenFrom(apiKey: string, apiSecret: string) {
   const payload = {
@@ -76,7 +76,7 @@ class Session {
 
   // Checks all available session accounts and creates a meeting on an
   // account that has no other meeting currently running, or scheduled to start
-  // withing the next hour.
+  // withing the time specified by MEETING_BUFFER.
   async nextAvailableMeeting() {
     let now = new Date()
     let bufferExpiryTime = new Date(now + MEETING_BUFFER)
