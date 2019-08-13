@@ -72,11 +72,11 @@ class Session {
       Array.from(this.users.map(u => u.email))
         .map(email => this.accountForEmail(email))
         .map(async function(accountSession): Promise<[Account, boolean]> {
-          let meetings = await accountSession.liveMeetings()
-
+          let meetings = await accountSession.getMeetings("live")
           return [accountSession, meetings.length == 0]
         }),
     )
+
     const availableSessions = accountMeetings
       .filter(([, availableForMeeting]) => availableForMeeting)
       .map(([session]) => session)
@@ -118,18 +118,17 @@ class Account {
     private apiSecret: string,
   ) {}
 
-  async liveMeetings() {
+  async getMeetings(returnType: string) {
     const response = await axios.get(
         URLs.meetings.replace(/{userId}/, this.email),
         {
           params: {
             access_token: this.token,
-            type: "live",
+            type: returnType,
           },
         },
       ),
       meetings: Meeting[] = response.data.meetings
-
     return meetings
   }
 
