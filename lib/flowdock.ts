@@ -5,7 +5,7 @@ const API_BASE_URL = "https://api.flowdock.com",
 
 const URLs = {
   messages: `${API_BASE_URL}/messages`,
-  flow: `${APP_BASE_URL}/{flowPath}`, // TODO delete if not in use?
+  flow: `${APP_BASE_URL}/{flowPath}`,
   thread: `${APP_BASE_URL}/{flowPath}/threads/{threadId}`,
 }
 
