@@ -97,8 +97,8 @@ class Session {
 enum MeetingType {
   Instant = 1,
   Scheduled = 2,
-  FixedRecurring = 3,
-  FloatingRecurring = 8,
+  FloatingRecurring = 3,
+  FixedRecurring = 8,
 }
 
 type Meeting = {
