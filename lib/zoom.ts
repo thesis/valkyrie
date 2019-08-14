@@ -88,7 +88,7 @@ class Session {
   // within the time specified by meetingLengthBuffer.
   async nextAvailableMeeting() {
     let now = new Date()
-    let bufferExpiryTime = new Date(now + meetingLengthBuffer)
+    let bufferExpiryTime = new Date(now + this.meetingLengthBuffer)
     const accountMeetings = await Promise.all(
       Array.from(this.users.map(u => u.email))
         .map(email => this.accountForEmail(email))
