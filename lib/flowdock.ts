@@ -49,8 +49,9 @@ type DiscussionMessage = {
 }
 
 /**
- * Flowdock Session represents a session of interactions with a Flowdock server.
+ * Session represents a session of interactions with a Flowdock server.
  * This session is authenticated by the `apiToken` passed to the constructor.
+ *
  * In this Session type, the apiToken must be a flow_token generated within an
  * integration for a third-party app.
  */
@@ -112,9 +113,10 @@ class Session {
 }
 
 /**
- * Flowdock BasicAuthSession represents a session of interactions with a
+ * BasicAuthSession represents a session of interactions with a
  * Flowdock server, using Basic Auth.
  * This session is authenticated by the `apiToken` passed to the constructor.
+ *
  * In a BasicAuthSession, the apiToken is the Personal API token for Hubot's
  * Flowdock account.
  */

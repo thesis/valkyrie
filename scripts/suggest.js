@@ -85,7 +85,6 @@ module.exports = function(robot) {
       let originalThreadReference = ""
 
       let sourceFlow = getRoomInfoFromIdOrName(robot.adapter, res.message.room)
-      // TODO: this should maybe throw now, since posting via API requires a flowId
       if (!sourceFlow) {
         // this is probably local dev in the shell adapter
         // let's log an error in case this ever happens in prod
@@ -147,12 +146,9 @@ module.exports = function(robot) {
           })
           .catch(err => {
             robot.logger.error(`Suggestion failed to post: ${err.message}`)
-            // TODO: bubble this error to the next catch instead of returning?
             return res.send(`Something went wrong sending your suggestion.`)
           })
       }
-
-      // TODO: does this still work or does it all need to be `then()` blocks?
     } catch (err) {
       robot.logger.error(
         `Failed to send user suggestion to target flow: ${util.inspect(err)}`,
