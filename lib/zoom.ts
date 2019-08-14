@@ -171,13 +171,16 @@ class Account {
     private apiSecret: string,
   ) {}
 
-  async getMeetings(meetingCategory: MeetingScheduleCategory) {
+  // NB: we may run into pagination issues at some point, especially for
+  // SCHEDULED (which returns past events)
+  // optional param "page_size" default: 30,/ max 300, "page_number" default: 1
+  private async getMeetings(meetingCategory: MeetingScheduleCategory) {
     const response = await axios.get(
         URLs.meetings.replace(/{userId}/, this.email),
         {
           params: {
             access_token: this.token,
-            type: meetingCategory, // defaults to "live" if type not passed
+            type: meetingCategory,
           },
         },
       ),
