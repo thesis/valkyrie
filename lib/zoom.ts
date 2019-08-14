@@ -128,6 +128,7 @@ class Session {
       .filter(([, availableForMeeting]) => availableForMeeting)
       .map(([session]) => session)
     const chosenIndex = Math.floor(Math.random() * availableSessions.length)
+
     return await availableSessions[chosenIndex].createMeeting()
   }
 
