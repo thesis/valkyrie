@@ -5,7 +5,7 @@
 // Configuration:
 //   ZOOM_API_SECRET - API secret for Zoom API, from https://developer.zoom.us/me/
 //   ZOOM_API_KEY - API key for Zoom API, used to sign requests https://developer.zoom.us/me/
-//   ZOOM_MEETING_DURATION - number of minutes hubot will watch a meeting (eg: how long a hubot-initiated meeting is likely to last)
+//   ZOOM_EXPECTED_MEETING_DURATION - Number of minutes hubot will watch a meeting (how long a hubot-initiated meeting is likely to last)
 //
 // Commands:
 //   hubot zoom - Responds with an available meeting from the registered accounts, follows up with a prompt to post meeting notes
@@ -20,7 +20,7 @@ let ZOOM_SESSION = null
 const INTERVAL_DELAY = 15 * 1000
 const MEETING_START_TIMEOUT_DELAY = 10 * 60 * 1000 // we'll only watch this long if meeting doesn't start
 const MEETING_DURATION_TIMEOUT_DELAY =
-  int(process.env["ZOOM_MEETING_DURATION"]) * 60 * 1000 // max mtg watch duration in milliseconds
+  int(process.env["ZOOM_EXPECTED_MEETING_DURATION"]) * 60 * 1000 // max mtg watch duration in milliseconds
 
 function isMeetingStarted(meeting) {
   return zoom
@@ -109,7 +109,7 @@ function watchMeeting(meeting) {
 }
 
 module.exports = function(robot) {
-  fetchConfigOrReportIssue(robot, "ZOOM_MEETING_DURATION")
+  fetchConfigOrReportIssue(robot, "ZOOM_EXPECTED_MEETING_DURATION")
 
   zoom
     .getSession(

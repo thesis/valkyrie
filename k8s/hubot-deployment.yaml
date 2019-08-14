@@ -90,7 +90,7 @@ spec:
                 secretKeyRef:
                   name: heimdall-hubot
                   key: zoom_api_secret
-            - name: ZOOM_MEETING_DURATION
+            - name: ZOOM_EXPECTED_MEETING_DURATION
               value: 60
           ports:
             - containerPort: 8080
