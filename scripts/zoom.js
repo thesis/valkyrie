@@ -5,10 +5,12 @@
 // Configuration:
 //   ZOOM_API_SECRET - API secret for Zoom API, from https://developer.zoom.us/me/
 //   ZOOM_API_KEY - API key for Zoom API, used to sign requests https://developer.zoom.us/me/
+//   ZOOM_EXPECTED_MEETING_DURATION - Number of minutes hubot will watch a meeting (how long a hubot-initiated meeting is likely to last). Defaults to 60 if not specified.
 //
 // Commands:
 //   hubot zoom - Responds with an available meeting from the registered accounts, follows up with a prompt to post meeting notes
 
+const { fetchConfigOrReportIssue } = require("../lib/config")
 const zoom = require("../lib/zoom"),
   util = require("util")
 
@@ -17,7 +19,8 @@ let ZOOM_SESSION = null
 
 const INTERVAL_DELAY = 15 * 1000
 const MEETING_START_TIMEOUT_DELAY = 10 * 60 * 1000 // we'll only watch this long if meeting doesn't start
-const MEETING_DURATION_TIMEOUT_DELAY = 60 * 60 * 1000 // max mtg watch duration
+const MEETING_DURATION_TIMEOUT_DELAY =
+  (parseInt(process.env["ZOOM_EXPECTED_MEETING_DURATION"]) || 60) * 60 * 1000 // max mtg watch duration in milliseconds
 
 function isMeetingStarted(meeting) {
   return zoom
@@ -107,7 +110,11 @@ function watchMeeting(meeting) {
 
 module.exports = function(robot) {
   zoom
-    .getSession(process.env["ZOOM_API_KEY"], process.env["ZOOM_API_SECRET"])
+    .getSession(
+      process.env["ZOOM_API_KEY"],
+      process.env["ZOOM_API_SECRET"],
+      MEETING_DURATION_TIMEOUT_DELAY,
+    )
     .then(session => (ZOOM_SESSION = session))
     .catch(err => {
       robot.logger.error("Failed to set up Zoom session:", util.inspect(err))
