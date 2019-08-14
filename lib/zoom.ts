@@ -164,13 +164,13 @@ class Account {
     private apiSecret: string,
   ) {}
 
-  async getMeetings(returnType: string) {
+  async getMeetings(MeetingCategory: string) {
     const response = await axios.get(
         URLs.meetings.replace(/{userId}/, this.email),
         {
           params: {
             access_token: this.token,
-            type: returnType,
+            type: MeetingCategory,
           },
         },
       ),
