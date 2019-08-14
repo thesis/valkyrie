@@ -136,7 +136,7 @@ class BasicAuthSession extends Session {
     let header = {
       "Content-type": "application/json",
       Accept: "application/json",
-      AUTHORIZATION: `Basic ${apiToken}`,
+      Authorization: `Basic ${apiToken}`,
       "X-flowdock-wait-for-message": true,
     }
     return this.postFn(
