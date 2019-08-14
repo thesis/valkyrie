@@ -141,6 +141,12 @@ class Session {
   }
 }
 
+enum MeetingScheduleCategory {
+  LIVE = "live",
+  SCHEDULED = "scheduled",
+  UPCOMING = "upcoming",
+}
+
 enum MeetingType {
   Instant = 1,
   Scheduled = 2,
@@ -165,13 +171,13 @@ class Account {
     private apiSecret: string,
   ) {}
 
-  async getMeetings(MeetingCategory: string) {
+  async getMeetings(meetingCategory: MeetingScheduleCategory) {
     const response = await axios.get(
         URLs.meetings.replace(/{userId}/, this.email),
         {
           params: {
             access_token: this.token,
-            type: MeetingCategory,
+            type: meetingCategory, // defaults to "live" if type not passed
           },
         },
       ),
