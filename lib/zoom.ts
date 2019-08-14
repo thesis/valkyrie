@@ -93,10 +93,10 @@ class Session {
       Array.from(this.users.map(u => u.email))
         .map(email => this.accountForEmail(email))
         .map(async function(accountSession): Promise<[Account, boolean]> {
-          let liveMeetings = await accountSession.getMeetings("live")
+          let live = await accountSession.liveMeetings()
           // filter out any upcoming or scheduled meetings starting within meetingLengthBuffer
-          let upcomingMeetings = await accountSession.getMeetings("scheduled")
-          let upcomingMeetingsInBuffer = upcomingMeetings.filter(meeting =>
+          let upcoming = await accountSession.upcomingMeetings()
+          let upcomingMeetingsInBuffer = upcoming.filter(meeting =>
             meeting.start_time
               ? isDatetimeWithinRange(
                   new Date(meeting.start_time),
@@ -105,8 +105,8 @@ class Session {
                 )
               : false,
           )
-          let scheduledMeetings = await accountSession.getMeetings("upcoming")
-          let scheduledMeetingsInBuffer = scheduledMeetings.filter(meeting =>
+          let scheduled = await accountSession.scheduledMeetings()
+          let scheduledMeetingsInBuffer = scheduled.filter(meeting =>
             meeting.start_time
               ? isDatetimeWithinRange(
                   new Date(meeting.start_time),
@@ -117,7 +117,7 @@ class Session {
           )
           return [
             accountSession,
-            liveMeetings.length == 0 &&
+            live.length == 0 &&
               upcomingMeetingsInBuffer.length == 0 &&
               scheduledMeetingsInBuffer.length == 0,
           ]
@@ -183,6 +183,18 @@ class Account {
       ),
       meetings: Meeting[] = response.data.meetings
     return meetings
+  }
+
+  async liveMeetings() {
+    return this.getMeetings(MeetingScheduleCategory.LIVE)
+  }
+
+  async scheduledMeetings() {
+    return this.getMeetings(MeetingScheduleCategory.SCHEDULED)
+  }
+
+  async upcomingMeetings() {
+    return this.getMeetings(MeetingScheduleCategory.UPCOMING)
   }
 
   async createMeeting() {
