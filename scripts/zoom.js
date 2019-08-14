@@ -20,7 +20,7 @@ let ZOOM_SESSION = null
 const INTERVAL_DELAY = 15 * 1000
 const MEETING_START_TIMEOUT_DELAY = 10 * 60 * 1000 // we'll only watch this long if meeting doesn't start
 const MEETING_DURATION_TIMEOUT_DELAY =
-  process.env["ZOOM_MEETING_DURATION"] * 60 * 1000 // max mtg watch duration
+  int(process.env["ZOOM_MEETING_DURATION"]) * 60 * 1000 // max mtg watch duration in milliseconds
 
 function isMeetingStarted(meeting) {
   return zoom
@@ -112,7 +112,11 @@ module.exports = function(robot) {
   fetchConfigOrReportIssue(robot, "ZOOM_MEETING_DURATION")
 
   zoom
-    .getSession(process.env["ZOOM_API_KEY"], process.env["ZOOM_API_SECRET"])
+    .getSession(
+      process.env["ZOOM_API_KEY"],
+      process.env["ZOOM_API_SECRET"],
+      MEETING_DURATION_TIMEOUT_DELAY,
+    )
     .then(session => (ZOOM_SESSION = session))
     .catch(err => {
       robot.logger.error("Failed to set up Zoom session:", util.inspect(err))

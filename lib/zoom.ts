@@ -10,7 +10,6 @@ const URLs = {
   users: `${API_BASE_URL}/users`,
   appJoin: `${APP_BASE_URL}/join?action=join&confno={meetingId}`,
 }
-const MEETING_BUFFER = +process.env["ZOOM_MEETING_DURATION"] * 60 * 1000
 
 function tokenFrom(apiKey: string, apiSecret: string) {
   const payload = {
@@ -21,7 +20,11 @@ function tokenFrom(apiKey: string, apiSecret: string) {
   return jwt.sign(payload, apiSecret)
 }
 
-async function getSession(apiKey: string, apiSecret: string) {
+async function getSession(
+  apiKey: string,
+  apiSecret: string,
+  meetingLengthBuffer: number, // in milliseconds
+) {
   const token = tokenFrom(apiKey, apiSecret),
     userResponse = await axios.get(URLs.users, {
       params: { access_token: token },
@@ -30,7 +33,12 @@ async function getSession(apiKey: string, apiSecret: string) {
   if (userResponse.status != 200) {
     throw `Error looking up users: ${util.inspect(userResponse.data)}.`
   } else {
-    return new Session(apiKey, apiSecret, userResponse.data.users)
+    return new Session(
+      apiKey,
+      apiSecret,
+      userResponse.data.users,
+      meetingLengthBuffer,
+    )
   }
 }
 
@@ -72,20 +80,21 @@ class Session {
     private apiKey: string,
     private apiSecret: string,
     private users: User[],
+    meetingLengthBuffer: number,
   ) {}
 
   // Checks all available session accounts and creates a meeting on an
   // account that has no other meeting currently running, or scheduled to start
-  // withing the time specified by MEETING_BUFFER.
+  // within the time specified by meetingLengthBuffer.
   async nextAvailableMeeting() {
     let now = new Date()
-    let bufferExpiryTime = new Date(now + MEETING_BUFFER)
+    let bufferExpiryTime = new Date(now + meetingLengthBuffer)
     const accountMeetings = await Promise.all(
       Array.from(this.users.map(u => u.email))
         .map(email => this.accountForEmail(email))
         .map(async function(accountSession): Promise<[Account, boolean]> {
           let liveMeetings = await accountSession.getMeetings("live")
-          // filter out any upcoming or scheduled meetings starting in next hour:
+          // filter out any upcoming or scheduled meetings starting within meetingLengthBuffer
           let upcomingMeetings = await accountSession.getMeetings("scheduled")
           let upcomingMeetingsInBuffer = upcomingMeetings.filter(meeting =>
             meeting.start_time
