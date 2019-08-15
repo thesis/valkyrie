@@ -15,7 +15,7 @@ const util = require("util")
 
 const {
   fetchConfigOrReportIssue,
-  fetchRoomOrReportIssue,
+  fetchRoomInfoOrReportIssue,
 } = require("../lib/config")
 
 const flowdock = require("../lib/flowdock")
@@ -31,7 +31,7 @@ const FLOWDOCK_SESSION = new flowdock.BasicAuthSession(
 
 module.exports = function(robot) {
   const alertRoomName = fetchConfigOrReportIssue(robot, "SUGGESTION_ALERT_ROOM")
-  const alertRoom = fetchRoomOrReportIssue(robot, alertRoomName)
+  const alertRoom = fetchRoomInfoOrReportIssue(robot, alertRoomName)
   // used for both alertRoomLink, used in redirect messages, and in
   // thread links used in reply to user suggestion
   let alertRoomPath = ""
