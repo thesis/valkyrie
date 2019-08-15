@@ -50,16 +50,15 @@ type DiscussionMessage = {
 
 /**
  * Session represents a session of interactions with a Flowdock server.
- * This session is authenticated by the `apiToken` passed to the constructor.
  */
-class Session {
+abstract class Session {
   private postFn: (
     url: string,
     data?: any,
     config?: AxiosRequestConfig,
   ) => Promise<AxiosResponse>
 
-  constructor(private apiToken: string, doPost: boolean = true) {
+  constructor(doPost: boolean) {
     if (doPost) {
       this.postFn = axios.post.bind(axios)
     } else {
@@ -117,7 +116,8 @@ class AppSession extends Session {
   ) => Promise<AxiosResponse>
 
   constructor(private apiToken: string, doPost: boolean = true) {
-    super("AppSession")
+    super(doPost)
+    this.apiToken = apiToken
   }
 
   async postActivity(message: ActivityThread | ActivityMessage) {
@@ -160,7 +160,8 @@ class BasicAuthSession extends Session {
   ) => Promise<AxiosResponse>
 
   constructor(private apiToken: string, doPost: boolean = true) {
-    super("BasicAuthSession")
+    super(doPost)
+    this.apiToken = apiToken
   }
 
   async postMessage(message: string, targetFlowId: string) {
