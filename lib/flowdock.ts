@@ -51,9 +51,6 @@ type DiscussionMessage = {
 /**
  * Session represents a session of interactions with a Flowdock server.
  * This session is authenticated by the `apiToken` passed to the constructor.
- *
- * In this Session type, the apiToken must be a flow_token generated within an
- * integration for a third-party app.
  */
 class Session {
   private postFn: (
@@ -88,6 +85,42 @@ class Session {
   }
 
   async postActivity(message: ActivityThread | ActivityMessage) {
+    return new Error(
+      "This method has not been implemented for this Session type.",
+    )
+  }
+
+  async postDiscussion(message: DiscussionMessage) {
+    return new Error(
+      "This method has not been implemented for this Session type.",
+    )
+  }
+
+  async postMessage(message: string) {
+    return new Error(
+      "This method has not been implemented for this Session type.",
+    )
+  }
+}
+
+/**
+ * AppSession represents a session of interactions with a Flowdock server.
+ *
+ * In this Session type, the apiToken must be a flow_token generated within an
+ * integration for a third-party app.
+ */
+class AppSession extends Session {
+  private postFn: (
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig,
+  ) => Promise<AxiosResponse>
+
+  constructor(private apiToken: string, doPost: boolean = true) {
+    super("AppSession")
+  }
+
+  async postActivity(message: ActivityThread | ActivityMessage) {
     return this.postFn(URLs.messages, {
       flow_token: this.apiToken,
       event: "activity",
@@ -115,7 +148,6 @@ class Session {
 /**
  * BasicAuthSession represents a session of interactions with a
  * Flowdock server, using Basic Auth.
- * This session is authenticated by the `apiToken` passed to the constructor.
  *
  * In a BasicAuthSession, the apiToken is the Personal API token for Hubot's
  * Flowdock account.
@@ -151,4 +183,4 @@ class BasicAuthSession extends Session {
   }
 }
 
-export { BasicAuthSession, Session, URLs, APP_BASE_URL }
+export { AppSession, BasicAuthSession, Session, URLs, APP_BASE_URL }

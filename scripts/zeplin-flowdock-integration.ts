@@ -18,7 +18,7 @@ import * as util from "util"
 
 require("axios-debug-log")({})
 
-const FLOWDOCK_SESSION = new flowdock.Session(
+const FLOWDOCK_SESSION = new flowdock.AppSession(
     process.env["ZEPLIN_FLOWDOCK_TOKEN"],
   ),
   ZEPLIN_SESSION = new zeplin.Session(
