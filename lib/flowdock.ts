@@ -82,24 +82,6 @@ abstract class Session {
       }
     }
   }
-
-  async postActivity(message: ActivityThread | ActivityMessage) {
-    return new Error(
-      "This method has not been implemented for this Session type.",
-    )
-  }
-
-  async postDiscussion(message: DiscussionMessage) {
-    return new Error(
-      "This method has not been implemented for this Session type.",
-    )
-  }
-
-  async postMessage(message: string) {
-    return new Error(
-      "This method has not been implemented for this Session type.",
-    )
-  }
 }
 
 /**
@@ -133,14 +115,6 @@ class AppSession extends Session {
       flow_token: this.apiToken,
       event: "discussion",
       ...message,
-    })
-  }
-
-  async postMessage(message: string) {
-    return this.postFn(URLs.messages, {
-      flow_token: this.apiToken,
-      event: "message",
-      content: `${message}`,
     })
   }
 }
