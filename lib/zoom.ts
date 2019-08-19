@@ -1,5 +1,6 @@
 import axios from "axios"
 import * as jwt from "jsonwebtoken"
+import * as moment from "moment"
 import * as util from "util"
 
 const API_BASE_URL = "https://api.zoom.us/v2",
@@ -87,8 +88,12 @@ class Session {
   // account that has no other meeting currently running, or scheduled to start
   // within the time specified by meetingLengthBuffer.
   async nextAvailableMeeting() {
-    let now = new Date()
-    let bufferExpiryTime = new Date(now + this.meetingLengthBuffer)
+    let now = moment()
+    let bufferExpiryTime = moment(now).add(
+      this.meetingLengthBuffer,
+      "milliseconds",
+    )
+
     const accountMeetings = await Promise.all(
       Array.from(this.users.map(u => u.email))
         .map(email => this.accountForEmail(email))
