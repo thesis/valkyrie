@@ -80,7 +80,7 @@ class Session {
     private apiKey: string,
     private apiSecret: string,
     private users: User[],
-    meetingLengthBuffer: number,
+    private meetingLengthBuffer: number,
   ) {}
 
   // Checks all available session accounts and creates a meeting on an
