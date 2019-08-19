@@ -209,6 +209,7 @@ class Account {
             join_before_host: true,
             host_video: true,
             participant_video: true,
+            waiting_room: false,
           },
         },
         { params: { access_token: this.token } },
@@ -216,8 +217,7 @@ class Account {
       meeting: Meeting = response.data
 
     meeting.app_url = URLs.appJoin.replace(/{meetingId}/, meeting.id)
-
-    return meeting
+    return [meeting, this.email]
   }
 
   private get token() {
