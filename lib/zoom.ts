@@ -69,11 +69,11 @@ type User = {
 }
 
 function isDatetimeWithinRange(
-  datetimeToCheck: datetime,
-  rangeStart: datetime,
-  rangeEnd: datetime,
+  datetimeToCheck: moment.Moment,
+  rangeStart: moment.Moment,
+  rangeEnd: moment.Moment,
 ) {
-  return datetimeToCheck > rangeStart && datetimeToCheck < rangeEnd
+  return moment(datetimeToCheck).isBetween(rangeStart, rangeEnd)
 }
 
 class Session {
@@ -104,7 +104,7 @@ class Session {
           let upcomingMeetingsInBuffer = upcoming.filter(meeting =>
             meeting.start_time
               ? isDatetimeWithinRange(
-                  new Date(meeting.start_time),
+                  moment(meeting.start_time),
                   now,
                   bufferExpiryTime,
                 )
@@ -114,7 +114,7 @@ class Session {
           let scheduledMeetingsInBuffer = scheduled.filter(meeting =>
             meeting.start_time
               ? isDatetimeWithinRange(
-                  new Date(meeting.start_time),
+                  moment(meeting.start_time),
                   now,
                   bufferExpiryTime,
                 )
