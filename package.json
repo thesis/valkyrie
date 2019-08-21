@@ -38,7 +38,8 @@
   },
   "devDependencies": {
     "@types/cookie": "^0.3.1",
+    "@types/hubot": "^2.19.2",
     "@types/jsonwebtoken": "~7.2.8",
-    "@types/hubot": "^2.19.2"
+    "hubot-chat-testing": "^1.0.2"
   }
 }
