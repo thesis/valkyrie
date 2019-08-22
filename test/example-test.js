@@ -1,6 +1,7 @@
 const Helper = require("hubot-test-helper")
 const chai = require("chai")
 const co = require("co")
+const Promise = require("bluebird")
 
 const { expect } = chai
 
@@ -20,6 +21,7 @@ describe("example script", function() {
       return co(
         function*() {
           yield this.room.user.say("alice", "did someone call for a badger?")
+          yield new Promise.delay(1000)
         }.bind(this),
       )
     })
@@ -27,7 +29,7 @@ describe("example script", function() {
     it("doesn't need badgers", function() {
       expect(this.room.messages).to.eql([
         ["alice", "did someone call for a badger?"],
-        // ["hubot", "Badgers? BADGERS? WE DON'T NEED NO STINKIN BADGERS"],
+        ["hubot", "Badgers? BADGERS? WE DON'T NEED NO STINKIN BADGERS"],
       ])
     })
   })
@@ -37,6 +39,7 @@ describe("example script", function() {
       return co(
         function*() {
           yield this.room.user.say("bob", "@hubot open the pod bay doors")
+          yield new Promise.delay(1000)
         }.bind(this),
       )
     })
@@ -44,7 +47,7 @@ describe("example script", function() {
     it("won't open the pod bay doors", function() {
       expect(this.room.messages).to.eql([
         ["bob", "@hubot open the pod bay doors"],
-        // ["hubot", "@bob I'm afraid I can't let you do that."],
+        ["hubot", "@bob I'm afraid I can't let you do that."],
       ])
     })
   })
@@ -54,6 +57,7 @@ describe("example script", function() {
       return co(
         function*() {
           yield this.room.user.say("bob", "@hubot open the dutch doors")
+          yield new Promise.delay(1000)
         }.bind(this),
       )
     })
@@ -61,7 +65,7 @@ describe("example script", function() {
     it("will open the dutch doors", function() {
       expect(this.room.messages).to.eql([
         ["bob", "@hubot open the dutch doors"],
-        // ["hubot", "@bob Opening dutch doors"],
+        ["hubot", "@bob Opening dutch doors"],
       ])
     })
   })

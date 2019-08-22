@@ -40,6 +40,7 @@
     "@types/cookie": "^0.3.1",
     "@types/hubot": "^2.19.2",
     "@types/jsonwebtoken": "~7.2.8",
+    "bluebird": "^3.5.5",
     "chai": "^4.2.0",
     "co": "^4.6.0",
     "hubot-test-helper": "^1.9.0",
