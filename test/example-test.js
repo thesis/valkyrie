@@ -1,5 +1,6 @@
 const Helper = require("hubot-test-helper")
 const chai = require("chai")
+const co = require("co")
 
 const { expect } = chai
 
