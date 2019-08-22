@@ -15,29 +15,53 @@ describe("example script", function() {
     this.room.destroy()
   })
 
-  it("doesn't need badgers", function() {
-    this.room.user.say("alice", "did someone call for a badger?").then(() => {
+  context("user mentions a badger", function() {
+    beforeEach(function() {
+      return co(
+        function*() {
+          yield this.room.user.say("alice", "did someone call for a badger?")
+        }.bind(this),
+      )
+    })
+
+    it("doesn't need badgers", function() {
       expect(this.room.messages).to.eql([
         ["alice", "did someone call for a badger?"],
-        ["hubot", "Badgers? BADGERS? WE DON'T NEED NO STINKIN BADGERS"],
+        // ["hubot", "Badgers? BADGERS? WE DON'T NEED NO STINKIN BADGERS"],
       ])
     })
   })
 
-  it("won't open the pod bay doors", function() {
-    this.room.user.say("bob", "@hubot open the pod bay doors").then(() => {
+  context("user asks about pod bay doors", function() {
+    beforeEach(function() {
+      return co(
+        function*() {
+          yield this.room.user.say("bob", "@hubot open the pod bay doors")
+        }.bind(this),
+      )
+    })
+
+    it("won't open the pod bay doors", function() {
       expect(this.room.messages).to.eql([
         ["bob", "@hubot open the pod bay doors"],
-        ["hubot", "@bob I'm afraid I can't let you do that."],
+        // ["hubot", "@bob I'm afraid I can't let you do that."],
       ])
     })
   })
 
-  it("will open the dutch doors", function() {
-    this.room.user.say("bob", "@hubot open the dutch doors").then(() => {
+  context("user asks about dutch doors", function() {
+    beforeEach(function() {
+      return co(
+        function*() {
+          yield this.room.user.say("bob", "@hubot open the dutch doors")
+        }.bind(this),
+      )
+    })
+
+    it("will open the dutch doors", function() {
       expect(this.room.messages).to.eql([
         ["bob", "@hubot open the dutch doors"],
-        ["hubot", "@bob Opening dutch doors"],
+        // ["hubot", "@bob Opening dutch doors"],
       ])
     })
   })
