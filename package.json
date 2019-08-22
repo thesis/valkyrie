@@ -40,6 +40,10 @@
     "@types/cookie": "^0.3.1",
     "@types/hubot": "^2.19.2",
     "@types/jsonwebtoken": "~7.2.8",
-    "hubot-test-helper": "^1.9.0"
+    "hubot-test-helper": "^1.9.0",
+    "mocha": "^6.2.0"
+  },
+  "scripts": {
+    "test": "mocha"
   }
 }
