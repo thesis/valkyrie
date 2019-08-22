@@ -29,7 +29,7 @@ describe("example script", function() {
     it("doesn't need badgers", function() {
       expect(this.room.messages).to.eql([
         ["alice", "did someone call for a badger?"],
-        ["hubot", "Badgers? BADGERS? WE DON'T NEED NO STINKIN BADGERS"],
+        ["heimdall", "Badgers? BADGERS? WE DON'T NEED NO STINKIN BADGERS"],
       ])
     })
   })
@@ -38,7 +38,7 @@ describe("example script", function() {
     beforeEach(function() {
       return co(
         function*() {
-          yield this.room.user.say("bob", "@hubot open the pod bay doors")
+          yield this.room.user.say("bob", "@heimdall open the pod bay doors")
           yield new Promise.delay(1000)
         }.bind(this),
       )
@@ -46,8 +46,8 @@ describe("example script", function() {
 
     it("won't open the pod bay doors", function() {
       expect(this.room.messages).to.eql([
-        ["bob", "@hubot open the pod bay doors"],
-        ["hubot", "@bob I'm afraid I can't let you do that."],
+        ["bob", "@heimdall open the pod bay doors"],
+        ["heimdall", "@bob I'm afraid I can't let you do that."],
       ])
     })
   })
@@ -56,7 +56,7 @@ describe("example script", function() {
     beforeEach(function() {
       return co(
         function*() {
-          yield this.room.user.say("bob", "@hubot open the dutch doors")
+          yield this.room.user.say("bob", "@heimdall open the dutch doors")
           yield new Promise.delay(1000)
         }.bind(this),
       )
@@ -64,8 +64,8 @@ describe("example script", function() {
 
     it("will open the dutch doors", function() {
       expect(this.room.messages).to.eql([
-        ["bob", "@hubot open the dutch doors"],
-        ["hubot", "@bob Opening dutch doors"],
+        ["bob", "@heimdall open the dutch doors"],
+        ["heimdall", "@bob Opening dutch doors"],
       ])
     })
   })
