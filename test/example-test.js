@@ -32,4 +32,11 @@ describe("Testing example scripts", function() {
     // Alternately, messagesRoom WITH "@<username> " in expected output works
     .bot.messagesRoom("@hal Opening dutch doors")
     .expect("will open the dutch doors")
+
+  chat
+    .when("user lulz-es")
+    .user("matt")
+    .messagesBot("lulz")
+    .bot.replyMatches(/lol|rofl|lmao/)
+    .expect("will lol or rofl or lmao")
 })
