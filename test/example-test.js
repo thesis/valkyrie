@@ -11,9 +11,9 @@ const expect = require("chai").expect
 
 describe("example script", function() {
   chat
-    .when("user mentions a badger")
+    .when("user mentions a badger", { answerDelay: 200 })
     .user("alice")
-    .messagesBot("did someone call for a badger?")
+    .messagesBot("did someone call for a badger?", 400)
     .bot.messagesRoom("Badgers? BADGERS? WE DON'T NEED NO STINKIN BADGERS")
     .expect("doesn't need badgers")
 })
