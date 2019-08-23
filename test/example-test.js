@@ -14,6 +14,6 @@ describe("example script", function() {
     .when("user mentions a badger", { answerDelay: 200 })
     .user("alice")
     .messagesRoom("did someone call for a badger?", 400)
-    .bot.repliesWith("Badgers? BADGERS? WE DON'T NEED NO STINKIN BADGERS")
+    .bot.messagesRoom("Badgers? BADGERS? WE DON'T NEED NO STINKIN BADGERS")
     .expect("doesn't need badgers")
 })
