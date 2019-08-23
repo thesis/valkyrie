@@ -7,14 +7,6 @@ const chat = new HubotChatTesting(
 )
 
 describe("example script", function() {
-  beforeEach(function() {
-    this.room = helper.createRoom()
-  })
-
-  afterEach(function() {
-    this.room.destroy()
-  })
-
   chat
     .when("user mentions a badger")
     .user("alice")
