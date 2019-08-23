@@ -1,3 +1,4 @@
+"use strict"
 const HubotChatTesting = require("hubot-chat-testing")
 const Helper = require("hubot-test-helper")
 
@@ -5,6 +6,8 @@ const chat = new HubotChatTesting(
   "hubot",
   new Helper("../scripts/example.coffee"),
 )
+
+const expect = require("chai").expect
 
 describe("example script", function() {
   chat
