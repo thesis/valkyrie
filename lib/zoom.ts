@@ -68,14 +68,6 @@ type User = {
   timezone: string
 }
 
-function isDatetimeWithinRange(
-  datetimeToCheck: moment.Moment,
-  rangeStart: moment.Moment,
-  rangeEnd: moment.Moment,
-) {
-  return moment(datetimeToCheck).isBetween(rangeStart, rangeEnd)
-}
-
 class Session {
   constructor(
     private apiKey: string,
@@ -103,21 +95,13 @@ class Session {
           let upcoming = await accountSession.upcomingMeetings()
           let upcomingMeetingsInBuffer = upcoming.filter(meeting =>
             meeting.start_time
-              ? isDatetimeWithinRange(
-                  moment(meeting.start_time),
-                  now,
-                  bufferExpiryTime,
-                )
+              ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
               : false,
           )
           let scheduled = await accountSession.scheduledMeetings()
           let scheduledMeetingsInBuffer = scheduled.filter(meeting =>
             meeting.start_time
-              ? isDatetimeWithinRange(
-                  moment(meeting.start_time),
-                  now,
-                  bufferExpiryTime,
-                )
+              ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
               : false,
           )
           return [
