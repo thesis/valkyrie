@@ -137,7 +137,6 @@ module.exports = function(robot) {
     } else {
       // If targetRoom is specified, show jobs for that room.
       rooms = [targetRoomId]
-      outputPrefix += `the ${targetRoom} flow:\n`
     }
 
     // Construct message string prefix
