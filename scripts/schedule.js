@@ -116,7 +116,8 @@ module.exports = function(robot) {
     }
 
     // only get DMs from user who called list, if user calls list from a DM
-    let userIdForDMs = typeof roomId === undefined ? msg.message.user.id : null
+    let userIdForDMs =
+      typeof roomId === "undefined" ? msg.message.user.id : null
 
     // Construct params for getting and formatting job list
     if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
