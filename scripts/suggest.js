@@ -53,7 +53,7 @@ module.exports = function(robot) {
     alertRoomReference = `[${alertRoomName}](${alertRoomLink})`
   }
 
-  robot.respond(/suggest ?((?:.|\s)*)$/i, res => {
+  robot.respond(/suggest ?((?:.|\s)*)$/i, async res => {
     try {
       let user = res.message.user
       let userSuggestion = res.match[1]
@@ -118,45 +118,34 @@ module.exports = function(robot) {
         // and post without the API (will that work w/o flow id?)
         robot.send({ room: alertRoomName }, formattedSuggestion)
         return
-      } else {
-        let postResponse = FLOWDOCK_SESSION.postMessage(
-          formattedSuggestion,
-          alertRoom.id,
-        )
-          .then(response => {
-            var alertThreadId = response.data.thread_id
-            if (alertThreadId) {
-              return alertThreadId
-            } else {
-              robot.logger.error(
-                `Did not get thread id from post message response: %o`,
-                response,
-              )
-              throw new Error(
-                "Did not get thread id from post message response",
-              )
-            }
-          })
-          .then(threadId => {
-            // construct formatted thread link
-            let alertThreadReference = `[${alertRoomName}](${flowdock.URLs.thread})`
-              .replace(/{flowPath}/, alertRoomPath)
-              .replace(/{threadId}/, threadId)
-            // then respond in source suggestion thread with formatted thread link
-            return res.send(
-              `Thanks for the suggestion! We'll be discussing it further in ${alertThreadReference}, feel free to join us there.`,
-            )
-          })
-          .catch(err => {
-            robot.logger.error(`Suggestion failed to post: ${err.message}`)
-            return res.send(`Something went wrong sending your suggestion.`)
-          })
       }
+
+      let postResponse = await FLOWDOCK_SESSION.postMessage(
+        formattedSuggestion,
+        alertRoom.id,
+      )
+      var alertThreadId = postResponse.data.thread_id
+      if (!alertThreadId) {
+        throw new Error(
+          `Did not get thread id from post message response: ${util.inspect(
+            postResponse,
+          )}`,
+        )
+      }
+
+      // construct formatted thread link
+      let alertThreadReference = `[${alertRoomName}](${flowdock.URLs.thread})`
+        .replace(/{flowPath}/, alertRoomPath)
+        .replace(/{threadId}/, threadId)
+      // then respond in source suggestion thread with formatted thread link
+      res.send(
+        `Thanks for the suggestion! We'll be discussing it further in ${alertThreadReference}, feel free to join us there.`,
+      )
     } catch (err) {
       robot.logger.error(
         `Failed to send user suggestion to target flow: ${util.inspect(err)}`,
       )
-      return res.send(
+      res.send(
         `Something went wrong trying to post your suggestion. Please ask your friendly human robot-tender to look into it.`,
       )
     }
