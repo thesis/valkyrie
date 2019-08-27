@@ -25,7 +25,12 @@ BOT_RESTICTED_COMMANDS = ["reload-scripts.reload"] // string that matches the li
 ALLOWED_BOTS = ["valkyrie"]
 
 ROOM_RESTRICTED_COMMANDS = ["badgers", "pod-bay-doors", "users", "reconnect"] // string that matches the listener ID
-ALLOWED_ROOMS = ["Bifrost", "Playground"] // string that matches the room name
+ALLOWED_ROOMS = [
+  "Bifrost",
+  "Playground",
+  "Playground, Too",
+  "Playground Private (for hubot dev)",
+] // string that matches the room name
 
 module.exports = function(robot) {
   robot.listenerMiddleware(function(context, next, done) {

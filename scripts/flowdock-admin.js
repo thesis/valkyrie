@@ -42,7 +42,7 @@ module.exports = function(robot) {
       if (notUsingFlowdock(robot.adapter, response)) {
         return
       }
-      const session = new flowdock.Session(apiToken)
+      const session = new flowdock.BasicAuthSession(apiToken)
       session.get("/users/", {}, (err, body, usersResponse) => {
         if (err == null) {
           response.send(

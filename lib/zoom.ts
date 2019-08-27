@@ -20,7 +20,11 @@ function tokenFrom(apiKey: string, apiSecret: string) {
   return jwt.sign(payload, apiSecret)
 }
 
-async function getSession(apiKey: string, apiSecret: string) {
+async function getSession(
+  apiKey: string,
+  apiSecret: string,
+  meetingLengthBuffer: number, // in milliseconds
+) {
   const token = tokenFrom(apiKey, apiSecret),
     userResponse = await axios.get(URLs.users, {
       params: { access_token: token },
@@ -29,7 +33,12 @@ async function getSession(apiKey: string, apiSecret: string) {
   if (userResponse.status != 200) {
     throw `Error looking up users: ${util.inspect(userResponse.data)}.`
   } else {
-    return new Session(apiKey, apiSecret, userResponse.data.users)
+    return new Session(
+      apiKey,
+      apiSecret,
+      userResponse.data.users,
+      meetingLengthBuffer,
+    )
   }
 }
 
@@ -58,25 +67,63 @@ type User = {
   timezone: string
 }
 
+function isDatetimeWithinRange(
+  datetimeToCheck: datetime,
+  rangeStart: datetime,
+  rangeEnd: datetime,
+) {
+  return datetimeToCheck > rangeStart && datetimeToCheck < rangeEnd
+}
+
 class Session {
   constructor(
     private apiKey: string,
     private apiSecret: string,
     private users: User[],
+    meetingLengthBuffer: number,
   ) {}
 
   // Checks all available session accounts and creates a meeting on an
-  // account that has no other meeting currently running.
+  // account that has no other meeting currently running, or scheduled to start
+  // within the time specified by meetingLengthBuffer.
   async nextAvailableMeeting() {
+    let now = new Date()
+    let bufferExpiryTime = new Date(now + this.meetingLengthBuffer)
     const accountMeetings = await Promise.all(
       Array.from(this.users.map(u => u.email))
         .map(email => this.accountForEmail(email))
         .map(async function(accountSession): Promise<[Account, boolean]> {
-          let meetings = await accountSession.liveMeetings()
-
-          return [accountSession, meetings.length == 0]
+          let live = await accountSession.liveMeetings()
+          // filter out any upcoming or scheduled meetings starting within meetingLengthBuffer
+          let upcoming = await accountSession.upcomingMeetings()
+          let upcomingMeetingsInBuffer = upcoming.filter(meeting =>
+            meeting.start_time
+              ? isDatetimeWithinRange(
+                  new Date(meeting.start_time),
+                  now,
+                  bufferExpiryTime,
+                )
+              : false,
+          )
+          let scheduled = await accountSession.scheduledMeetings()
+          let scheduledMeetingsInBuffer = scheduled.filter(meeting =>
+            meeting.start_time
+              ? isDatetimeWithinRange(
+                  new Date(meeting.start_time),
+                  now,
+                  bufferExpiryTime,
+                )
+              : false,
+          )
+          return [
+            accountSession,
+            live.length == 0 &&
+              upcomingMeetingsInBuffer.length == 0 &&
+              scheduledMeetingsInBuffer.length == 0,
+          ]
         }),
     )
+
     const availableSessions = accountMeetings
       .filter(([, availableForMeeting]) => availableForMeeting)
       .map(([session]) => session)
@@ -94,11 +141,17 @@ class Session {
   }
 }
 
+enum MeetingScheduleCategory {
+  LIVE = "live",
+  SCHEDULED = "scheduled",
+  UPCOMING = "upcoming",
+}
+
 enum MeetingType {
   Instant = 1,
   Scheduled = 2,
-  FixedRecurring = 3,
-  FloatingRecurring = 8,
+  FloatingRecurring = 3,
+  FixedRecurring = 8,
 }
 
 type Meeting = {
@@ -118,25 +171,40 @@ class Account {
     private apiSecret: string,
   ) {}
 
-  async liveMeetings() {
+  // NB: we may run into pagination issues at some point, especially for
+  // SCHEDULED (which returns past events)
+  // optional param "page_size" default: 30,/ max 300, "page_number" default: 1
+  private async getMeetings(meetingCategory: MeetingScheduleCategory) {
     const response = await axios.get(
         URLs.meetings.replace(/{userId}/, this.email),
         {
           params: {
             access_token: this.token,
-            type: "live",
+            type: meetingCategory,
           },
         },
       ),
       meetings: Meeting[] = response.data.meetings
-
     return meetings
+  }
+
+  async liveMeetings() {
+    return this.getMeetings(MeetingScheduleCategory.LIVE)
+  }
+
+  async scheduledMeetings() {
+    return this.getMeetings(MeetingScheduleCategory.SCHEDULED)
+  }
+
+  async upcomingMeetings() {
+    return this.getMeetings(MeetingScheduleCategory.UPCOMING)
   }
 
   async createMeeting() {
     const response = await axios.post(
         URLs.meetings.replace(/{userId}/, this.email),
         {
+          topic: "Heimdall-initiated Zoom meeting",
           settings: {
             join_before_host: true,
             host_video: true,

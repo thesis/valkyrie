@@ -1,5 +1,7 @@
 import { default as axios, AxiosResponse, AxiosRequestConfig } from "axios"
 
+import { Base64 } from "js-base64"
+
 const API_BASE_URL = "https://api.flowdock.com",
   APP_BASE_URL = "https://www.flowdock.com/app"
 
@@ -47,17 +49,16 @@ type DiscussionMessage = {
 }
 
 /**
- * FlowdockSession represents a session of interactions with a Flowdock server.
- * This session is authenticated by the `apiToken` passed to the constructor.
+ * Session represents a session of interactions with a Flowdock server.
  */
-class Session {
+abstract class Session {
   private postFn: (
     url: string,
     data?: any,
     config?: AxiosRequestConfig,
   ) => Promise<AxiosResponse>
 
-  constructor(private apiToken: string, doPost: boolean = true) {
+  constructor(doPost: boolean) {
     if (doPost) {
       this.postFn = axios.post.bind(axios)
     } else {
@@ -81,6 +82,25 @@ class Session {
       }
     }
   }
+}
+
+/**
+ * AppSession represents a session of interactions with a Flowdock server.
+ *
+ * In this Session type, the apiToken must be a flow_token generated within an
+ * integration for a third-party app.
+ */
+class AppSession extends Session {
+  private postFn: (
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig,
+  ) => Promise<AxiosResponse>
+
+  constructor(private apiToken: string, doPost: boolean = true) {
+    super(doPost)
+    this.apiToken = apiToken
+  }
 
   async postActivity(message: ActivityThread | ActivityMessage) {
     return this.postFn(URLs.messages, {
@@ -99,4 +119,43 @@ class Session {
   }
 }
 
-export { Session, URLs, APP_BASE_URL }
+/**
+ * BasicAuthSession represents a session of interactions with a
+ * Flowdock server, using Basic Auth.
+ *
+ * In a BasicAuthSession, the apiToken is the Personal API token for Hubot's
+ * Flowdock account.
+ */
+class BasicAuthSession extends Session {
+  private postFn: (
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig,
+  ) => Promise<AxiosResponse>
+
+  constructor(private apiToken: string, doPost: boolean = true) {
+    super(doPost)
+    this.apiToken = apiToken
+  }
+
+  async postMessage(message: string, targetFlowId: string) {
+    let apiToken = Base64.encode(this.apiToken)
+    let header = {
+      "Content-type": "application/json",
+      Accept: "application/json",
+      Authorization: `Basic ${apiToken}`,
+      "X-flowdock-wait-for-message": true,
+    }
+    return this.postFn(
+      URLs.messages,
+      {
+        event: "message",
+        content: `${message}`,
+        flow: targetFlowId,
+      },
+      { headers: header },
+    )
+  }
+}
+
+export { AppSession, BasicAuthSession, Session, URLs, APP_BASE_URL }

@@ -40,7 +40,7 @@ spec:
                 secretKeyRef:
                   name: heimdall-hubot
                   key: heimdall_alert_flow
-            - name: SUGGESTION_ALERT_ROOM
+            - name: SUGGESTION_ALERT_ROOM # Name of room for suggestion posts
               valueFrom:
                 secretKeyRef:
                   name: heimdall-hubot
@@ -92,6 +92,8 @@ spec:
                 secretKeyRef:
                   name: heimdall-hubot
                   key: zoom_api_secret
+            - name: ZOOM_EXPECTED_MEETING_DURATION
+              value: "60"
           ports:
             - containerPort: 8080
           resources:
