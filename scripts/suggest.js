@@ -61,17 +61,19 @@ module.exports = function(robot) {
       let redirectToSuggestionAlertRoomMessage = `You can try again from a public flow, or join us in ${alertRoomReference} and chat with us about your idea there.`
 
       if (typeof res.message.room === "undefined") {
-        return res.send(
+        res.send(
           `Sorry, this command only works from flows, not DMs.\n${redirectToSuggestionAlertRoomMessage}`,
         )
+        return
       }
 
       if (
         isRoomInviteOnly(robot.adapter, robot.adapterName, res.message.room)
       ) {
-        return res.send(
+        res.send(
           `Sorry, this command only works from public flows, to protect the privacy of your invite-only flow.\n\n${redirectToSuggestionAlertRoomMessage}`,
         )
+        return
       }
 
       if (!userSuggestion) {
@@ -114,7 +116,8 @@ module.exports = function(robot) {
           `Could not get room name for: ${alertRoom}. Falling back to posting message without link to thread in alert room.`,
         )
         // and post without the API (will that work w/o flow id?)
-        return robot.send({ room: alertRoomName }, formattedSuggestion)
+        robot.send({ room: alertRoomName }, formattedSuggestion)
+        return
       } else {
         let postResponse = FLOWDOCK_SESSION.postMessage(
           formattedSuggestion,
