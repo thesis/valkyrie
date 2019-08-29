@@ -97,6 +97,7 @@ module.exports = function(robot) {
     const roomId = msg.message.user.room // room command is called from
     let targetRoomId = null
     let output = ""
+    let calledFromDm = typeof roomId === "undefined"
 
     // If targetRoom is specified, check whether list for is permitted.
     if (!isBlank(targetRoom) && targetRoom != "all") {
@@ -116,7 +117,7 @@ module.exports = function(robot) {
     }
 
     // only get DMs from user who called list, if user calls list from a DM
-    let userIdForDMs = typeof roomId === undefined ? msg.message.user.id : null
+    let userIdForDMs = calledFromDm ? msg.message.user.id : null
 
     // Construct params for getting and formatting job list
     if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
@@ -127,18 +128,15 @@ module.exports = function(robot) {
       // Get list of public rooms.
       rooms = getPublicJoinedFlowIds(robot.adapter)
       // If called from a private room, add to list.
-      calledFromPrivateRoom = isRoomInviteOnly(
-        robot.adapter,
-        robot.adapterName,
-        roomId,
-      )
+      calledFromPrivateRoom = !calledFromDm
+        ? isRoomInviteOnly(robot.adapter, robot.adapterName, roomId)
+        : false
       if (calledFromPrivateRoom) {
         rooms.push(roomId)
       }
     } else {
       // If targetRoom is specified, show jobs for that room.
       rooms = [targetRoomId]
-      outputPrefix += `the ${targetRoom} flow:\n`
     }
 
     // Construct message string prefix
@@ -147,7 +145,7 @@ module.exports = function(robot) {
       outputPrefix += "THIS flow:\n"
     } else if (targetRoom === "all") {
       // If called from a private room, add to list.
-      if (calledFromPrivateRoom) {
+      if (calledFromPrivateRoom || calledFromDm) {
         outputPrefix += "THIS flow AND "
       }
       outputPrefix += "all public flows:\n"
