@@ -136,7 +136,7 @@ module.exports = function(robot) {
       // construct formatted thread link
       let alertThreadReference = `[${alertRoomName}](${flowdock.URLs.thread})`
         .replace(/{flowPath}/, alertRoomPath)
-        .replace(/{threadId}/, threadId)
+        .replace(/{threadId}/, alertThreadId)
       // then respond in source suggestion thread with formatted thread link
       res.send(
         `Thanks for the suggestion! We'll be discussing it further in ${alertThreadReference}, feel free to join us there.`,
