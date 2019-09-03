@@ -6,7 +6,7 @@
 //   language input for date patterns
 //
 //   Currently not supporting recurring events/ cron patterns. Continue using
-//   the `schedule`` command for that.
+//   the `schedule` command for that.
 //
 // Commands:
 //   hubot remind "<day or date in English>" <message> - Create a reminder that runs on a specific date and time, using regular English syntax to describe the date/time. See https://www.npmjs.com/package/chrono-node for examples of accepted date formats. Note: you CAN include a timezone in your request, but all times will be Displayed in UTC.
