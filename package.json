@@ -5,8 +5,6 @@
   "author": "Antonio Salazar Cardozo <antonio@thesis.co>",
   "description": "Heimdall can see and hear your every need, and keeps watch for the onset of Ragnarok",
   "dependencies": {
-    "axios-debug-log": "0.4.0",
-    "cheerio": "^1.0.0-rc.2",
     "coffeescript": "^1.12.3",
     "cookie-parser": "^1.4.3",
     "cron-parser": "~1.0.1",
@@ -25,6 +23,7 @@
     "hubot-scripts": "^2.17.2",
     "hubot-shipit": "github:takouhai/hubot-shipit#955703ae5e00412bedec5eea0070d4a66e10fc93",
     "jsonwebtoken": "~8.3.0",
+    "lodash": "^4.17.14",
     "moment": "^2.24.0",
     "node-schedule": "~1.0.0",
     "passport": "^0.4.0",

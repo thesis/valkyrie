@@ -67,21 +67,6 @@ spec:
                 secretKeyRef:
                   name: heimdall-hubot
                   key: imgflip_api_password
-            - name: ZEPLIN_FLOWDOCK_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: heimdall-hubot
-                  key: zeplin_flowdock_token
-            - name: ZEPLIN_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: heimdall-hubot
-                  key: zeplin_username
-            - name: ZEPLIN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: heimdall-hubot
-                  key: zeplin_password
             - name: ZOOM_API_KEY
               valueFrom:
                 secretKeyRef:
