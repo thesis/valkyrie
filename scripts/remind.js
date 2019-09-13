@@ -81,14 +81,13 @@ module.exports = function(robot) {
     //   }
     // }
 
-    let who = msg.match[1]
-    let message = ""
-
-    if (who == "me") {
-      message = `@${msg.message.user.name}, `
-    } else if (who == "team") {
-      message = `@team, `
+    const whoToTag = {
+      me: `@${msg.message.user.name}`,
+      team: "@team",
     }
+
+    let who = msg.match[1]
+    let message = whoToTag[who] || ""
 
     try {
       let inputString = msg.match[2]
