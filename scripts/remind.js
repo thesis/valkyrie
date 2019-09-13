@@ -82,6 +82,13 @@ module.exports = function(robot) {
     // }
 
     let who = msg.match[1]
+    let message = ""
+
+    if (who == "me") {
+      message = `@${msg.message.user.name}, `
+    } else if (who == "team") {
+      message = `@team, `
+    }
 
     try {
       let inputString = msg.match[2]
@@ -98,7 +105,8 @@ module.exports = function(robot) {
           `)
       }
 
-      let message = inputString.substring(dateTextIndex + dateText.length)
+      let messageText = inputString.substring(dateTextIndex + dateText.length)
+      message += messageText.replace("to ", "")
 
       let resp = createScheduledJob(
         robot,
