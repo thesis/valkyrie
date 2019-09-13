@@ -62,25 +62,6 @@ module.exports = function(robot) {
   // TODO: update pattern/ help to use improved syntax
   // --> remind [me|@username] [in <flowname>] [when|how often] <what>
   robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, function(msg) {
-    // let targetRoom = _.trim(msg.match[1]) // optional name of room specified in msg
-    // let targetRoomId = null
-
-    // if (!isBlank(targetRoom)) {
-    //   targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
-
-    //   if (isRestrictedRoom(targetRoomId, robot, msg)) {
-    //     return msg.send(
-    //       `Creating reminder for the ${targetRoom} flow is restricted.`,
-    //     )
-    //   }
-
-    //   if (!robotIsInRoom(robot.adapter, targetRoomId)) {
-    //     return msg.send(
-    //       `Can't create reminder for ${targetRoom}: I'm not in that flow, or there's a typo in the name.`,
-    //     )
-    //   }
-    // }
-
     const whoToTag = {
       me: `@${msg.message.user.name}`,
       team: "@team",
