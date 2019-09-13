@@ -42,7 +42,6 @@ const {
   cancelScheduledJob,
   getScheduledJobList,
   formatJobsForListMessage,
-  convertNaturalLanguageDatePattern,
 } = require("../lib/schedule-util")
 
 const REMINDER_JOBS = {}
