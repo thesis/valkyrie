@@ -22,6 +22,7 @@
 //
 
 const _ = require("lodash")
+const chrono = require("chrono-node")
 
 const {
   getRoomIdFromName,
@@ -84,14 +85,21 @@ module.exports = function(robot) {
     let who = msg.match[1]
 
     try {
-      let pattern = convertNaturalLanguageDatePattern(msg.match[2])
-      if (!pattern) {
-        return msg.send(`\"${msg.match[2]}\" is an invalid date format.
+      let inputString = msg.match[2]
+      let refDate = Date.now()
+      let parsedText = chrono.parse(inputString, refDate, { forwardDate: true })
+      let { index: dateTextIndex, text: dateText, start: date } = parsedText[0]
+
+      if (!date.date()) {
+        robot.logger.error(`Could not parse datetime from text: ${dateText}`)
+        return msg.send(`Sorry, I can't extract a date from your request.
           See https://www.npmjs.com/package/chrono-node for examples of accepted date formats.
           If you're trying to schedule a recurring reminder, try using the \`schedule\` command:
           See \`help schedule\` for more information.
           `)
       }
+
+      let message = inputString.substring(dateTextIndex + dateText.length)
 
       let resp = createScheduledJob(
         robot,
@@ -99,8 +107,8 @@ module.exports = function(robot) {
         REMINDER_KEY,
         msg.message.user,
         null, //targetRoomId || targetRoom,
-        pattern,
-        msg.match[3],
+        date.date(),
+        message,
       )
       msg.send(resp)
     } catch (error) {
