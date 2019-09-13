@@ -8,9 +8,13 @@
 //   Currently not supporting recurring events/ cron patterns. Continue using
 //   the `schedule` command for that.
 //
+// Dependencies:
+//   "lodash"        : "^4.17.14",
+//   "chrono-node"   : "^1.3.11",
+//
+//
 // Commands:
-//   hubot remind "<day or date in English>" <message> - Create a reminder that runs on a specific date and time, using regular English syntax to describe the date/time. See https://www.npmjs.com/package/chrono-node for examples of accepted date formats. Note: you CAN include a timezone in your request, but all times will be Displayed in UTC.
-//   hubot remind <flow> "<day or date in English>" <message> - Create a reminder to a specific flow. See above for info on date/ time syntax.
+//   hubot remind [me|team|here] <day or date in English> <message> - Create a reminder, in the current flow, that runs on a specific date and time, using regular English syntax to describe the date/time. See https://www.npmjs.com/package/chrono-node for examples of accepted date formats. Note: you CAN include a timezone in your request, but all times will be Displayed in UTC.
 //   hubot reminder [cancel|del|delete|remove] <id> - Cancel the reminder
 //   hubot reminder [upd|update] <id> <message> - Update reminder message
 //   hubot reminder list - List all reminders for current flow. NOTE all times are displayed in UTC
@@ -56,11 +60,6 @@ module.exports = function(robot) {
     robot.brain.set(REMINDER_KEY, {})
   }
 
-  // v1 syntax:
-  // --> remind [me|team|here] <when> <what>
-  // where me|team|here = @me in this channel, @team in this channel, no mention
-  // TODO: update pattern/ help to use improved syntax
-  // --> remind [me|@username] [in <flowname>] [when|how often] <what>
   robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, function(msg) {
     const whoToTag = {
       me: `@${msg.message.user.name}`,
