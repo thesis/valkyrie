@@ -56,27 +56,32 @@ module.exports = function(robot) {
     robot.brain.set(REMINDER_KEY, {})
   }
 
+  // v1 syntax:
+  // --> remind [me|team|here] <when> <what>
+  // where me|team|here = @me in this channel, @team in this channel, no mention
   // TODO: update pattern/ help to use improved syntax
   // --> remind [me|@username] [in <flowname>] [when|how often] <what>
-  robot.respond(/remind (.*)?"(.*?)" ((?:.|\s)*)$/i, function(msg) {
-    let targetRoom = _.trim(msg.match[1]) // optional name of room specified in msg
-    let targetRoomId = null
+  robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, function(msg) {
+    // let targetRoom = _.trim(msg.match[1]) // optional name of room specified in msg
+    // let targetRoomId = null
 
-    if (!isBlank(targetRoom)) {
-      targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
+    // if (!isBlank(targetRoom)) {
+    //   targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
 
-      if (isRestrictedRoom(targetRoomId, robot, msg)) {
-        return msg.send(
-          `Creating reminder for the ${targetRoom} flow is restricted.`,
-        )
-      }
+    //   if (isRestrictedRoom(targetRoomId, robot, msg)) {
+    //     return msg.send(
+    //       `Creating reminder for the ${targetRoom} flow is restricted.`,
+    //     )
+    //   }
 
-      if (!robotIsInRoom(robot.adapter, targetRoomId)) {
-        return msg.send(
-          `Can't create reminder for ${targetRoom}: I'm not in that flow, or there's a typo in the name.`,
-        )
-      }
-    }
+    //   if (!robotIsInRoom(robot.adapter, targetRoomId)) {
+    //     return msg.send(
+    //       `Can't create reminder for ${targetRoom}: I'm not in that flow, or there's a typo in the name.`,
+    //     )
+    //   }
+    // }
+
+    let who = msg.match[1]
 
     try {
       let pattern = convertNaturalLanguageDatePattern(msg.match[2])
@@ -93,7 +98,7 @@ module.exports = function(robot) {
         REMINDER_JOBS,
         REMINDER_KEY,
         msg.message.user,
-        targetRoomId || targetRoom,
+        null, //targetRoomId || targetRoom,
         pattern,
         msg.match[3],
       )
