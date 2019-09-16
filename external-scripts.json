@@ -1,7 +1,7 @@
 [
   "hubot-circleci",
   "hubot-diagnostics",
-  "hubot-help",
+  "hubot-even-better-help",
   "hubot-redis-brain",
   "hubot-reload",
   "hubot-rules",

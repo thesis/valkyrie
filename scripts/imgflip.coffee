@@ -9,26 +9,26 @@
 #   IMGFLIP_API_PASSWORD [optional, overrides default imgflip_hubot account]
 #
 # Commands:
-#   hubot meme One does not simply <text> - Lord of the Rings Boromir
-#   hubot meme I don't always <text> but when i do <text> - The Most Interesting man in the World
-#   hubot meme aliens <text> - Ancient Aliens History Channel Guy
-#   hubot meme grumpy cat <text> - Grumpy Cat with text on the bottom
-#   hubot meme <text>, <text> everywhere - X, X Everywhere (Buzz and Woody from Toy Story)
-#   hubot meme Not sure if <text> or <text> - Futurama Fry
-#   hubot meme Y U NO <text> - Y U NO Guy
-#   hubot meme Brace yourselves <text> - Brace Yourselves X is Coming (Imminent Ned, Game of Thrones)
-#   hubot meme <text> all the <text> - X all the Y
-#   hubot meme <text> that would be great - Bill Lumbergh from Office Space
-#   hubot meme <text> too damn <text> - The rent is too damn high
-#   hubot meme Yo dawg <text> so <text> - Yo Dawg Heard You (Xzibit)
-#   hubot meme <text> you're gonna have a bad time - Super Cool Ski Instructor from South Park
-#   hubot meme Am I the only one around here <text> - The Big Lebowski
-#   hubot meme What if I told you <text> - Matrix Morpheus
-#   hubot meme <text> ain't nobody got time for that
-#   hubot meme <text> I guarantee it - George Zimmer
-#   hubot meme <text> and it's gone - South Park Banker Guy
-#   hubot meme <text> nobody bats an eye <text> everyone loses their minds - Heath Ledger Joker
-#   hubot meme back in my day <text> - Grumpy old man
+#   hubot One does not simply <text> - meme: Lord of the Rings Boromir
+#   hubot I don't always <text> but when i do <text> - meme: The Most Interesting man in the World
+#   hubot aliens <text> - meme: Ancient Aliens History Channel Guy
+#   hubot grumpy cat <text> - meme: Grumpy Cat with text on the bottom
+#   hubot <text>, <text> everywhere - meme: X, X Everywhere (Buzz and Woody from Toy Story)
+#   hubot Not sure if <text> or <text> - meme: Futurama Fry
+#   hubot Y U NO <text> - meme: Y U NO Guy
+#   hubot Brace yourselves <text> - meme: Brace Yourselves X is Coming (Imminent Ned, Game of Thrones)
+#   hubot <text> all the <text> - meme: X all the Y
+#   hubot <text> that would be great - meme: Bill Lumbergh from Office Space
+#   hubot <text> too damn <text> - meme: The rent is too damn high
+#   hubot Yo dawg <text> so <text> - meme: Yo Dawg Heard You (Xzibit)
+#   hubot <text> you're gonna have a bad time - meme: Super Cool Ski Instructor from South Park
+#   hubot Am I the only one around here <text> - meme: The Big Lebowski
+#   hubot What if I told you <text> - meme: Matrix Morpheus
+#   hubot <text> ain't nobody got time for that - meme: Sweet Brown
+#   hubot <text> I guarantee it - meme: George Zimmer
+#   hubot <text> and it's gone - meme: South Park Banker Guy
+#   hubot <text> nobody bats an eye <text> everyone loses their minds - meme: Heath Ledger Joker
+#   hubot back in my day <text> - meme: Grumpy old man
 #
 # Author:
 #   dylanwenzlau
