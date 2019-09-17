@@ -6,7 +6,7 @@
 // Commands:
 //   hubot schedule [add|new] "<datetime pattern>" <message> - Schedule a message that runs on a specific date and time. "YYYY-MM-DDTHH:mm" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
 //   hubot schedule [add|new] "<cron pattern>" <message> - Schedule a message that runs recurrently. For the wizards only. See https://crontab.guru/ or http://crontab.org/ for cron pattern syntax.
-//   hubot schedule [add|new] <flow> "[<datetime pattern>|<cron pattern>]" <message> - Schedule a message to a specific flow, using either the datetime pattern or cron pattern syntax as specified above.
+//   hubot schedule [add|new] <flow> "[<datetime pattern>|<cron pattern>]" <message> - Schedule a message to a specific flow, using either the datetime pattern or the cron pattern syntax as specified above.
 //   hubot schedule [cancel|del|delete|remove] <id> - Cancel the schedule
 //   hubot schedule [upd|update] <id> <message> - Update scheduled message
 //   hubot schedule list - List all scheduled messages for current flow. NOTE all times are listed in UTC
@@ -57,6 +57,7 @@ module.exports = function(robot) {
     function(msg) {
       let targetRoom = msg.match[1] // optional name of room specified in msg
       let targetRoomId = null
+      let pattern = _.trim(msg.match[2])
 
       if (!isBlank(targetRoom)) {
         targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
@@ -73,6 +74,15 @@ module.exports = function(robot) {
           )
         }
       }
+
+      // if (!isCronPattern(pattern)) {
+      //   return msg.send(`\"${pattern}\" is an invalid pattern.
+      //     See http://crontab.org/ or https://crontab.guru/ for cron-style format pattern.
+      //     If you're trying to schedule a one-time reminder, try using the \`remind\` command:
+      //     See \`help remind\` for more information.
+      //     `)
+      // }
+
       try {
         let resp = createScheduledJob(
           robot,
@@ -80,7 +90,7 @@ module.exports = function(robot) {
           STORE_KEY,
           msg.message.user,
           targetRoomId || targetRoom,
-          _.trim(msg.match[2]),
+          pattern,
           msg.match[3],
         )
         msg.send(resp)
