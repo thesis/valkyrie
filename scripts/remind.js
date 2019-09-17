@@ -79,7 +79,7 @@ module.exports = function(robot) {
       }
 
       let messageText = inputString.substring(dateTextIndex + dateText.length)
-      message += messageText.replace("to ", "")
+      message += messageText.replace(/^\s*to\s*/i, "")
 
       let resp = createScheduledJob(
         robot,
