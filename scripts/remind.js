@@ -1,25 +1,19 @@
 // Description:
 //   Create a reminder message
 //
-//   Based on hubot-schedule by matsukaz <matsukaz@gmail.com>
-//   Modified for flowdock, converted to JS, and updated to accept natural
-//   language input for date patterns
-//
-//   Currently not supporting recurring events/ cron patterns. Continue using
-//   the `schedule` command for that.
+//   Lightly based on hubot-schedule by matsukaz <matsukaz@gmail.com>
 //
 // Dependencies:
 //   "lodash"        : "^4.17.14",
 //   "chrono-node"   : "^1.3.11",
 //
-//
 // Commands:
-//   hubot remind [me|team|here] <day or date in English> <message> - Create a reminder, in the current flow, that runs on a specific date and time, using regular English syntax to describe the date/time. See https://www.npmjs.com/package/chrono-node for examples of accepted date formats. Note: you CAN include a timezone in your request, but all times will be Displayed in UTC.
-//   hubot reminder [cancel|del|delete|remove] <id> - Cancel the reminder
-//   hubot reminder [upd|update] <id> <message> - Update reminder message
-//   hubot reminder list - List all reminders for current flow. NOTE all times are displayed in UTC
-//   hubot reminder list <flow> - List all reminders for specified flow. NOTE all times are displayed in UTC
-//   hubot reminder list all - List all reminders for any flows. NOTE all times are displayed in UTC
+//   hubot remind [me|team|here] <day or date in English> <message> - Create a reminder, in the current flow, that runs at a specific date and time, using regular English syntax to describe the date/time. See https://www.npmjs.com/package/chrono-node for examples of accepted date formats. Note: you CAN include a timezone in your request, but all times will be Displayed in UTC.
+//   hubot reminder [cancel|del|delete|remove] <id> - Cancel the reminder for the specified id.
+//   hubot reminder [upd|update] <id> <message> - Update the message for the reminder with the specified id.
+//   hubot reminder list - List all reminders for the current flow or DM. NOTE all times are displayed in UTC.
+//   hubot reminder list <flow> - List all reminders for the specified flow. NOTE all times are displayed in UTC.
+//   hubot reminder list all - List all reminders for any public flows (reminders in DMs or invite-only flows are hidden from this list, except when called from a DM or private flow). NOTE all times are displayed in UTC.
 //
 // Author:
 //   kb0rg
