@@ -1,5 +1,16 @@
 version: 2
 jobs:
+  test:
+    docker:
+      - image: docker:17.05.0-ce-git
+    steps:
+      - checkout
+      - run:
+          name: Install npm dependencies
+          command: npm install
+      - run:
+          name: Run tests
+          command: npm test
   build:
     docker:
       - image: docker:17.05.0-ce-git
@@ -47,6 +58,7 @@ workflows:
   version: 2
   build_or_deploy:
     jobs:
+      - test
       - build:
           filters:
             branches:
