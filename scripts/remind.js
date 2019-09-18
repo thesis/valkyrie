@@ -56,8 +56,8 @@ module.exports = function(robot) {
 
   robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, function(msg) {
     const whoToTag = {
-      me: `@${msg.message.user.name}`,
-      team: "@team",
+      me: `@${msg.message.user.name}, `,
+      team: "@team, ",
     }
 
     let who = msg.match[1]
