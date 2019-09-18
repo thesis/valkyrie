@@ -67,10 +67,11 @@ module.exports = function(robot) {
       let inputString = msg.match[2]
       let refDate = Date.now()
       let parsedText = chrono.parse(inputString, refDate, { forwardDate: true })
-      let { index: dateTextIndex, text: dateText, start: date } = parsedText[0]
 
-      if (!date.date()) {
-        robot.logger.error(`Could not parse datetime from text: ${dateText}`)
+      if (!parsedText[0]) {
+        robot.logger.error(
+          `Could not parse datetime from text: ${inputString}.`,
+        )
         return msg.send(`Sorry, I can't extract a date from your request.
           See https://www.npmjs.com/package/chrono-node for examples of accepted date formats.
           If you're trying to schedule a recurring reminder, try using the \`schedule\` command:
@@ -78,6 +79,7 @@ module.exports = function(robot) {
           `)
       }
 
+      let { index: dateTextIndex, text: dateText, start: date } = parsedText[0]
       let messageText = inputString.substring(dateTextIndex + dateText.length)
       message += messageText.replace(/^\s*to\s*/i, "")
 
