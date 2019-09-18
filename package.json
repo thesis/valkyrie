@@ -44,6 +44,6 @@
     "mocha": "^6.2.0"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha --require coffeescript/register"
   }
 }
