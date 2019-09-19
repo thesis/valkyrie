@@ -1,17 +1,6 @@
 version: 2
 jobs:
-  test:
-    docker:
-      - image: docker:17.05.0-ce-git
-    steps:
-      - checkout
-      - run:
-          name: Install npm dependencies
-          command: npm install
-      - run:
-          name: Run tests
-          command: npm test
-  build:
+  build: # TODO: make this build available to test.
     docker:
       - image: docker:17.05.0-ce-git
     steps:
@@ -20,7 +9,18 @@ jobs:
           docker_layer_caching: true
       - run:
           name: Build Docker Image
-          command: docker build .
+          command: docker build . # TODO: tag this. build number?
+      - persist_to_workspace:
+          root: /tmp/heimdall
+          paths:
+            - docker-images
+  test:
+    docker:
+      - image: docker:17.05.0-ce-git # TODO: change this to reference the build we made.
+    steps:
+      - run:
+          name: Run tests
+          command: npm test
   deploy:
     docker:
       - image: google/cloud-sdk:latest
@@ -58,11 +58,13 @@ workflows:
   version: 2
   build_or_deploy:
     jobs:
-      - test
       - build:
           filters:
             branches:
               ignore: master
+      - test:
+          requires:
+            - build
       - deploy:
           filters:
             branches:
