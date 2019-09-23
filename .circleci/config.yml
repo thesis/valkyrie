@@ -3,6 +3,8 @@ jobs:
   build_and_test:
     docker:
       - image: docker:17.05.0-ce-git
+        environment:
+          PROJECT_NAME: cfc-production
     steps:
       - checkout
       - setup_remote_docker:
@@ -11,11 +13,13 @@ jobs:
           name: Build Docker Image and Run Tests
           command: |
             echo $CIRCLE_BUILD_NUM > BUILD
-            docker build . -t gcr.io/${PROJECT_NAME}/heimdall:$CIRCLE_BUILD_NUM
+            docker build . -t gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
       - run:
           name: Save build
           command: |
-            docker save -o /tmp/heimdall/docker-images/
+            echo $CIRCLE_BUILD_NUM > BUILD
+            mkdir -p /tmp/heimdall/docker-images/
+            docker save -o /tmp/heimdall/docker-images/gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM.tar gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
   deploy:
     docker:
       - image: google/cloud-sdk:latest
