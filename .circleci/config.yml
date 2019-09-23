@@ -8,13 +8,10 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          name: Build Docker Image
+          name: Build Docker Image and Run Tests
           command: |
             echo $CIRCLE_BUILD_NUM > BUILD
             docker build . -t gcr.io/${PROJECT_NAME}/heimdall:$CIRCLE_BUILD_NUM
-      - run:
-          name: Run tests
-          command: npm test
       - run:
           name: Save build
           command: |
