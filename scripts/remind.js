@@ -60,6 +60,12 @@ module.exports = function(robot) {
       team: "@team, ",
     }
 
+    // debug
+    // console.log(
+    //   `\n\n>>>remind command: what's in msg? \n${require("util").inspect(msg)}`,
+    // )
+    //
+
     let who = msg.match[1]
     let message = whoToTag[who] || ""
 
