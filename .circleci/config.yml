@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build: # TODO: make this build available to test.
+  build_and_test:
     docker:
       - image: docker:17.05.0-ce-git
     steps:
@@ -9,18 +9,16 @@ jobs:
           docker_layer_caching: true
       - run:
           name: Build Docker Image
-          command: docker build . # TODO: tag this. build number?
-      - persist_to_workspace:
-          root: /tmp/heimdall
-          paths:
-            - docker-images
-  test:
-    docker:
-      - image: docker:17.05.0-ce-git # TODO: change this to reference the build we made.
-    steps:
+          command: |
+            echo $CIRCLE_BUILD_NUM > BUILD
+            docker build . -t gcr.io/${PROJECT_NAME}/heimdall:$CIRCLE_BUILD_NUM
       - run:
           name: Run tests
           command: npm test
+      - run:
+          name: Save build
+          command: |
+            docker save -o /tmp/heimdall/docker-images/
   deploy:
     docker:
       - image: google/cloud-sdk:latest
@@ -30,7 +28,6 @@ jobs:
           CLUSTER_NAME: heimdall
           CLOUDSDK_COMPUTE_ZONE: us-east4-c
     steps:
-      - checkout
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
@@ -43,11 +40,6 @@ jobs:
             gcloud --quiet container clusters get-credentials $CLUSTER_NAME
             gcloud --quiet auth configure-docker
       - run:
-          name: Build Docker Image
-          command: |
-            echo $CIRCLE_BUILD_NUM > BUILD
-            docker build -t gcr.io/cfc-production/heimdall:$CIRCLE_BUILD_NUM .
-      - run:
           name: Push Docker Image
           command: docker push gcr.io/${PROJECT_NAME}/heimdall:$CIRCLE_BUILD_NUM
       - run:
@@ -56,16 +48,12 @@ jobs:
 
 workflows:
   version: 2
-  build_or_deploy:
+  build_and_test_and_maybe_deploy:
     jobs:
-      - build:
-          filters:
-            branches:
-              ignore: master
-      - test:
-          requires:
-            - build
+      - build_and_test
       - deploy:
           filters:
             branches:
               only: master
+          requires:
+            - build_and_test
