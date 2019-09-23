@@ -17,14 +17,17 @@ jobs:
       - run:
           name: Save build
           command: |
-            echo $CIRCLE_BRANCH
+            mkdir -p /tmp/heimdall/docker-images/
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               echo Saving build for master branch.
-              mkdir -p /tmp/heimdall/docker-images/
               docker save -o /tmp/heimdall/docker-images/heimdall-$CIRCLE_BUILD_NUM.tar gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
             else
               echo Not saving build for development branch.
             fi
+      - persist_to_workspace:
+          root: /tmp/heimdall/
+          paths:
+            - docker-images
   deploy:
     docker:
       - image: google/cloud-sdk:latest
