@@ -37,8 +37,14 @@ jobs:
           CLUSTER_NAME: heimdall
           CLOUDSDK_COMPUTE_ZONE: us-east4-c
     steps:
+      - attach_workspace:
+          at: /tmp/heimdall/docker-images
       - setup_remote_docker:
           docker_layer_caching: true
+      - run:
+          name: Load Docker image
+          command: |
+            docker load -i /tmp/heimdall/docker-images/heimdall-{$CIRCLE_BUILD_NUM}.tar
       - run:
           name: Set up GCP
           command: |
