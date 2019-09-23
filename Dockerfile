@@ -26,6 +26,7 @@ COPY test ./test
 
 RUN npm test
 RUN rm -r test
+RUN echo $?
 
 FROM runtime
 
