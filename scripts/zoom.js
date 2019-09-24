@@ -126,7 +126,10 @@ module.exports = function(robot) {
       return
     }
     ZOOM_SESSION.nextAvailableMeeting()
-      .then(meeting => {
+      .then(([meeting, zoomUserEmail]) => {
+        robot.logger.info(
+          `Created meeting: ${meeting.id}: using account for ${zoomUserEmail}`,
+        )
         res.send(
           `All set; open in [the app](${meeting.app_url}) or [your browser](${meeting.join_url})!`,
         )

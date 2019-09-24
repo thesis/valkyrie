@@ -1,5 +1,6 @@
 import axios from "axios"
 import * as jwt from "jsonwebtoken"
+import * as moment from "moment"
 import * as util from "util"
 
 const API_BASE_URL = "https://api.zoom.us/v2",
@@ -67,28 +68,24 @@ type User = {
   timezone: string
 }
 
-function isDatetimeWithinRange(
-  datetimeToCheck: datetime,
-  rangeStart: datetime,
-  rangeEnd: datetime,
-) {
-  return datetimeToCheck > rangeStart && datetimeToCheck < rangeEnd
-}
-
 class Session {
   constructor(
     private apiKey: string,
     private apiSecret: string,
     private users: User[],
-    meetingLengthBuffer: number,
+    private meetingLengthBuffer: number,
   ) {}
 
   // Checks all available session accounts and creates a meeting on an
   // account that has no other meeting currently running, or scheduled to start
   // within the time specified by meetingLengthBuffer.
   async nextAvailableMeeting() {
-    let now = new Date()
-    let bufferExpiryTime = new Date(now + this.meetingLengthBuffer)
+    let now = moment()
+    let bufferExpiryTime = moment(now).add(
+      this.meetingLengthBuffer,
+      "milliseconds",
+    )
+
     const accountMeetings = await Promise.all(
       Array.from(this.users.map(u => u.email))
         .map(email => this.accountForEmail(email))
@@ -98,21 +95,13 @@ class Session {
           let upcoming = await accountSession.upcomingMeetings()
           let upcomingMeetingsInBuffer = upcoming.filter(meeting =>
             meeting.start_time
-              ? isDatetimeWithinRange(
-                  new Date(meeting.start_time),
-                  now,
-                  bufferExpiryTime,
-                )
+              ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
               : false,
           )
           let scheduled = await accountSession.scheduledMeetings()
           let scheduledMeetingsInBuffer = scheduled.filter(meeting =>
             meeting.start_time
-              ? isDatetimeWithinRange(
-                  new Date(meeting.start_time),
-                  now,
-                  bufferExpiryTime,
-                )
+              ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
               : false,
           )
           return [
@@ -209,6 +198,7 @@ class Account {
             join_before_host: true,
             host_video: true,
             participant_video: true,
+            waiting_room: false,
           },
         },
         { params: { access_token: this.token } },
@@ -216,8 +206,7 @@ class Account {
       meeting: Meeting = response.data
 
     meeting.app_url = URLs.appJoin.replace(/{meetingId}/, meeting.id)
-
-    return meeting
+    return [meeting, this.email]
   }
 
   private get token() {
