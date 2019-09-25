@@ -30,6 +30,19 @@ To log in to your running hubot container:
 $ docker ps | grep 'heimdall:latest' | awk '{print $1}' | xargs -o -I {} docker exec -it {} /bin/sh
 ```
 
+## Tests
+
+Test coverage is currently not programmatically enforced, but we are working
+toward coverage for existing scripts. Any PRs opened should contain tests for
+new functionality introduced, and fix tests for any breaking changes.
+
+Tests should be saved in the `test/` directory; these will be run automatically
+by Circle CI whenever a branch is pushed to the remote. Test failures will
+abort the build, and prevent merging.
+
+To run tests locally before pushing your branch:
+run `npm test` from the repo root.
+
 ## Deploying
 
 To deploy a new build, you'll need to set up Google Cloud SDK, authenticate,

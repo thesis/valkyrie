@@ -16,12 +16,17 @@ COPY package-lock.json package.json ./
 
 RUN npm install
 
-RUN mkdir bin scripts lib
+RUN mkdir bin scripts lib test
 COPY external-scripts.json .
 COPY bin ./bin
 COPY scripts ./scripts
 COPY lib ./lib
 COPY BUILD ./BUILD
+COPY test ./test
+
+RUN npm test
+RUN rm -r test
+RUN echo $?
 
 FROM runtime
 

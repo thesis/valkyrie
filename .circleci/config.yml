@@ -1,15 +1,33 @@
 version: 2
 jobs:
-  build:
+  build-and-test:
     docker:
       - image: docker:17.05.0-ce-git
+        environment:
+          PROJECT_NAME: cfc-production
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          name: Build Docker Image
-          command: docker build .
+          name: Build Docker Image and Run Tests
+          command: |
+            echo $CIRCLE_BUILD_NUM > BUILD
+            docker build . -t gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
+      - run:
+          name: Save build
+          command: |
+            mkdir -p /tmp/heimdall/docker-images/
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              echo Saving build for master branch.
+              docker save -o /tmp/heimdall/docker-images/heimdall-$CIRCLE_BUILD_NUM.tar gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
+            else
+              echo Not saving build for development branch.
+            fi
+      - persist_to_workspace:
+          root: /tmp/heimdall/
+          paths:
+            - docker-images
   deploy:
     docker:
       - image: google/cloud-sdk:latest
@@ -19,9 +37,14 @@ jobs:
           CLUSTER_NAME: heimdall
           CLOUDSDK_COMPUTE_ZONE: us-east4-c
     steps:
-      - checkout
+      - attach_workspace:
+          at: /tmp/heimdall/docker-images
       - setup_remote_docker:
           docker_layer_caching: true
+      - run:
+          name: Load Docker image
+          command: |
+            docker load -i /tmp/heimdall/docker-images/heimdall-{$CIRCLE_BUILD_NUM}.tar
       - run:
           name: Set up GCP
           command: |
@@ -32,11 +55,6 @@ jobs:
             gcloud --quiet container clusters get-credentials $CLUSTER_NAME
             gcloud --quiet auth configure-docker
       - run:
-          name: Build Docker Image
-          command: |
-            echo $CIRCLE_BUILD_NUM > BUILD
-            docker build -t gcr.io/cfc-production/heimdall:$CIRCLE_BUILD_NUM .
-      - run:
           name: Push Docker Image
           command: docker push gcr.io/${PROJECT_NAME}/heimdall:$CIRCLE_BUILD_NUM
       - run:
@@ -45,13 +63,12 @@ jobs:
 
 workflows:
   version: 2
-  build_or_deploy:
+  build-test-deploy:
     jobs:
-      - build:
-          filters:
-            branches:
-              ignore: master
+      - build-and-test
       - deploy:
           filters:
             branches:
               only: master
+          requires:
+            - build-and-test
