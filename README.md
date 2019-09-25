@@ -36,7 +36,7 @@ Test coverage is currently not programmatically enforced, but we are working
 toward coverage for existing scripts. Any PRs opened should contain tests for
 new functionality introduced, and fix tests for any breaking changes.
 
-Tests should be saved in the `test/` directory; these will be run autmatically
+Tests should be saved in the `test/` directory; these will be run automatically
 by Circle CI whenever a branch is pushed to the remote. Test failures will
 abort the build, and prevent merging.
 
