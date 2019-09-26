@@ -20,7 +20,7 @@ jobs:
             mkdir -p /tmp/heimdall/docker-images/
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               echo Saving build for master branch.
-              docker save -o /tmp/heimdall/docker-images/heimdall-$CIRCLE_BUILD_NUM.tar gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
+              docker save -o /tmp/heimdall/docker-images/heimdall-${CIRCLE_BUILD_NUM}.tar gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
             else
               echo Not saving build for development branch.
             fi
