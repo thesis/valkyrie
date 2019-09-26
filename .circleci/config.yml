@@ -44,7 +44,7 @@ jobs:
       - run:
           name: Load Docker image
           command: |
-            docker load -i /tmp/heimdall/docker-images/heimdall-$CIRCLE_BUILD_NUM.tar
+            docker load -i /tmp/heimdall/docker-images/heimdall-${CIRCLE_BUILD_NUM}.tar
       - run:
           name: Set up GCP
           command: |
