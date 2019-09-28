@@ -73,10 +73,10 @@ $ docker tag heimdall:latest gcr.io/cfc-production/heimdall:my-cool-tag
 $ docker push gcr.io/cfc-production/heimdall:my-cool-tag
 ```
 
-Edit `k8s/hubot-deployment.yaml` to reference your tag, and then apply:
+Edit `infrastructure/kube/thesis-ops/hubot-deployment.yaml` to reference your tag, and then apply:
 
 ```
-$ kubectl apply -f k8s/hubot-deployment.yaml
+$ kubectl apply -f infrastructure/kube/thesis-ops/hubot-deployment.yaml
 ```
 
 ---
