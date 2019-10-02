@@ -11,7 +11,7 @@ $ npm audit fix
 $ bin/hubot -n "Heimdall"
 ```
 
-You can also run using docker, which is what is deployed to k8s:
+You can also run using docker, which is what is deployed to kube:
 
 ```
 $ brew install npm
