@@ -58,16 +58,11 @@ jobs:
             gcloud --quiet container clusters get-credentials $CLUSTER_NAME
             gcloud --quiet auth configure-docker
       - run:
-          name: Save BUILD_TAG Env Var from persisted BUILD file
+          name: Push and Deploy Docker Image
           command: |
             export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
-      - run:
-          name: Push Docker Image
-          command: docker push gcr.io/${PROJECT_NAME}/heimdall:$BUILD_TAG
-      - run:
-          name: Deploy
-          command: bash k8s/update-image.sh $BUILD_TAG
-
+            docker push gcr.io/${PROJECT_NAME}/heimdall:$BUILD_TAG
+            bash k8s/update-image.sh $BUILD_TAG
 workflows:
   version: 2
   build-test-deploy:
