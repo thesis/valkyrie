@@ -10,19 +10,17 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          name: Create Directory and Save Build Number
-          command: |
-            mkdir -p /tmp/heimdall/docker-images/
-            echo $CIRCLE_BUILD_NUM > /tmp/heimdall/docker-images/BUILD
-      - run:
           name: Build Docker Image and Run Tests
           command: |
+            echo $CIRCLE_BUILD_NUM > BUILD
             docker build . -t gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
       - run:
           name: Save build
           command: |
+            mkdir -p /tmp/heimdall/docker-images/
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              echo Saving build for master branch.
+              echo Saving build and build tag for master branch.
+              cp ./BUILD /tmp/heimdall/docker-images/BUILD
               docker save -o /tmp/heimdall/docker-images/heimdall.tar gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
             else
               echo Not saving build for development branch.
