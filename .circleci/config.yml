@@ -40,6 +40,7 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp/heimdall
+      - checkout
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
