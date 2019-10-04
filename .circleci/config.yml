@@ -60,7 +60,7 @@ jobs:
           command: |
             export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
             docker push gcr.io/${PROJECT_NAME}/heimdall:$BUILD_TAG
-            bash k8s/update-image.sh $BUILD_TAG
+            bash infrastructure/kube/thesis-ops/update-image.sh $BUILD_TAG
 workflows:
   version: 2
   build-test-deploy:
