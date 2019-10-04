@@ -19,13 +19,14 @@ jobs:
           command: |
             mkdir -p /tmp/heimdall/docker-images/
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              echo Saving build for master branch.
-              docker save -o /tmp/heimdall/docker-images/heimdall-${CIRCLE_BUILD_NUM}.tar gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
+              echo Saving build and build tag for master branch.
+              cp ./BUILD /tmp/heimdall/docker-images/BUILD
+              docker save -o /tmp/heimdall/docker-images/heimdall.tar gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
             else
               echo Not saving build for development branch.
             fi
       - persist_to_workspace:
-          root: /tmp/heimdall/
+          root: /tmp/heimdall
           paths:
             - docker-images
   deploy:
@@ -38,13 +39,13 @@ jobs:
           CLOUDSDK_COMPUTE_ZONE: us-east4-c
     steps:
       - attach_workspace:
-          at: /tmp/heimdall/docker-images
+          at: /tmp/heimdall
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
           name: Load Docker image
           command: |
-            docker load -i /tmp/heimdall/docker-images/heimdall-${CIRCLE_BUILD_NUM}.tar
+            docker load -i /tmp/heimdall/docker-images/heimdall.tar
       - run:
           name: Set up GCP
           command: |
@@ -55,12 +56,11 @@ jobs:
             gcloud --quiet container clusters get-credentials $CLUSTER_NAME
             gcloud --quiet auth configure-docker
       - run:
-          name: Push Docker Image
-          command: docker push gcr.io/${PROJECT_NAME}/heimdall:$CIRCLE_BUILD_NUM
-      - run:
-          name: Deploy
-          command: bash infrastructure/kube/thesis-ops/update-image.sh $CIRCLE_BUILD_NUM
-
+          name: Push and Deploy Docker Image
+          command: |
+            export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
+            docker push gcr.io/${PROJECT_NAME}/heimdall:$BUILD_TAG
+            bash k8s/update-image.sh $BUILD_TAG
 workflows:
   version: 2
   build-test-deploy:
