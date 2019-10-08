@@ -62,6 +62,7 @@ module.exports = function(robot) {
 
     let who = msg.match[1]
     let message = whoToTag[who] || ""
+    let threadId = msg.message.metadata && msg.message.metadata.thread_id
 
     try {
       let inputString = msg.match[2]
@@ -91,6 +92,7 @@ module.exports = function(robot) {
         null, //targetRoomId || targetRoom,
         date.date(),
         message,
+        threadId,
       )
       msg.send(resp)
     } catch (error) {
