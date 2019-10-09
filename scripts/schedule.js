@@ -61,6 +61,7 @@ module.exports = function(robot) {
 
       // store the threadId, but do not use it to post the job
       let threadId = msg.message.metadata && msg.message.metadata.thread_id
+      let remindInThread = false // default for schedule jobs
 
       if (!isBlank(targetRoom)) {
         targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
@@ -96,7 +97,7 @@ module.exports = function(robot) {
           pattern,
           msg.match[3],
           threadId,
-          (remindInThread = false),
+          remindInThread,
         )
         msg.send(resp)
       } catch (error) {
