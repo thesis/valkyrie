@@ -93,6 +93,7 @@ module.exports = function(robot) {
         date.date(),
         message,
         threadId,
+        (remindInThread = true),
       )
       msg.send(resp)
     } catch (error) {
