@@ -63,7 +63,6 @@ module.exports = function(robot) {
     let who = msg.match[1]
     let message = whoToTag[who] || ""
     let threadId = msg.message.metadata && msg.message.metadata.thread_id
-    let remindInThread = true // default for remind jobs
 
     try {
       let inputString = msg.match[2]
@@ -94,7 +93,7 @@ module.exports = function(robot) {
         date.date(),
         message,
         threadId,
-        remindInThread,
+        true, // remindInThread: default to true for remind jobs
       )
       msg.send(resp)
     } catch (error) {
