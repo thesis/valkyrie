@@ -93,6 +93,7 @@ module.exports = function(robot) {
         date.date(),
         message,
         threadId,
+        true, // remindInThread: default to true for remind jobs
       )
       msg.send(resp)
     } catch (error) {
