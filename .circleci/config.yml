@@ -12,8 +12,9 @@ jobs:
       - run:
           name: Build Docker Image and Run Tests
           command: |
+
             echo $CIRCLE_BUILD_NUM > BUILD
-            docker build . -t gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
+            docker build . -f infrastructure/docker/Dockerfile -t gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
       - run:
           name: Save build
           command: |
