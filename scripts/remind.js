@@ -62,7 +62,7 @@ module.exports = function(robot) {
 
     let who = msg.match[1]
     let message = whoToTag[who] || ""
-    let threadId = msg.message.metadata && msg.message.metadata.thread_id
+    let metadata = msg.message.metadata // TODO: strip to only needed metadata, or include all?
 
     try {
       let inputString = msg.match[2]
@@ -92,7 +92,7 @@ module.exports = function(robot) {
         null, //targetRoomId || targetRoom,
         date.date(),
         message,
-        threadId,
+        metadata,
         true, // remindInThread: default to true for remind jobs
       )
       msg.send(resp)
