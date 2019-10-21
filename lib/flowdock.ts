@@ -7,6 +7,7 @@ const API_BASE_URL = "https://api.flowdock.com",
 
 const URLs = {
   messages: `${API_BASE_URL}/messages`,
+  messageDetail: `${APP_BASE_URL}/{flowPath}/messages/{messageId}`,
   flow: `${APP_BASE_URL}/{flowPath}`,
   thread: `${APP_BASE_URL}/{flowPath}/threads/{threadId}`,
 }
