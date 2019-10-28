@@ -24,4 +24,21 @@ some extra data in the file.
 
 ## Switching projects and setting up config
 
+Make sure you have been granted access to the new project. This should be
+done via terraform, with an update to the iam role.
+
+Set up your vpn to access the project (get an `.ovpn` config file from the project owner).
+
+Use glcoud to download the kubectl profile for the cluster:
+
+- `gcloud beta interactive` opens a console with autocomplete for gcloud commands
+- `gcloud container clusters get-credentials <project-name> --internal-ip --region <your-region>`
+
+Switch your kubectl context to the new project
+
+- Verify that you see it in `kubectl get context`
+- `kubectl config use-context <your-context>`
+
+You should now be able to apply the secrets as described above.
+
 ## Redis-brain
