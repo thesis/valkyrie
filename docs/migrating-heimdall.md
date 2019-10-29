@@ -100,9 +100,9 @@ Example:
 
 The file copied from the local filesystem, above, shows `501:dialout`.
 Update it:
-`sudo chown root:root /redis-master-data/dump.rdb`
+`chown root:root /redis-master-data/dump.rdb`
 
 In this case we don't need to `chmod` - but you should confirm that for your db copy.
 
 You can now restart the redis service:
-`sudo service redis-server start`
+`service redis-server start`
