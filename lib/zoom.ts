@@ -199,14 +199,14 @@ class Account {
             host_video: true,
             participant_video: true,
             waiting_room: false,
-            use_pmi: true,
+            use_pmi: false,
           },
         },
         { params: { access_token: this.token } },
       ),
       meeting: Meeting = response.data
 
-    meeting.app_url = URLs.appJoin.replace(/{meetingId}/, meeting.pmi)
+    meeting.app_url = URLs.appJoin.replace(/{meetingId}/, meeting.id)
     return [meeting, this.email]
   }
 
