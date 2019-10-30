@@ -5,7 +5,7 @@
 ## Migrating Secrets
 
 All of Heimdall's secrets are stored in one GCP `Secret` object, named
-`heimdall-hubot`, which is in the default namespace.
+`heimdall-hubot`, which is in the `default` namespace.
 
 You can view the details in the GCP console from the Kubernetes Configuration
 tab. You will not be able to view the values in the console, but you can see
