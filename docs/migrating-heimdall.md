@@ -1,5 +1,17 @@
 # MIGRATING HEIMDALL TO A NEW GCP PROJECT
 
+## Migration Scope
+
+- Source GCP Project: `cfc-production-deprecated`
+- Target GCP Project: `thesis-ops`
+- Source Cluster: `gke_cfc-production_us-east4-c_heimdall`
+- Target Cluser: `gke_thesis-ops-2748_us-central1_heimdall` (not yet created)
+
+### Kube Objects
+
+- Secret Data: `heimdall-hubot`
+- StatefulSet Data: `heimdall-redis-set`
+
 ## Set up your access
 
 Make sure you have been granted access to the new project. This should be
