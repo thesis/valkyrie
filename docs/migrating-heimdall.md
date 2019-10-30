@@ -44,9 +44,11 @@ Verify this via: `kubectl get context`.
 All of Heimdall's secrets are stored in one GCP `Secret` object, named
 `heimdall-hubot`, which is in the `default` namespace.
 
-You can view the details in the GCP console from the Kubernetes Configuration
-tab. You will not be able to view the values in the console, but you can see
-the key names of all currently-stored secrets.
+You can view the details via:
+`kubectl describe secret heimdall-hubot`
+
+You will not be able to view the values this way, but you can see the key names
+and of all currently-stored secrets, and the size of each value.
 
 Copying secrets from one project to another can be done with the following
 kubectl commands:
@@ -55,8 +57,13 @@ kubectl commands:
 Switch your kubectl context to the new project:
 `kubectl config use-context gke_thesis-ops-2748_us-central1_thesis-ops`
 
-You should now be able to apply the secrets:
+Open your VPN connection. You should now be able to apply the secrets:
 `kubectl apply -f my-secret-name.yaml`
+
+Verify that the secrets copied, and look like you expect, by viewing the
+details, and comparing against the details viewed before exporting. Run the
+same command you ran earlier (but from the current context):
+`kubectl describe secret heimdall-hubot`
 
 Note: If you're using kubectl version 1.18 or greater, `--export` will no longer
 be available. You can still save the secrets with `-o yaml` but you will have
