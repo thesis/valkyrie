@@ -2,6 +2,19 @@
 
 ## Set up your access
 
+Make sure you have been granted access to the new project. This should be
+done via terraform, with an update to the iam role.
+
+Set up your vpn to access the project (get an `.ovpn` config file from the project owner).
+
+Use glcoud to download the kubectl profile for the cluster:
+
+- `gcloud beta interactive` opens a console with autocomplete for gcloud commands
+- `gcloud container clusters get-credentials <project-name> --internal-ip --region <your-region>`
+
+You should now be able to see `gke_thesis-ops-2748_us-central1_thesis-ops`.
+Verify this via: `kubectl get context`.
+
 ## Migrating Secrets
 
 All of Heimdall's secrets are stored in one GCP `Secret` object, named
@@ -15,36 +28,22 @@ Copying secrets from one project to another can be done with the following
 kubectl commands:
 `kubectl get secret my-secret-name --export -o yaml > my-secret-name.yaml`
 
-Change kube context to the new project (see below for details), and:
+Switch your kubectl context to the new project:
+`kubectl config use-context gke_thesis-ops-2748_us-central1_thesis-ops`
+
+You should now be able to apply the secrets:
 `kubectl apply -f my-secret-name.yaml`
 
 Note: If you're using kubectl version 1.18 or greater, `--export` will no longer
 be available. You can still save the secrets with `-o yaml` but you will have
 some extra data in the file.
 
-## Switching projects and setting up config
-
-Make sure you have been granted access to the new project. This should be
-done via terraform, with an update to the iam role.
-
-Set up your vpn to access the project (get an `.ovpn` config file from the project owner).
-
-Use glcoud to download the kubectl profile for the cluster:
-
-- `gcloud beta interactive` opens a console with autocomplete for gcloud commands
-- `gcloud container clusters get-credentials <project-name> --internal-ip --region <your-region>`
-
-Switch your kubectl context to the new project
-
-- Verify that you see it in `kubectl get context`
-- `kubectl config use-context <your-context>`
-
-You should now be able to apply the secrets as described [above](#migrating-secrets).
-
 ## Migrating Redis-brain
 
-Make sure your `kubectl` context is set to the old project, and exec into the
-redis pod:
+Make sure your `kubectl` context is set back to the old project:
+`kubectl config use-context gke_cfc-production_us-east4-c_heimdall`
+
+Then exec into the redis pod:
 `kubectl exec -it heimdall-redis-set-0 sh`
 
 Verify that the database file is where we expect it to be:
