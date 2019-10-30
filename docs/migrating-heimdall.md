@@ -1,5 +1,10 @@
 # MIGRATING HEIMDALL TO A NEW GCP PROJECT
 
+This document contains instructions for our migration of Heimdall from the
+`cfc-production-deprecated` project to `thesis-ops`. It attempts to provide
+this information in a sufficiently generalized way, so that it will remain a
+useful reference point for any future migrations.
+
 ## Table of Contents:
 
 - [Migration Scope](#migration-scope)
