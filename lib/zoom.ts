@@ -199,6 +199,7 @@ class Account {
             host_video: true,
             participant_video: true,
             waiting_room: false,
+            use_pmi: false,
           },
         },
         { params: { access_token: this.token } },
