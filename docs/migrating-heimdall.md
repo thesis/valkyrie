@@ -1,5 +1,12 @@
 # MIGRATING HEIMDALL TO A NEW GCP PROJECT
 
+## Table of Contents:
+
+- [Migration Scope](#migration-scope)
+- [Set up your access](#set-up-your-access)
+- [Migrating Secrets](#migrating-secrets)
+- [Migrating Redis-brain](#migrating-redis-brain)
+
 ## Migration Scope
 
 - Source GCP Project: `cfc-production-deprecated`
