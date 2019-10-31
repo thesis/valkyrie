@@ -118,21 +118,8 @@ Make a copy of they new project's dump file, just in case you need to roll back:
 Copy and rename your old project's db backup to replace the current dump file:
 `cp -p ./<your-backup-name>.rdb /redis-master-data/dump.rdb`
 
-Look at the new data file's has permissions and modify as needed:
-`ls -ls /redis-master-data/`
-
-Example:
-
-```
--rw-r--r--    1 501      dialout      10842 Oct 28 21:34 dump.rdb
--rw-r--r--    1 root     root         10842 Oct 28 21:30 dump.rdb.old
-```
-
-The file copied from the local filesystem, above, shows `501:dialout`.
-Update it:
+Look at the new data file's permissions and modify as needed:
 `chown root:root /redis-master-data/dump.rdb`
-
-In this case we don't need to `chmod` - but you should confirm that for your db copy.
 
 You can now restart the redis service:
 `service redis-server start`
