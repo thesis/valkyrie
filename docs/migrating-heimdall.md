@@ -33,8 +33,13 @@ Set up your vpn to access the project (get an `.ovpn` config file from the proje
 
 Use glcoud to download the kubectl profile for the cluster:
 
-- `gcloud beta interactive` opens a console with autocomplete for gcloud commands
-- `gcloud container clusters get-credentials <project-name> --internal-ip --region <your-region>`
+Using `gcloud beta interactive` is helpful; it opens a console with
+autocomplete for gcloud commands. The command to download the kubectl profile
+is `gcloud container clusters get-credentials` -- you must specify the
+`<project-name>`, set the `--internal-ip` flag, and `--region <your-region>`
+
+In our case:
+`gcloud container clusters get-credentials thesis-ops --internal-ip --region us-central1`
 
 You should now be able to see `gke_thesis-ops-2748_us-central1_thesis-ops`.
 Verify this via: `kubectl get context`.
@@ -90,19 +95,26 @@ OK
 ```
 
 Make a copy of the dumpfile:
-`cp /redis-master-data/dump.rdb ./<your-backup-name>.rdb`
-then exit the kubectl shell.
+`cp /redis-master-data/dump.rdb ./redis-brain-backup-2019-10-31.rdb`
+(substituting filenames and paths as appropriate)
+Then exit the kubectl shell.
 
 Make a copy of the backup file to your local filesystem:
-`kubectl cp heimdall-redis-set-0:/data/<your-backup-name>.rdb ./<your-backup-name>.rdb`
+`kubectl cp heimdall-redis-set-0:/data/redis-brain-backup-2019-10-31.rdb ./redis-brain-backup-2019-10-31.rdb`
 
 Change kubectl context to your new project, and open your VPN connection.
 
+The following steps can not be done until the redis cluster has been created in
+the new project. You can verify that it exists by running `kubectl get pods`
+from within the kube context for the new project, you should see
+`heimdall-redis-set-0`. If the redis brain cluster has been renamed, replace
+`heimdall-redis-set-0` in the below commands with your pod name.
+
 Copy the backup file to your new pod:
-`kubectl cp ./<your-backup-name>.rdb <new-redis-pod>:/data/<your-backup-name>.rdb`
+`kubectl cp ./redis-brain-backup-2019-10-31.rdb heimdall-redis-set-0:/data/redis-brain-backup-2019-10-31.rdb`
 
 Exec into the running redis pod in the new context:
-`kubectl exec -it <new-redis-pod> sh`
+`kubectl exec -it heimdall-redis-set-0 sh`
 
 Verfiy that your new redis server is up and running:
 `redis-benchmark -q -n 1000 -c 10 -P 5`
@@ -116,7 +128,7 @@ Make a copy of they new project's dump file, just in case you need to roll back:
 `pc /redis-master-data/dump.rdb /redis-master-data/dump.rdb.old`
 
 Copy and rename your old project's db backup to replace the current dump file:
-`cp -p ./<your-backup-name>.rdb /redis-master-data/dump.rdb`
+`cp -p ./redis-brain-backup-2019-10-31.rdb /redis-master-data/dump.rdb`
 
 Look at the new data file's permissions and modify as needed:
 `chown root:root /redis-master-data/dump.rdb`
