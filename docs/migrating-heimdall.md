@@ -57,13 +57,13 @@ and of all currently-stored secrets, and the size of each value.
 
 Copying secrets from one project to another can be done with the following
 kubectl commands:
-`kubectl get secret my-secret-name --export -o yaml > my-secret-name.yaml`
+`kubectl get secret heimdall-hubot --export -o yaml > heimdall-secrets-backup-2019-10-31.yaml`
 
 Switch your kubectl context to the new project:
 `kubectl config use-context gke_thesis-ops-2748_us-central1_thesis-ops`
 
 Open your VPN connection. You should now be able to apply the secrets:
-`kubectl apply -f my-secret-name.yaml`
+`kubectl apply -f heimdall-secrets-backup-2019-10-31.yaml`
 
 Verify that the secrets copied, and look like you expect, by viewing the
 details, and comparing against the details viewed before exporting. Run the
