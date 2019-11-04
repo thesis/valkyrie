@@ -17,7 +17,7 @@ useful reference point for any future migrations.
 - Source GCP Project: `cfc-production-deprecated`
 - Target GCP Project: `thesis-ops`
 - Source Cluster: `gke_cfc-production_us-east4-c_heimdall`
-- Target Cluser: `gke_thesis-ops-2748_us-central1_heimdall` (not yet created)
+- Target Cluser: `gke_thesis-ops-2748_us-central1_thesis-ops`
 
 ### Kube Objects
 
