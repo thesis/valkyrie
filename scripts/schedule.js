@@ -36,7 +36,8 @@ const {
   isCronPattern,
   updateScheduledJob,
   cancelScheduledJob,
-  getScheduledJobList,
+  getScheduledCronJobs,
+  getScheduledDatetimeJobs,
   formatJobsForListMessage,
 } = require("../lib/schedule-util")
 
@@ -162,8 +163,10 @@ module.exports = function(robot) {
     }
 
     try {
-      let [dateJobs, cronJobs] = getScheduledJobList(JOBS, rooms, userIdForDMs)
+      let dateJobs = getScheduledDatetimeJobs(JOBS, rooms, userIdForDMs)
       output = formatJobsForListMessage(robot.adapter, dateJobs, false)
+
+      let cronJobs = getScheduledCronJobs(JOBS, rooms, userIdForDMs)
       output += formatJobsForListMessage(robot.adapter, cronJobs, true)
 
       if (!!output.length) {
