@@ -166,13 +166,8 @@ module.exports = function(robot) {
     }
 
     try {
-      let [dateJobs, cronJobs] = getScheduledJobList(
-        REMINDER_JOBS,
-        rooms,
-        userIdForDMs,
-      )
+      let [dateJobs] = getScheduledJobList(REMINDER_JOBS, rooms, userIdForDMs)
       output = formatJobsForListMessage(robot.adapter, dateJobs, false)
-      output += formatJobsForListMessage(robot.adapter, cronJobs, true)
 
       if (!!output.length) {
         output = outputPrefix + "===\n" + output
