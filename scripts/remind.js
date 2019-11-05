@@ -62,7 +62,7 @@ module.exports = function(robot) {
 
     let who = msg.match[1]
     let message = whoToTag[who] || ""
-    let metadata = msg.message.metadata // TODO: strip to only needed metadata, or include all?
+    let metadata = msg.message.metadata
 
     try {
       let inputString = msg.match[2]
@@ -89,7 +89,7 @@ module.exports = function(robot) {
         REMINDER_JOBS,
         REMINDER_KEY,
         msg.message.user,
-        null, //targetRoomId || targetRoom,
+        null,
         date.date(),
         message,
         metadata,

@@ -60,7 +60,7 @@ module.exports = function(robot) {
       let pattern = _.trim(msg.match[2])
 
       // store the metadata, but do not use it to post the job
-      let metadata = msg.message.metadata // TODO: strip to only needed metadata, or include all?
+      let metadata = msg.message.metadata
 
       if (!isBlank(targetRoom)) {
         targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
@@ -77,14 +77,6 @@ module.exports = function(robot) {
           )
         }
       }
-
-      // if (!isCronPattern(pattern)) {
-      //   return msg.send(`\"${pattern}\" is an invalid pattern.
-      //     See http://crontab.org/ or https://crontab.guru/ for cron-style format pattern.
-      //     If you're trying to schedule a one-time reminder, try using the \`remind\` command:
-      //     See \`help remind\` for more information.
-      //     `)
-      // }
 
       try {
         let resp = createScheduledJob(
