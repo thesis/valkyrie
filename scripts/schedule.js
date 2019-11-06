@@ -147,21 +147,6 @@ module.exports = function(robot) {
       rooms = [targetRoomId]
     }
 
-    // Construct message string prefix
-    outputPrefix = "Showing scheduled jobs for "
-    if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
-      outputPrefix += "THIS flow:\n"
-    } else if (targetRoom === "all") {
-      // If called from a private room, add to list.
-      if (calledFromPrivateRoom || calledFromDm) {
-        outputPrefix += "THIS flow AND "
-      }
-      outputPrefix += "all public flows:\n"
-    } else {
-      // If targetRoom is specified, show jobs for that room if allowed.
-      outputPrefix += `the ${targetRoom} flow:\n`
-    }
-
     try {
       let dateJobs = getScheduledDatetimeJobs(JOBS, rooms, userIdForDMs)
       output = formatJobsForListMessage(robot.adapter, dateJobs, false)
@@ -170,6 +155,21 @@ module.exports = function(robot) {
       output += formatJobsForListMessage(robot.adapter, cronJobs, true)
 
       if (!!output.length) {
+        // Construct message string prefix
+        outputPrefix = "Showing scheduled jobs for "
+        if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
+          outputPrefix += "THIS flow:\n"
+        } else if (targetRoom === "all") {
+          // If called from a private room, add to list.
+          if (calledFromPrivateRoom || calledFromDm) {
+            outputPrefix += "THIS flow AND "
+          }
+          outputPrefix += "all public flows:\n"
+        } else {
+          // If targetRoom is specified, show jobs for that room if allowed.
+          outputPrefix += `the ${targetRoom} flow:\n`
+        }
+
         output = outputPrefix + "===\n" + output
         return msg.send(output)
       } else {
