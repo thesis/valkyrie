@@ -34,6 +34,10 @@ async function getSession(
   if (userResponse.status != 200) {
     throw `Error looking up users: ${util.inspect(userResponse.data)}.`
   } else {
+    // NB: We currently do not have to handle pagination, because we have fewer
+    // users than the number of potential results per page (30).
+    // If our user count (user.data.total_records) grows to exceed that, we'll
+    // need to update this to handle pagination.
     return new Session(
       apiKey,
       apiSecret,
