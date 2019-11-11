@@ -87,43 +87,49 @@ class Session {
     )
 
     const accountMeetings = await Promise.all(
-      Array.from(this.users.map(u => this.accountFromUser(u.email, u.type)))
-        .map(async function(accountSession): Promise<[Account, boolean]> {
-          // filter out any upcoming or scheduled meetings starting within meetingLengthBuffer
-          let upcoming = await accountSession.upcomingMeetings()
-          let upcomingMeetingsInBuffer = upcoming.filter(meeting =>
-            meeting.start_time
-              ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
-              : false,
-          )
-          let scheduled = await accountSession.scheduledMeetings()
-          let scheduledMeetingsInBuffer = scheduled.filter(meeting =>
-            meeting.start_time
-              ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
-              : false,
-          )
-          let live = await accountSession.liveMeetings()
-          return [
-            accountSession,
-            live.length == 0 &&
-              upcomingMeetingsInBuffer.length == 0 &&
-              scheduledMeetingsInBuffer.length == 0,
-          ]
-        }),
+      Array.from(
+        this.users.map(u => this.accountFromUser(u.email, u.type)),
+      ).map(async function(accountSession): Promise<[Account, boolean]> {
+        // filter out any upcoming or scheduled meetings starting within meetingLengthBuffer
+        let upcoming = await accountSession.upcomingMeetings()
+        let upcomingMeetingsInBuffer = upcoming.filter(meeting =>
+          meeting.start_time
+            ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
+            : false,
+        )
+        let scheduled = await accountSession.scheduledMeetings()
+        let scheduledMeetingsInBuffer = scheduled.filter(meeting =>
+          meeting.start_time
+            ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
+            : false,
+        )
+        let live = await accountSession.liveMeetings()
+        return [
+          accountSession,
+          live.length == 0 &&
+            upcomingMeetingsInBuffer.length == 0 &&
+            scheduledMeetingsInBuffer.length == 0,
+        ]
+      }),
     )
 
     const availableSessions = accountMeetings
       .filter(([, availableForMeeting]) => availableForMeeting)
       .map(([session]) => session)
 
-    const availableProSessions = availableSessions.filter(session => session.type > 1)
-    const availableBasicSessions = availableSessions.filter(session => session.type == 1)
+    const availableProSessions = availableSessions.filter(
+      session => session.type > 1,
+    )
+    const availableBasicSessions = availableSessions.filter(
+      session => session.type == 1,
+    )
 
-    const candidateSessions = (availableProSessions.length > 0 && availableProSessions) || availableBasicSessions
+    const candidateSessions =
+      (availableProSessions.length > 0 && availableProSessions) ||
+      availableBasicSessions
 
     const chosenIndex = Math.floor(Math.random() * candidateSessions.length)
     return await candidateSessions[chosenIndex].createMeeting()
-
   }
 
   private get token() {
@@ -137,7 +143,6 @@ class Session {
   private accountFromUser(email: string, type: number) {
     return new Account(email, this.apiKey, this.apiSecret, type)
   }
-
 }
 
 enum MeetingScheduleCategory {
