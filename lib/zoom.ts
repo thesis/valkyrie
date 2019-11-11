@@ -115,9 +115,15 @@ class Session {
     const availableSessions = accountMeetings
       .filter(([, availableForMeeting]) => availableForMeeting)
       .map(([session]) => session)
-    const chosenIndex = Math.floor(Math.random() * availableSessions.length)
 
-    return await availableSessions[chosenIndex].createMeeting()
+    const availableProSessions = availableSessions.filter(session => session.type > 1)
+    const availableBasicSessions = availableSessions.filter(session => session.type == 1)
+
+    const candidateSessions = (availableProSessions.length > 0 && availableProSessions) || availableBasicSessions
+
+    const chosenIndex = Math.floor(Math.random() * candidateSessions.length)
+    return await candidateSessions[chosenIndex].createMeeting()
+
   }
 
   private get token() {
