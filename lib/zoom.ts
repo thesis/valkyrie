@@ -89,7 +89,6 @@ class Session {
     const accountMeetings = await Promise.all(
       Array.from(this.users.map(u => this.accountFromUser(u.email, u.type))
         .map(async function(accountSession): Promise<[Account, boolean]> {
-          let live = await accountSession.liveMeetings()
           // filter out any upcoming or scheduled meetings starting within meetingLengthBuffer
           let upcoming = await accountSession.upcomingMeetings()
           let upcomingMeetingsInBuffer = upcoming.filter(meeting =>
@@ -103,6 +102,7 @@ class Session {
               ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
               : false,
           )
+          let live = await accountSession.liveMeetings()
           return [
             accountSession,
             live.length == 0 &&
