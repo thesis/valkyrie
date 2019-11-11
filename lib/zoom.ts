@@ -87,8 +87,7 @@ class Session {
     )
 
     const accountMeetings = await Promise.all(
-      Array.from(this.users.map(u => u.email))
-        .map(email => this.accountForEmail(email))
+      Array.from(this.users.map(u => this.accountFromUser(u.email, u.type))
         .map(async function(accountSession): Promise<[Account, boolean]> {
           let live = await accountSession.liveMeetings()
           // filter out any upcoming or scheduled meetings starting within meetingLengthBuffer
@@ -126,8 +125,13 @@ class Session {
   }
 
   private accountForEmail(email: string) {
-    return new Account(email, this.apiKey, this.apiSecret)
+    return new Account(email, this.apiKey, this.apiSecret, null)
   }
+
+  private accountFromUser(email: string, type: number) {
+    return new Account(email, this.apiKey, this.apiSecret, type)
+  }
+
 }
 
 enum MeetingScheduleCategory {
@@ -158,6 +162,7 @@ class Account {
     private email: string,
     private apiKey: string,
     private apiSecret: string,
+    private type: ? UserType,
   ) {}
 
   // NB: we may run into pagination issues at some point, especially for
