@@ -87,7 +87,7 @@ class Session {
     )
 
     const accountMeetings = await Promise.all(
-      Array.from(this.users.map(u => this.accountFromUser(u.email, u.type))
+      Array.from(this.users.map(u => this.accountFromUser(u.email, u.type)))
         .map(async function(accountSession): Promise<[Account, boolean]> {
           // filter out any upcoming or scheduled meetings starting within meetingLengthBuffer
           let upcoming = await accountSession.upcomingMeetings()
@@ -168,7 +168,7 @@ class Account {
     private email: string,
     private apiKey: string,
     private apiSecret: string,
-    private type: ? UserType,
+    private type?: UserType,
   ) {}
 
   // NB: we may run into pagination issues at some point, especially for
