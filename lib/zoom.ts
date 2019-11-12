@@ -227,7 +227,7 @@ class Account {
       meeting: Meeting = response.data
 
     meeting.app_url = URLs.appJoin.replace(/{meetingId}/, meeting.id)
-    return [meeting, this.email]
+    return [meeting, this.email, this.type]
   }
 
   private get token() {
