@@ -140,10 +140,6 @@ class Session {
     return tokenFrom(this.apiKey, this.apiSecret)
   }
 
-  private accountForEmail(email: string) {
-    return new Account(email, this.apiKey, this.apiSecret, null)
-  }
-
   private accountFromUser(email: string, type: number) {
     return new Account(email, this.apiKey, this.apiSecret, type)
   }
@@ -177,7 +173,7 @@ class Account {
     private email: string,
     private apiKey: string,
     private apiSecret: string,
-    private type?: UserType,
+    private type: UserType,
   ) {}
 
   // NB: we may run into pagination issues at some point, especially for
