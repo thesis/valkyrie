@@ -122,10 +122,10 @@ class Session {
       .map(([session]) => session)
 
     const availableProSessions = availableSessions.filter(
-      session => session.type > 1,
+      session => session.type == UserType.Pro,
     )
     const availableBasicSessions = availableSessions.filter(
-      session => session.type == 1,
+      session => session.type != UserType.Pro,
     )
 
     const candidateSessions =
