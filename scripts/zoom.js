@@ -126,13 +126,16 @@ module.exports = function(robot) {
       return
     }
     ZOOM_SESSION.nextAvailableMeeting()
-      .then(([meeting, zoomUserEmail]) => {
+      .then(([meeting, zoomUserEmail, zoomUserType]) => {
         robot.logger.info(
-          `Created meeting: ${meeting.id}: using account for ${zoomUserEmail}`,
+          `Created meeting: ${meeting.id}: using type ${zoomUserType} account for ${zoomUserEmail}`,
         )
-        res.send(
-          `All set; open in [the app](${meeting.app_url}) or [your browser](${meeting.join_url})!`,
-        )
+        let replyMessage = `All set; open in [the app](${meeting.app_url}) or [your browser](${meeting.join_url})!`
+        if (zoomUserType == 1) {
+          replyMessage +=
+            "\n\nNote: this meeting has a limited duration of 40 minutes. All accounts with unlimited meetings are currently occupied. If you need a longer meeting, please try again later, or request a new meeting when this one ends."
+        }
+        res.send(replyMessage)
         return meeting
       })
       .catch(err => {

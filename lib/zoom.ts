@@ -34,6 +34,10 @@ async function getSession(
   if (userResponse.status != 200) {
     throw `Error looking up users: ${util.inspect(userResponse.data)}.`
   } else {
+    // NB: We currently do not have to handle pagination, because we have fewer
+    // users than the number of potential results per page (30).
+    // If our user count (user.data.total_records) grows to exceed that, we'll
+    // need to update this to handle pagination.
     return new Session(
       apiKey,
       apiSecret,
@@ -87,46 +91,57 @@ class Session {
     )
 
     const accountMeetings = await Promise.all(
-      Array.from(this.users.map(u => u.email))
-        .map(email => this.accountForEmail(email))
-        .map(async function(accountSession): Promise<[Account, boolean]> {
-          let live = await accountSession.liveMeetings()
-          // filter out any upcoming or scheduled meetings starting within meetingLengthBuffer
-          let upcoming = await accountSession.upcomingMeetings()
-          let upcomingMeetingsInBuffer = upcoming.filter(meeting =>
-            meeting.start_time
-              ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
-              : false,
-          )
-          let scheduled = await accountSession.scheduledMeetings()
-          let scheduledMeetingsInBuffer = scheduled.filter(meeting =>
-            meeting.start_time
-              ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
-              : false,
-          )
-          return [
-            accountSession,
-            live.length == 0 &&
-              upcomingMeetingsInBuffer.length == 0 &&
-              scheduledMeetingsInBuffer.length == 0,
-          ]
-        }),
+      Array.from(
+        this.users.map(u => this.accountFromUser(u.email, u.type)),
+      ).map(async function(accountSession): Promise<[Account, boolean]> {
+        // filter out any upcoming or scheduled meetings starting within meetingLengthBuffer
+        let upcoming = await accountSession.upcomingMeetings()
+        let upcomingMeetingsInBuffer = upcoming.filter(meeting =>
+          meeting.start_time
+            ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
+            : false,
+        )
+        let scheduled = await accountSession.scheduledMeetings()
+        let scheduledMeetingsInBuffer = scheduled.filter(meeting =>
+          meeting.start_time
+            ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
+            : false,
+        )
+        let live = await accountSession.liveMeetings()
+        return [
+          accountSession,
+          live.length == 0 &&
+            upcomingMeetingsInBuffer.length == 0 &&
+            scheduledMeetingsInBuffer.length == 0,
+        ]
+      }),
     )
 
     const availableSessions = accountMeetings
       .filter(([, availableForMeeting]) => availableForMeeting)
       .map(([session]) => session)
-    const chosenIndex = Math.floor(Math.random() * availableSessions.length)
 
-    return await availableSessions[chosenIndex].createMeeting()
+    const availableProSessions = availableSessions.filter(
+      session => session.type == UserType.Pro,
+    )
+    const availableBasicSessions = availableSessions.filter(
+      session => session.type != UserType.Pro,
+    )
+
+    const candidateSessions =
+      (availableProSessions.length > 0 && availableProSessions) ||
+      availableBasicSessions
+
+    const chosenIndex = Math.floor(Math.random() * candidateSessions.length)
+    return await candidateSessions[chosenIndex].createMeeting()
   }
 
   private get token() {
     return tokenFrom(this.apiKey, this.apiSecret)
   }
 
-  private accountForEmail(email: string) {
-    return new Account(email, this.apiKey, this.apiSecret)
+  private accountFromUser(email: string, type: number) {
+    return new Account(email, this.apiKey, this.apiSecret, type)
   }
 }
 
@@ -158,6 +173,7 @@ class Account {
     private email: string,
     private apiKey: string,
     private apiSecret: string,
+    private type: UserType,
   ) {}
 
   // NB: we may run into pagination issues at some point, especially for
@@ -207,7 +223,7 @@ class Account {
       meeting: Meeting = response.data
 
     meeting.app_url = URLs.appJoin.replace(/{meetingId}/, meeting.id)
-    return [meeting, this.email]
+    return [meeting, this.email, this.type]
   }
 
   private get token() {
