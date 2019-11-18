@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
         - name: hubot
-          # image: gcr.io/cfc-production/heimdall:USE_CIRCLE_CI_BUILDS
+          image: gcr.io/thesis-ops-2748/heimdall-no-flowdock-for-testing
+          command: ["bin/valkyrie", "-a", "reload-flowdock"]
           env:
             - name: HUBOT_CIRCLECI_TOKEN
               valueFrom:
