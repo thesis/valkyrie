@@ -11,6 +11,7 @@ useful reference point for any future migrations.
 - [Set up your access](#set-up-your-access)
 - [Migrating Secrets](#migrating-secrets)
 - [Migrating Redis-brain](#migrating-redis-brain)
+- [Testing Image Migration](#testing-image-migration)
 
 ## Migration Scope
 
@@ -135,3 +136,27 @@ Look at the new data file's permissions and modify as needed:
 
 You can now restart the redis service:
 `service redis-server start`
+
+## Testing Image Migration
+
+Our production image is built by a circle workflow run for any branch pushed to
+github. The image is pushed, and the deployment applied, in a workflow only run
+on merges to master.
+
+In order to do a test run of the image migration without a merge to master, we
+had to bypass circle, and replicate these steps manually via command line.
+
+First, we baked an image on local, and pushed it manually to the `thesis-ops`
+container registry.
+
+We initally built an image with an abbreviated Entrypoint in
+[the Dockerfile](../infrastructure/docker/Dockerfile). We removed the `adapter`
+flag to prevent Heimdall from connecting to Flowdock:
+
+```
+- ENTRYPOINT ["bin/hubot", "--name", "heimdall", "--adapter", "reload-flowdock"]
++ ENTRYPOINT ["bin/hubot", "--name", "heimdall"]
+```
+
+We wanted to startup Heimdall in thesis-ops without enabling Flowdock, just to
+see if it would boot.
