@@ -177,13 +177,31 @@ required keys.
 docker run --env HUBOT_FLOWDOCK_API_TOKEN="fooooo" --env GITHUB_CLIENT_ID="blahblah" --env GITHUB_CLIENT_SECRET="barrr" --env HUBOT_HOST="local" -dt heimdall-no-flowdock
 ```
 
-### Pushing the build to GCP and deploying the test image
+### Pushing the test image build to GCP and
+
+Make sure you are connected to the `thesis-ops` VPN. While this is not strictly
+necessary for this step, it is good practice in general.
+
+Ensure that you [have permission to push to this container registry](https://cloud.google.com/sdk/gcloud/reference/auth/configure-docker).
+
+Create a new tag of the image, to use the naming convention required by GCP:
+
+`docker tag heimdall-no-flowdock gcr.io/thesis-ops-2748/heimdall-no-flowdock-for-testing`
+
+The name _must_ match the `[HOSTNAME]/[PROJECT-ID]/[IMAGE]` pattern in order to
+push successfully to the GCP project's container registry.
+
+Push this image:
+
+`docker push gcr.io/thesis-ops-2748/heimdall-no-flowdock-for-testing`
+
+### Deploying the test image
 
 We wanted to test the new build with the Flowdock adpater, but with minimal
-confusion to Flowdock users, so we decided to run as Valkyrie, our test bot,
-instead of Heimdall.
+confusion to Flowdock users, so we decided to run hubot as our test bot
+Valkyrie instead of our live bot Heimdall.
 
-To do this withouth having to re-build the image, we temporarily updated the
+To do this without having to re-build the image, we temporarily updated the
 container spec in [the deployment file](../infrastructure/kube/thesis-ops/heimdall-hubot-deployment.yaml)
 to add a run command that will override the Dockerfile's entrypoint:
 
@@ -193,15 +211,31 @@ command: ["bin/valkyrie", "-a", "reload-flowdock"]
 
 We also updated the image name in the same spec, to use the correct path for
 our GCP `thesis-ops` project's container registry, and to use our custom-named
-image tag instead of an image tagged with a Circle CI build number.
+image (instead of an image tagged with a Circle CI build number).
 
 ```
 - image: gcr.io/cfc-production/heimdall:USE_CIRCLE_CI_BUILDS
 + image: gcr.io/thesis-ops-2748/heimdall-no-flowdock-for-testing
 ```
 
-(Note that the new tag is no longer an accurate name, in this case, because we
-_are_ now using the flowdock adpater via the updated run command. The tag name
-is not important here as long as it matches the build you want to use. The rest
-of the file path however, _must_ match the GCP naming convention in order to
-push successfully)
+Note that, while the `no-flowdock` tag is no longer accurate (because, in this
+case, we _are_ now using the flowdock adpater via the updated run command),
+the image name at this point is not really important. The name in the
+deployment just needs match the name of the pushed build that you want to
+deploy.
+
+Now we can begin to spin up the services and deployments we want to test.
+
+We're essentially manually running (some of) the `kubectl` commands that are
+specified in the [create file](../infrastructure/kube/thesis-ops/create.sh)
+
+```
+kubectl apply --record -f "infrastructure/kube/thesis-ops/heimdall-redis-stateful-set.yaml"
+kubectl apply --record -f "infrastructure/kube/thesis-ops/heimdall-redis-service.yaml"
+kubectl apply --record -f "infrastructure/kube/thesis-ops/heimdall-hubot-deployment.yaml"
+```
+
+Normally, we want to be careful to spin up the deployment before the service as
+a safety measure to isolate the deployment from any public access. For our test,
+we only need the redis stateful set and service, which can be spun up in any
+order, and the Heimdall deployment.
