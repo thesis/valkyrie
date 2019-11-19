@@ -11,7 +11,7 @@ useful reference point for any future migrations.
 - [Set up your access](#set-up-your-access)
 - [Migrating Secrets](#migrating-secrets)
 - [Migrating Redis-brain](#migrating-redis-brain)
-- [Testing Image Migration](#testing-image-migration)
+- [Docker Image Migration Testing](#docker-image-migration-testing)
 
 ## Migration Scope
 
@@ -137,7 +137,7 @@ Look at the new data file's permissions and modify as needed:
 You can now restart the redis service:
 `service redis-server start`
 
-## Testing Image Migration
+## Docker Image Migration Testing
 
 Our production image is built by a circle workflow run for any branch pushed to
 github. The image is pushed, and the deployment applied, in a workflow only run
@@ -145,6 +145,12 @@ on merges to master.
 
 In order to do a test run of the image migration without a merge to master, we
 had to bypass circle, and replicate these steps manually via command line.
+
+We first ran the image locally, without the actual secrets, just to verify that
+the build worked as expected. We then updated the build to run as Valkyrie
+instead of Heimdall, pushed to the Google Cloud, and deployed.
+
+### Building and running a test image locally
 
 First, we baked an image on local, and pushed it manually to the `thesis-ops`
 container registry.
@@ -160,3 +166,42 @@ flag to prevent Heimdall from connecting to Flowdock:
 
 We wanted to startup Heimdall in thesis-ops without enabling Flowdock, just to
 see if it would boot.
+
+With this Dockerfile edit in place, we built an image
+`docker build -t heimdall-no-flowdock`
+On attempting to run it locally, we got a number of errors about missing
+environment variables, so we re-ran it with temporary placeholder values for the
+required keys.
+
+```
+docker run --env HUBOT_FLOWDOCK_API_TOKEN="fooooo" --env GITHUB_CLIENT_ID="blahblah" --env GITHUB_CLIENT_SECRET="barrr" --env HUBOT_HOST="local" -dt heimdall-no-flowdock
+```
+
+### Pushing the build to GCP and deploying the test image
+
+We wanted to test the new build with the Flowdock adpater, but with minimal
+confusion to Flowdock users, so we decided to run as Valkyrie, our test bot,
+instead of Heimdall.
+
+To do this withouth having to re-build the image, we temporarily updated the
+container spec in [the deployment file](../infrastructure/kube/thesis-ops/heimdall-hubot-deployment.yaml)
+to add a run command that will override the Dockerfile's entrypoint:
+
+```
+command: ["bin/valkyrie", "-a", "reload-flowdock"]
+```
+
+We also updated the image name in the same spec, to use the correct path for
+our GCP `thesis-ops` project's container registry, and to use our custom-named
+image tag instead of an image tagged with a Circle CI build number.
+
+```
+- image: gcr.io/cfc-production/heimdall:USE_CIRCLE_CI_BUILDS
++ image: gcr.io/thesis-ops-2748/heimdall-no-flowdock-for-testing
+```
+
+(Note that the new tag is no longer an accurate name, in this case, because we
+_are_ now using the flowdock adpater via the updated run command. The tag name
+is not important here as long as it matches the build you want to use. The rest
+of the file path however, _must_ match the GCP naming convention in order to
+push successfully)
