@@ -12,6 +12,8 @@ useful reference point for any future migrations.
 - [Migrating Secrets](#migrating-secrets)
 - [Migrating Redis-brain](#migrating-redis-brain)
 - [Docker Image Migration Testing](#docker-image-migration-testing)
+- [Preparing for Production Docker Image Migration](#preparing-for-production-docker-image-migration)
+- [Doing the Migration Thing, For Reals](#doing-the-migration-thing-for-reals)
 
 ## Migration Scope
 
@@ -239,3 +241,24 @@ Normally, we want to be careful to spin up the deployment before the service as
 a safety measure to isolate the deployment from any public access. For our test,
 we only need the redis stateful set and service, which can be spun up in any
 order, and the Heimdall deployment.
+
+## Preparing for Production Docker Image Migration
+
+Now that we've verified that the test image will run, we update our circle
+config to apply these changes upon merge to master.
+
+Update the `PROJECT_NAME` and `PROJECT_ID` in the [circle config file](../.circleci/config.yml).
+
+## Doing the Migration Thing, For Reals
+
+Since we have already created a redis stateful set, we can copy a fresh backup
+of the production redis brain before proceeding with a heimdall deployment.
+
+When ready, there will be a service outage.
+
+- Shut down Heimdall: `kubectl delete pod <old-project-podname>`
+- Stop the prouction Redis server and make a fresh backup of the Redis brain
+  [as explained above](#migrating-redis-brain)
+- Log into the new project's Redis service and save to create a dumpfile.
+- Copy the redis backup to the new project, and overwrite the default dumpfile.
+- Merge the migration PR, and let circle do its thing.
