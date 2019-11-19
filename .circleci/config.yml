@@ -4,7 +4,7 @@ jobs:
     docker:
       - image: docker:17.05.0-ce-git
         environment:
-          PROJECT_NAME: cfc-production
+          PROJECT_NAME: thesis-ops
     steps:
       - checkout
       - setup_remote_docker:
@@ -34,8 +34,8 @@ jobs:
     docker:
       - image: google/cloud-sdk:latest
         environment:
-          PROJECT_NAME: cfc-production
-          PROJECT_ID: cfc-production
+          PROJECT_NAME: thesis-ops
+          PROJECT_ID: thesis-ops
           CLUSTER_NAME: heimdall
           CLOUDSDK_COMPUTE_ZONE: us-east4-c
     steps:
