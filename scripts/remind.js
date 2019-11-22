@@ -89,7 +89,7 @@ module.exports = function(robot) {
         REMINDER_JOBS,
         REMINDER_KEY,
         msg.message.user,
-        null,
+        msg.message.user.room,
         date.date(),
         message,
         metadata,
