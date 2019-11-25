@@ -48,6 +48,7 @@ module.exports = async function(robot) {
       // double thanks to the Ethereum folks for figuring this regex out already
       return msg.send('Improperly formatted account address, please try a valid one.');
     }
+
     try {
       msg.send(`Unlocking purse account: ${purse}`);
       await web3.eth.personal.unlockAccount(purse, ethAccountPassword, 150000);
