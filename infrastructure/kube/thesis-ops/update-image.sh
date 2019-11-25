@@ -1,4 +1,4 @@
 #!/bin/sh
 set -e
 
-kubectl set image deployment/heimdall-hubot-deployment hubot=gcr.io/cfc-production/heimdall:$1
+kubectl set image deployment/heimdall-hubot-deployment hubot=gcr.io/thesis-ops-2748/heimdall:$1
