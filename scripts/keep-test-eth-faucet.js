@@ -1,6 +1,6 @@
 // Description:
 //  Get some cold hard fake ETH from the keep-test private ETH chain.
-//  This is an extraordinary basic first pass, most things are hardcoded with purpose.
+//  This is an extraordinarily basic first pass, most things are hardcoded with purpose.
 //
 //
 // Commands:
