@@ -28,7 +28,6 @@ const etherToTransfer = '10';
 // We override transactionConfirmationBlocks and transactionBlockTimeout because they're
 // 25 and 50 blocks respectively at default.  The result of this on small private testnets
 // is long wait times for scripts to execute.
-
 const web3_options = {
     defaultBlock: 'latest',
     defaultGas: 4712388,
@@ -54,8 +53,8 @@ module.exports = async function(robot) {
       await web3.eth.personal.unlockAccount(purse, ethAccountPassword, 150000);
       msg.send(`Account ${purse} unlocked!`);
     } catch (error) {
-        robot.logger.error(`ETH account unlock error: ${error.message}`)
-        msg.send('There was an issue unlocking the purse account, ask for an adult!')
+        robot.logger.error(`ETH account unlock error: ${error.message}`);
+        msg.send('There was an issue unlocking the purse account, ask for an adult!');
     }
 
     try {
@@ -63,8 +62,8 @@ module.exports = async function(robot) {
       await web3.eth.sendTransaction({ from:purse, to:account, value:transferAmount });
       msg.send(`Account ${account} funded!`);
     } catch (error) {
-      robot.logger.error(`ETH account funding error: ${error.message}`)
-      msg.send('There was an issue funding the ETH account, ask for an adult!')
+      robot.logger.error(`ETH account funding error: ${error.message}`);
+      msg.send('There was an issue funding the ETH account, ask for an adult!');
     }
   });
 };
