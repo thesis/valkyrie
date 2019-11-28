@@ -48,8 +48,46 @@ jobs:
           root: /tmp/heimdall
           paths:
             - docker-images
+  publish-docker-image:
+    executor: gcp-gcr/default
+    steps:
+      - attach_workspace:
+          at: /tmp/heimdall
+      - run:
+          # Remove this in favor of the Set Gcloud Auth and gcp-gcr steps below?
+          name: Set up GCP
+          command: |
+            echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
+            gcloud --quiet auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+            gcloud --quiet config set project $PROJECT_ID
+            gcloud --quiet config set container/cluster $CLUSTER_NAME
+            gcloud --quiet container clusters get-credentials $CLUSTER_NAME
+            gcloud --quiet auth configure-docker
+      - run:
+          name: Set Gcloud Auth
+          command: |
+            echo $GCLOUD_SERVICE_KEY_JUMPHOST_SSH > ~/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file ~/gcloud-service-key.json
+      - run:
+          name: Load And Push Docker image
+          command: |
+            docker load -i /tmp/heimdall/docker-images/heimdall.tar
+            export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
+            # Replace this manual push step with the gcp-gcr stuff below?
+            # docker push gcr.io/${PROJECT_NAME}/heimdall:$BUILD_TAG
+      - gcp-gcr/gcr-auth:
+          google-project-id: GOOGLE_PROJECT_ID
+          google-compute-zone: GOOGLE_COMPUTE_ZONE_A
+          # This param doesn't actually set anything, leaving here as a reminder to check when they fix it.
+          gcloud-service-key: GCLOUD_SERVICE_KEY
+      - gcp-gcr/push-image:
+          google-project-id: GOOGLE_PROJECT_ID
+          registry-url: $GCR_REGISTRY_URL
+          image: heimdall
+          tag: $BUILD_TAG
   deploy:
     docker:
+      # This chunk goes now too?
       - image: google/cloud-sdk:latest
         environment:
           PROJECT_NAME: thesis-ops
@@ -60,26 +98,10 @@ jobs:
       - attach_workspace:
           at: /tmp/heimdall
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
       - run:
-          name: Load Docker image
-          command: |
-            docker load -i /tmp/heimdall/docker-images/heimdall.tar
-      - run:
-          name: Set up GCP
-          command: |
-            echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
-            gcloud --quiet auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
-            gcloud --quiet config set project $PROJECT_ID
-            gcloud --quiet config set container/cluster $CLUSTER_NAME
-            gcloud --quiet container clusters get-credentials $CLUSTER_NAME
-            gcloud --quiet auth configure-docker
-      - run:
-          name: Push and Deploy Docker Image
+          name: Deploy Docker Image
           command: |
             export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
-            docker push gcr.io/${PROJECT_NAME}/heimdall:$BUILD_TAG
             bash infrastructure/kube/thesis-ops/update-image.sh $BUILD_TAG
 workflows:
   version: 2
