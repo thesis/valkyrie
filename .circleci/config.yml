@@ -101,6 +101,7 @@ jobs:
       - run:
           name: Deploy Docker Image
           command: |
+            # need to ssh into jumphost here, so kubectl cmds in update-image.sh can be excuted?
             export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
             bash infrastructure/kube/thesis-ops/update-image.sh $BUILD_TAG
 workflows:
