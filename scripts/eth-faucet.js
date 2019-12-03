@@ -41,7 +41,7 @@ const web3_options = {
 
 const web3 = new Web3(new Web3.providers.HttpProvider(`${ethHost}:${ethRpcPort}`), null, web3_options);
 
-module.exports = async function(robot) {
+module.exports = function(robot) {
   robot.respond(/eth-faucet fund (.*)/i, async function(msg) {
     let account = msg.match[1];
     let transferAmount = web3.utils.toWei(etherToTransfer, "ether");
