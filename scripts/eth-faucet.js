@@ -59,7 +59,7 @@ module.exports = function(robot) {
         .then(msg.send(`Account ${purse} unlocked!`));
     } catch (error) {
       robot.logger.error(`ETH account unlock error: ${error.message}`);
-      msg.send('There was an issue unlocking the purse account, ask for an adult!');
+      return msg.send('There was an issue unlocking the purse account, ask for an adult!');
     }
 
     try {
@@ -68,7 +68,7 @@ module.exports = function(robot) {
         .then(msg.send(`Account ${account} funded!`));
     } catch (error) {
       robot.logger.error(`ETH account funding error: ${error.message}`);
-      msg.send('There was an issue funding the ETH account, ask for an adult!');
+      return msg.send('There was an issue funding the ETH account, ask for an adult!');
     }
   })
 };
