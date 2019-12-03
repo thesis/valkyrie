@@ -25,7 +25,7 @@ const ethNetworkId = '1101';
 const purse = '0x0f0977c4161a371b5e5ee6a8f43eb798cd1ae1db';
 
 // These are throw away accounts on an internal private testnet, hence the plaintext.
-const ethAccountPassword = 'doughnut_armenian_parallel_firework_backbite_employer_singlet';
+const purseAccountPassword = 'doughnut_armenian_parallel_firework_backbite_employer_singlet';
 const etherToTransfer = '10';
 
 
@@ -55,7 +55,7 @@ module.exports = function(robot) {
 
     try {
       msg.send(`Unlocking purse account: ${purse}`)
-      await web3.eth.personal.unlockAccount(purse, ethAccountPassword, 150000)
+      await web3.eth.personal.unlockAccount(purse, purseAccountPassword, 150000)
         .then(msg.send(`Account ${purse} unlocked!`));
     } catch (error) {
       robot.logger.error(`ETH account unlock error: ${error.message}`);
