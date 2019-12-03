@@ -9,6 +9,9 @@ RUN mkdir hubot
 WORKDIR /hubot
 
 RUN apk add --no-cache \
+  python \
+  make \
+  g++ \
 	git && \
 	rm -rf /usr/share/man/
 
