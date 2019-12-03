@@ -11,6 +11,9 @@
 //   with referenced hubot code examples from: kb0rg
 //
 
+// WARNING: THIS ONLY WORKS FOR KEEP-TEST AT THE MOMENT.  In the future this can be
+// extended to pass an environment to the commands provided here.
+
 const Web3 = require('web3');
 
 // ETH host info
@@ -36,7 +39,7 @@ const web3_options = {
     transactionPollingTimeout: 480
 };
 
-const web3 = new Web3(new Web3.providers.HttpProvider(ethHost + ':' + ethRpcPort), null, web3_options);
+const web3 = new Web3(new Web3.providers.HttpProvider(`${ethHost}:${ethRpcPort}`), null, web3_options);
 
 module.exports = async function(robot) {
   robot.respond(/keep-test-faucet fund (.*)/i, async function(msg) {
