@@ -23,6 +23,7 @@ const ethNetworkId = '1101';
 
 // ETH account info
 const purse = '0x0f0977c4161a371b5e5ee6a8f43eb798cd1ae1db';
+
 // These are throw away accounts on an internal private testnet, hence the plaintext.
 const ethAccountPassword = 'doughnut_armenian_parallel_firework_backbite_employer_singlet';
 const etherToTransfer = '10';
@@ -53,21 +54,21 @@ module.exports = function(robot) {
     }
 
     try {
-      msg.send(`Unlocking purse account: ${purse}`);
-      await web3.eth.personal.unlockAccount(purse, ethAccountPassword, 150000);
-      msg.send(`Account ${purse} unlocked!`);
+      msg.send(`Unlocking purse account: ${purse}`)
+      await web3.eth.personal.unlockAccount(purse, ethAccountPassword, 150000)
+        .then(msg.send(`Account ${purse} unlocked!`));
     } catch (error) {
-        robot.logger.error(`ETH account unlock error: ${error.message}`);
-        msg.send('There was an issue unlocking the purse account, ask for an adult!');
+      robot.logger.error(`ETH account unlock error: ${error.message}`);
+      msg.send('There was an issue unlocking the purse account, ask for an adult!');
     }
 
     try {
       msg.send(`Funding account ${account} with ${etherToTransfer} ETH.  Don't panic, this may take several seconds.`);
-      await web3.eth.sendTransaction({ from:purse, to:account, value:transferAmount });
-      msg.send(`Account ${account} funded!`);
+      await web3.eth.sendTransaction({ from:purse, to:account, value:transferAmount })
+        .then(msg.send(`Account ${account} funded!`));
     } catch (error) {
       robot.logger.error(`ETH account funding error: ${error.message}`);
       msg.send('There was an issue funding the ETH account, ask for an adult!');
     }
-  });
+  })
 };
