@@ -62,7 +62,7 @@ module.exports = function(robot) {
     }
 
     try {
-      msg.send(`Funding account ${account} with ${etherToTransfer} ETH from purse: ${purse}.  Don't panic, this may take several seconds.`);
+      msg.send(`Funding account ${account} with ${etherToTransfer} ETH.  Don't panic, this may take several seconds.`);
       await web3.eth.sendTransaction({ from:purse, to:account, value:transferAmount });
       msg.send(`Account ${account} funded!`);
     } catch (error) {
