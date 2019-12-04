@@ -2,7 +2,7 @@ version: 2
 jobs:
   build-and-test:
     docker:
-      - image: docker:17.05.0-ce-git
+      - image: thesisco/docker-buildpack:bionic
         environment:
           PROJECT_NAME: cfc-production
     steps:
