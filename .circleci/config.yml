@@ -58,21 +58,6 @@ jobs:
       - attach_workspace:
           at: /tmp/heimdall
       - run:
-          # Remove this in favor of the Set Gcloud Auth and gcp-gcr steps below?
-          name: Set up GCP
-          command: |
-            echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
-            gcloud --quiet auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
-            gcloud --quiet config set project $PROJECT_ID
-            gcloud --quiet config set container/cluster $CLUSTER_NAME
-            gcloud --quiet container clusters get-credentials $CLUSTER_NAME
-            gcloud --quiet auth configure-docker
-      - run:
-          name: Set Gcloud Auth
-          command: |
-            echo $GCLOUD_SERVICE_KEY_JUMPHOST_SSH > ~/gcloud-service-key.json
-            gcloud auth activate-service-account --key-file ~/gcloud-service-key.json
-      - run:
           name: Load Docker image
           command: |
             docker load -i /tmp/heimdall/docker-images/heimdall.tar
