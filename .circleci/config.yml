@@ -19,18 +19,22 @@ orbs:
 
 jobs:
   build-and-test:
-    docker:
-      - image: docker:17.05.0-ce-git
-        environment:
-          PROJECT_NAME: thesis-ops
+    # docker:
+    #   - image: docker:17.05.0-ce-git
+    #     environment:
+    #       PROJECT_NAME: thesis-ops
+    executor: docker-git
+    # do we still want the PROJECT_NAME var here? and if so can I set it at this level?
+    environment:
+      PROJECT_NAME: thesis-ops
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
           name: Build Docker Image and Run Tests
+          # Note: Tests are run from the Dockerfile
           command: |
-
             echo $CIRCLE_BUILD_NUM > BUILD
             docker build . -f infrastructure/docker/Dockerfile -t gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
       - run:
@@ -69,12 +73,10 @@ jobs:
             echo $GCLOUD_SERVICE_KEY_JUMPHOST_SSH > ~/gcloud-service-key.json
             gcloud auth activate-service-account --key-file ~/gcloud-service-key.json
       - run:
-          name: Load And Push Docker image
+          name: Load Docker image
           command: |
             docker load -i /tmp/heimdall/docker-images/heimdall.tar
             export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
-            # Replace this manual push step with the gcp-gcr stuff below?
-            # docker push gcr.io/${PROJECT_NAME}/heimdall:$BUILD_TAG
       - gcp-gcr/gcr-auth:
           google-project-id: GOOGLE_PROJECT_ID
           google-compute-zone: GOOGLE_COMPUTE_ZONE_A
@@ -86,14 +88,12 @@ jobs:
           image: heimdall
           tag: $BUILD_TAG
   deploy:
-    docker:
-      # This chunk goes now too?
-      - image: google/cloud-sdk:latest
-        environment:
-          PROJECT_NAME: thesis-ops
-          PROJECT_ID: thesis-ops
-          CLUSTER_NAME: heimdall
-          CLOUDSDK_COMPUTE_ZONE: us-east4-c
+    executor: docker-thesis-buildpack
+    # do we still want/ need the env var that were previously set in the docker section here?
+    # -          PROJECT_NAME: thesis-ops
+    # -          PROJECT_ID: thesis-ops
+    # -          CLUSTER_NAME: heimdall
+    # -          CLOUDSDK_COMPUTE_ZONE: us-east4-c
     steps:
       - attach_workspace:
           at: /tmp/heimdall
