@@ -18,15 +18,14 @@ orbs:
   gcp-cli: circleci/gcp-cli@1.8.2
 
 jobs:
+  # TODO: set in circle context:
+  # $GCR_REGISTRY_URL -> gcr.io
+  # $GOOGLE_PROJECT_ID -> thesis-ops-2748
+  # $GCLOUD_SERVICE_KEY -> need to create or find this
+  # $GOOGLE_COMPUTE_ZONE_A -> us-east4-a
+
   build-and-test:
-    # docker:
-    #   - image: docker:17.05.0-ce-git
-    #     environment:
-    #       PROJECT_NAME: thesis-ops
     executor: docker-git
-    # do we still want the PROJECT_NAME var here? and if so can I set it at this level?
-    environment:
-      PROJECT_NAME: thesis-ops
     steps:
       - checkout
       - setup_remote_docker:
@@ -36,7 +35,7 @@ jobs:
           # Note: Tests are run from the Dockerfile
           command: |
             echo $CIRCLE_BUILD_NUM > BUILD
-            docker build . -f infrastructure/docker/Dockerfile -t gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
+            docker build . -f infrastructure/docker/Dockerfile -t $GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/heimdall:$CIRCLE_BUILD_NUM
       - run:
           name: Save build
           command: |
@@ -44,7 +43,7 @@ jobs:
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               echo Saving build and build tag for master branch.
               cp ./BUILD /tmp/heimdall/docker-images/BUILD
-              docker save -o /tmp/heimdall/docker-images/heimdall.tar gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
+              docker save -o /tmp/heimdall/docker-images/heimdall.tar $GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/heimdall:$CIRCLE_BUILD_NUM
             else
               echo Not saving build for development branch.
             fi
@@ -74,11 +73,7 @@ jobs:
           tag: $BUILD_TAG
   deploy:
     executor: docker-thesis-buildpack
-    # do we still want/ need the env var that were previously set in the docker section here?
-    # -          PROJECT_NAME: thesis-ops
-    # -          PROJECT_ID: thesis-ops
-    # -          CLUSTER_NAME: heimdall
-    # -          CLOUDSDK_COMPUTE_ZONE: us-east4-c
+
     steps:
       - attach_workspace:
           at: /tmp/heimdall
