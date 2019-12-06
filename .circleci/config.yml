@@ -95,9 +95,9 @@ workflows:
     jobs:
       - build-and-test
       - publish-docker-image:
-          filters:
-            branches:
-              only: master
+          # filters:
+          #   branches:
+          #     only: master
           requires:
             - build-and-test
       - deploy:
