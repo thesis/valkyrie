@@ -21,9 +21,9 @@ jobs:
   # TODO: set in circle context:
   # $GCR_REGISTRY_URL -> gcr.io
   # $GOOGLE_PROJECT_ID -> thesis-ops-2748
-  # $GCLOUD_SERVICE_KEY -> need to create or find this
+  # $GCLOUD_SERVICE_KEY -> need to create or find this (grab from thesis-ops)
+  # GCLOUD_SERVICE_KEY_JUMPHOST_SSH -> need to create or find this (grab from thesis-ops)
   # $GOOGLE_COMPUTE_ZONE_A -> us-east4-a
-
   build-and-test:
     executor: docker-git
     steps:
@@ -71,19 +71,38 @@ jobs:
           registry-url: $GCR_REGISTRY_URL
           image: heimdall
           tag: $BUILD_TAG
+  # migrate_contracts: as ref
   deploy:
     executor: docker-thesis-buildpack
-
     steps:
+      # - setup_remote_docker:
+      #     docker_layer_caching: true
       - attach_workspace:
           at: /tmp/heimdall
       - checkout
       - run:
+          name: Set Gcloud Auth
+          command: |
+            echo $GCLOUD_SERVICE_KEY_JUMPHOST_SSH > ~/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file ~/gcloud-service-key.json
+      - run:
           name: Deploy Docker Image
           command: |
             # need to ssh into jumphost here, so kubectl cmds in update-image.sh can be excuted?
+            # need to add something like
             export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
             bash infrastructure/kube/thesis-ops/update-image.sh $BUILD_TAG
+      # - run:
+      #     name: Migrate Contracts
+      #     command: |
+      #       export BUILD_TAG=$CIRCLE_SHA1
+      #       export TRUFFLE_NETWORK=$TRUFFLE_NETWORK
+      #       mkdir -p /tmp/keep-client/contracts
+      #       contracts/solidity/scripts/circleci-migrate-contracts.sh
+      # - persist_to_workspace:
+      #     root: /tmp/keep-client
+      #     paths:
+      #       - contracts
 workflows:
   version: 2
   build-test-deploy:
