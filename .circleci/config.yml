@@ -33,14 +33,9 @@ jobs:
       - run:
           name: Save build
           command: |
-            mkdir -p /tmp/heimdall/docker-images/
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              echo Saving build and build tag for master branch.
-              cp ./BUILD /tmp/heimdall/docker-images/BUILD
-              docker save -o /tmp/heimdall/docker-images/heimdall.tar $GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/heimdall:$CIRCLE_BUILD_NUM
-            else
-              echo Not saving build for development branch.
-            fi
+            echo Saving build and build tag.
+            cp ./BUILD /tmp/heimdall/docker-images/BUILD
+            docker save -o /tmp/heimdall/docker-images/heimdall.tar $GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/heimdall:$CIRCLE_BUILD_NUM
       - persist_to_workspace:
           root: /tmp/heimdall
           paths:
