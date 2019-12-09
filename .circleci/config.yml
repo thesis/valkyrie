@@ -18,12 +18,6 @@ orbs:
   gcp-cli: circleci/gcp-cli@1.8.2
 
 jobs:
-  # TODO: set in circle context:
-  # $GCR_REGISTRY_URL -> gcr.io
-  # $GOOGLE_PROJECT_ID -> thesis-ops-2748
-  # $GCLOUD_SERVICE_KEY -> need to create or find this (grab from thesis-ops)
-  # GCLOUD_SERVICE_KEY_JUMPHOST_SSH -> need to create or find this (grab from thesis-ops)
-  # $GOOGLE_COMPUTE_ZONE_A -> us-east4-a
   build-and-test:
     executor: docker-git
     steps:
@@ -52,27 +46,20 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp/heimdall
-      - run:
-          name: Load Docker image
-          command: |
-            docker load -i /tmp/heimdall/docker-images/heimdall.tar
-            export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
       - gcp-gcr/gcr-auth:
           google-project-id: GOOGLE_PROJECT_ID
           google-compute-zone: GOOGLE_COMPUTE_ZONE_A
           # This param doesn't actually set anything, leaving here as a reminder to check when they fix it.
           gcloud-service-key: GCLOUD_SERVICE_KEY
-      - gcp-gcr/push-image:
-          google-project-id: GOOGLE_PROJECT_ID
-          registry-url: $GCR_REGISTRY_URL
-          image: heimdall
-          tag: $BUILD_TAG
-  # migrate_contracts: as ref
+      - run:
+          name: Load and Push Docker image
+          command: |
+            export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
+            docker load -i /tmp/heimdall/docker-images/heimdall.tar
+            docker push $GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/heimdall:$BUILD_TAG
   deploy:
     executor: docker-thesis-buildpack
     steps:
-      # - setup_remote_docker:
-      #     docker_layer_caching: true
       - attach_workspace:
           at: /tmp/heimdall
       - checkout
@@ -86,17 +73,6 @@ jobs:
           command: |
             export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
             bash infrastructure/kube/thesis-ops/update-image.sh $BUILD_TAG
-      # - run:
-      #     name: Migrate Contracts
-      #     command: |
-      #       export BUILD_TAG=$CIRCLE_SHA1
-      #       export TRUFFLE_NETWORK=$TRUFFLE_NETWORK
-      #       mkdir -p /tmp/keep-client/contracts
-      #       contracts/solidity/scripts/circleci-migrate-contracts.sh
-      # - persist_to_workspace:
-      #     root: /tmp/keep-client
-      #     paths:
-      #       - contracts
 workflows:
   version: 2
   build-test-deploy:
