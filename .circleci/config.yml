@@ -72,7 +72,7 @@ jobs:
           name: Deploy Docker Image
           command: |
             export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
-            bash infrastructure/kube/thesis-ops/update-image.sh $BUILD_TAG
+            bash infrastructure/kube/thesis-ops/update-image.sh
 workflows:
   version: 2
   build-test-deploy:
