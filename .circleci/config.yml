@@ -50,6 +50,7 @@ jobs:
           name: Load Docker image
           command: |
             docker load -i /tmp/heimdall/docker-images/heimdall.tar
+            docker image ls
             export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
       - gcp-gcr/gcr-auth:
           google-project-id: GOOGLE_PROJECT_ID
