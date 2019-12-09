@@ -57,17 +57,9 @@ jobs:
             export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
             docker load -i /tmp/heimdall/docker-images/heimdall.tar
             docker push $GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/heimdall:$BUILD_TAG
-      # - gcp-gcr/push-image:
-      #     google-project-id: GOOGLE_PROJECT_ID
-      #     registry-url: $GCR_REGISTRY_URL
-      #     image: heimdall
-      # tag: $BUILD_TAG
-  # migrate_contracts: as ref
   deploy:
     executor: docker-thesis-buildpack
     steps:
-      # - setup_remote_docker:
-      #     docker_layer_caching: true
       - attach_workspace:
           at: /tmp/heimdall
       - checkout
@@ -82,18 +74,7 @@ jobs:
             # need to ssh into jumphost here, so kubectl cmds in update-image.sh can be excuted?
             # need to add something like
             export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
-            bash infrastructure/kube/thesis-ops/update-image.sh $BUILD_TAG
-      # - run:
-      #     name: Migrate Contracts
-      #     command: |
-      #       export BUILD_TAG=$CIRCLE_SHA1
-      #       export TRUFFLE_NETWORK=$TRUFFLE_NETWORK
-      #       mkdir -p /tmp/keep-client/contracts
-      #       contracts/solidity/scripts/circleci-migrate-contracts.sh
-      # - persist_to_workspace:
-      #     root: /tmp/keep-client
-      #     paths:
-      #       - contracts
+            bash infrastructure/kube/thesis-ops/update-image.sh
 workflows:
   version: 2
   build-test-deploy:
