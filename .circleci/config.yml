@@ -49,9 +49,9 @@ jobs:
       - run:
           name: Load Docker image
           command: |
+            export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
             docker load -i /tmp/heimdall/docker-images/heimdall.tar
             docker image ls
-            export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
       - gcp-gcr/gcr-auth:
           google-project-id: GOOGLE_PROJECT_ID
           google-compute-zone: GOOGLE_COMPUTE_ZONE_A
@@ -61,7 +61,7 @@ jobs:
           google-project-id: GOOGLE_PROJECT_ID
           registry-url: $GCR_REGISTRY_URL
           image: heimdall
-          tag: $BUILD_TAG
+          # tag: $BUILD_TAG
   # migrate_contracts: as ref
   deploy:
     executor: docker-thesis-buildpack
