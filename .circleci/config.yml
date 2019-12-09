@@ -34,6 +34,7 @@ jobs:
           name: Save build
           command: |
             echo Saving build and build tag.
+            mkdir -p /tmp/heimdall/docker-images/
             cp ./BUILD /tmp/heimdall/docker-images/BUILD
             docker save -o /tmp/heimdall/docker-images/heimdall.tar $GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/heimdall:$CIRCLE_BUILD_NUM
       - persist_to_workspace:
