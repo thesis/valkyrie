@@ -77,14 +77,17 @@ workflows:
   version: 2
   build-test-deploy:
     jobs:
-      - build-and-test
+      - build-and-test:
+          context: thesis-ops
       - publish-docker-image:
+          context: thesis-ops
           filters:
             branches:
               only: master
           requires:
             - build-and-test
       - deploy:
+          context: thesis-ops
           filters:
             branches:
               only: master
