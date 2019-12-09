@@ -46,22 +46,22 @@ jobs:
     steps:
       - attach_workspace:
           at: /tmp/heimdall
-      - run:
-          name: Load Docker image
-          command: |
-            export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
-            docker load -i /tmp/heimdall/docker-images/heimdall.tar
-            docker image ls
       - gcp-gcr/gcr-auth:
           google-project-id: GOOGLE_PROJECT_ID
           google-compute-zone: GOOGLE_COMPUTE_ZONE_A
           # This param doesn't actually set anything, leaving here as a reminder to check when they fix it.
           gcloud-service-key: GCLOUD_SERVICE_KEY
-      - gcp-gcr/push-image:
-          google-project-id: GOOGLE_PROJECT_ID
-          registry-url: $GCR_REGISTRY_URL
-          image: heimdall
-          # tag: $BUILD_TAG
+      - run:
+          name: Load and Push Docker image
+          command: |
+            export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
+            docker load -i /tmp/heimdall/docker-images/heimdall.tar
+            docker push $GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/heimdall:$BUILD_TAG
+      # - gcp-gcr/push-image:
+      #     google-project-id: GOOGLE_PROJECT_ID
+      #     registry-url: $GCR_REGISTRY_URL
+      #     image: heimdall
+      # tag: $BUILD_TAG
   # migrate_contracts: as ref
   deploy:
     executor: docker-thesis-buildpack
