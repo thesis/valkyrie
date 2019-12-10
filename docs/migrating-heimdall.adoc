@@ -280,24 +280,25 @@ When ready, there will be a service outage.
 [retro-unanticipated-pitfalls]
 === RETRO: Unanticipated Pitfalls
 
-The "let circle do its thing" step above was complicated by the fact that the 
+The "let circle do its thing" step above was complicated by the fact that the
 new project, `thesis-ops`, has significantly stricter permissions than the old
 project did. Both the push and deploy steps required us to set up permissions
-to grant Circle CI access to the project. 
+to grant Circle CI access to the project.
 
-This required the following additional steps:
-- Update the `thesis/infrastructure` repo to enable push deployment for `thesis-ops`
-- Create a `ci-publish-to-gcr` role in `thesis/infrastructure` for `thesis-ops`
-- Create a `ci-ssh-service-account` role in `thesis/infrastructure` for `thesis-ops`
-- Create gcloud service keys for the above roles, and add them to the Circle context
-- Upgrade the `thesis/heimdall` repo's `.circleci/config.yml` to make use of the 
+This required the following additional steps:  
+
+* Update the `thesis/infrastructure` repo to enable push deployment for `thesis-ops`
+* Create a `ci-publish-to-gcr` role in `thesis/infrastructure` for `thesis-ops`
+* Create a `ci-ssh-service-account` role in `thesis/infrastructure` for `thesis-ops`
+* Create gcloud service keys for the above roles, and add them to the Circle context
+* Upgrade the `thesis/heimdall` repo's `.circleci/config.yml` to make use of the
 version 2.1 orbs and executables, split the push and deploy into separate steps,
-and edit the environment variables to use naming conventions used elsewhere in 
-our infrastruction (eg `keep-core`). 
-- Add any missing environment variables to the circle context (including the 
-service keys created above). 
-- Update the `thesis/heimdall` repo's 
-`infrastructure/kube/thesis-ops/update-image.sh` to use the above circle context 
+and edit the environment variables to use naming conventions used elsewhere in
+our infrastruction (eg `keep-core`).
+* Add any missing environment variables to the circle context (including the
+service keys created above).
+* Update the `thesis/heimdall` repo's
+`infrastructure/kube/thesis-ops/update-image.sh` to use the above circle context
 environment variables and to set up SSH into the jumphost.
 
 
