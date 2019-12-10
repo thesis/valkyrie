@@ -1,76 +1,92 @@
-version: 2
-jobs:
-  build-and-test:
+version: 2.1
+executors:
+  docker-git:
+    docker:
+      - image: docker:18.06.0-ce-git
+  docker-thesis-buildpack:
     docker:
       - image: thesisco/docker-buildpack:bionic
-        environment:
-          PROJECT_NAME: cfc-production
+
+orbs:
+  gcp-gcr: circleci/gcp-gcr@0.0.4
+
+jobs:
+  build-and-test:
+    executor: docker-git
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
           name: Build Docker Image and Run Tests
+          # Note: Tests are run from the Dockerfile
           command: |
-
             echo $CIRCLE_BUILD_NUM > BUILD
-            docker build . -f infrastructure/docker/Dockerfile -t gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
+            docker build . -f infrastructure/docker/Dockerfile -t $GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/heimdall:$CIRCLE_BUILD_NUM
       - run:
           name: Save build
           command: |
+            echo Saving build and build tag.
             mkdir -p /tmp/heimdall/docker-images/
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              echo Saving build and build tag for master branch.
-              cp ./BUILD /tmp/heimdall/docker-images/BUILD
-              docker save -o /tmp/heimdall/docker-images/heimdall.tar gcr.io/$PROJECT_NAME/heimdall:$CIRCLE_BUILD_NUM
-            else
-              echo Not saving build for development branch.
-            fi
+            cp ./BUILD /tmp/heimdall/docker-images/BUILD
+            docker save -o /tmp/heimdall/docker-images/heimdall.tar $GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/heimdall:$CIRCLE_BUILD_NUM
       - persist_to_workspace:
           root: /tmp/heimdall
           paths:
             - docker-images
+  publish-docker-image:
+    executor: gcp-gcr/default
+    steps:
+      - attach_workspace:
+          at: /tmp/heimdall
+      - gcp-gcr/gcr-auth:
+          google-project-id: GOOGLE_PROJECT_ID
+          google-compute-zone: GOOGLE_COMPUTE_ZONE_A
+          # This param doesn't actually set anything, leaving here as a reminder to check when they fix it.
+          gcloud-service-key: GCLOUD_SERVICE_KEY
+      - run:
+          # Note: we're using the docker push command here instead of the orb
+          # due to issues accessing the BUILD_TAG var from the orb.
+          # We should look into that and remedy it, and use the orb, but for
+          # now this accomplishes the goal of getting Heimdall's CI working.
+          name: Load and Push Docker image
+          command: |
+            export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
+            docker load -i /tmp/heimdall/docker-images/heimdall.tar
+            docker push $GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/heimdall:$BUILD_TAG
   deploy:
-    docker:
-      - image: google/cloud-sdk:latest
-        environment:
-          PROJECT_NAME: cfc-production
-          PROJECT_ID: cfc-production
-          CLUSTER_NAME: heimdall
-          CLOUDSDK_COMPUTE_ZONE: us-east4-c
+    executor: docker-thesis-buildpack
     steps:
       - attach_workspace:
           at: /tmp/heimdall
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
       - run:
-          name: Load Docker image
+          name: Set Gcloud Auth
           command: |
-            docker load -i /tmp/heimdall/docker-images/heimdall.tar
+            echo $GCLOUD_SERVICE_KEY_JUMPHOST_SSH > ~/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file ~/gcloud-service-key.json
       - run:
-          name: Set up GCP
-          command: |
-            echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
-            gcloud --quiet auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
-            gcloud --quiet config set project $PROJECT_ID
-            gcloud --quiet config set container/cluster $CLUSTER_NAME
-            gcloud --quiet container clusters get-credentials $CLUSTER_NAME
-            gcloud --quiet auth configure-docker
-      - run:
-          name: Push and Deploy Docker Image
+          name: Deploy Docker Image
           command: |
             export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
-            docker push gcr.io/${PROJECT_NAME}/heimdall:$BUILD_TAG
-            bash infrastructure/kube/thesis-ops/update-image.sh $BUILD_TAG
+            bash infrastructure/kube/thesis-ops/update-image.sh
 workflows:
   version: 2
   build-test-deploy:
     jobs:
-      - build-and-test
-      - deploy:
+      - build-and-test:
+          context: thesis-ops
+      - publish-docker-image:
+          context: thesis-ops
           filters:
             branches:
               only: master
           requires:
             - build-and-test
+      - deploy:
+          context: thesis-ops
+          filters:
+            branches:
+              only: master
+          requires:
+            - publish-docker-image
