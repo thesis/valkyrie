@@ -45,6 +45,10 @@ jobs:
           # This param doesn't actually set anything, leaving here as a reminder to check when they fix it.
           gcloud-service-key: GCLOUD_SERVICE_KEY
       - run:
+          # Note: we're using the docker push command here instead of the orb
+          # due to issues accessing the BUILD_TAG var from the orb.
+          # We should look into that and remedy it, and use the orb, but for
+          # now this accomplishes the goal of getting Heimdall's CI working.
           name: Load and Push Docker image
           command: |
             export BUILD_TAG=`cat /tmp/heimdall/docker-images/BUILD`
