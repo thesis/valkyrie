@@ -280,12 +280,8 @@ When ready, there will be a service outage.
 [retro-unanticipated-pitfalls]
 === RETRO: Unanticipated Pitfalls
 
-The "let circle do its thing" step above was complicated by the fact that the
-new project, `thesis-ops`, has significantly stricter permissions than the old
-project did. Both the push and deploy steps required us to set up permissions
-to grant Circle CI access to the project.
-
-This required the following additional steps:  
+We migrated from a public Kube cluster to a private one...and as a result we had 
+to make the following config additions:
 
 * Update the `thesis/infrastructure` repo to enable push deployment for `thesis-ops`
 * Create a `ci-publish-to-gcr` role in `thesis/infrastructure` for `thesis-ops`
