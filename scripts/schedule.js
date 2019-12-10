@@ -84,7 +84,7 @@ module.exports = function(robot) {
           JOBS,
           STORE_KEY,
           msg.message.user,
-          targetRoomId || targetRoom,
+          targetRoomId || targetRoom || msg.message.user.room,
           pattern,
           msg.match[3],
           metadata,
