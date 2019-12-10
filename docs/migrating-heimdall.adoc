@@ -31,6 +31,7 @@ useful reference point for any future migrations.
 
 * Secret Data: `heimdall-hubot`
 * StatefulSet Data: `heimdall-redis-set`
+* Deployment: `heimdall-hubot-deployment`
 
 [#set-up-your-access]
 == Set up your access
