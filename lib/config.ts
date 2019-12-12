@@ -59,8 +59,9 @@ export function fetchRoomInfoOrReportIssue(robot: Hubot.Robot<any>, roomName: st
  * - if the robot is using the shell adapter, logs and returns an empty string.
  * - if the robot is using any other adapter, throws an error.
  */
-export function fetchConfigOrReportIssue(robot: Hubot.Robot<any>, configKey: string): string {
+export function fetchConfigOrReportIssue(configKey: string, issueReporter: (string)=>void): string {
   if (!process.env[configKey]) {
+    issueReporter(`Could not get necessary value...`)
     logOrThrow(
       robot,
       `Could not get necessary value for configKey: ${configKey}.`,
@@ -68,6 +69,14 @@ export function fetchConfigOrReportIssue(robot: Hubot.Robot<any>, configKey: str
   }
   return process.env[configKey] || ""
 }
+
+function issueReporterForRobot(robot: Hubot.Robot<any>): (string)=>void {
+  return (errorMessage: String) => {
+    logOrThrow(robot, errorMessage)
+  }
+}
+
+fetchConfigOrReportIssue("config key", issueReporterForRobot(robot))
 
 /**
  * Given a robot and an error message:
