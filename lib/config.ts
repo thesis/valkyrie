@@ -13,7 +13,7 @@ import { getRoomInfoFromIdOrName, isRoomNameValid } from "../lib/flowdock-util"
  * 
  * An example:
  * ```
- * withConfigOrReportIssues(robot, "config1", "config2")((config1, config2) => {
+ * withConfigOrReportIssues(reporter, "config1", "config2")((config1, config2) => {
  *   // - receives the values of config keys "config1" and "config2" in order
  *   // - throws an exception if fetchConfigOrReportIssue throws an exception
  *   //   due to the config key not existing during a production run
@@ -22,11 +22,11 @@ import { getRoomInfoFromIdOrName, isRoomNameValid } from "../lib/flowdock-util"
  * })
  * ```
  * 
- * The robot is used to report a startup error if there is an issue looking up a
- * config key in production.
+ * The reporter is used to report a startup error if there is an issue looking
+ * up a config key in production.
  */
-export function withConfigOrReportIssues(robot: Hubot.Robot<any>, ...keys: string[]) {
-  const values = keys.map(_ => fetchConfigOrReportIssue(robot, _)).filter(_ => _.length > 0)
+export function withConfigOrReportIssues(issueReporter: (errorMessage: string)=>void, ...keys: string[]) {
+  const values = keys.map(_ => fetchConfigOrReportIssue(_, issueReporter)).filter(_ => _.length > 0)
 
   return (valueHandler: (...configValues: string[])=>void) => {
     if (values.length == keys.length) {
@@ -59,24 +59,21 @@ export function fetchRoomInfoOrReportIssue(robot: Hubot.Robot<any>, roomName: st
  * - if the robot is using the shell adapter, logs and returns an empty string.
  * - if the robot is using any other adapter, throws an error.
  */
-export function fetchConfigOrReportIssue(configKey: string, issueReporter: (string)=>void): string {
+export function fetchConfigOrReportIssue(configKey: string, issueReporter: (errorMessage: string)=>void): string {
   if (!process.env[configKey]) {
-    issueReporter(`Could not get necessary value...`)
-    logOrThrow(
-      robot,
-      `Could not get necessary value for configKey: ${configKey}.`,
-    )
+    issueReporter(`Could not get necessary value for configKey: ${configKey}.`)
   }
+
   return process.env[configKey] || ""
 }
 
-function issueReporterForRobot(robot: Hubot.Robot<any>): (string)=>void {
-  return (errorMessage: String) => {
+export function issueReporterForRobot(robot: Hubot.Robot<any>): (errorMessage: string)=>void {
+  console.log("Building an issue reporter!")
+  return (errorMessage: string) => {
+    console.log("Inside an issue reporter!")
     logOrThrow(robot, errorMessage)
   }
 }
-
-fetchConfigOrReportIssue("config key", issueReporterForRobot(robot))
 
 /**
  * Given a robot and an error message:

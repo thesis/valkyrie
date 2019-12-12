@@ -14,13 +14,13 @@ import * as Figma from 'figma-api'
 import { GetCommentsResult, Comment } from 'figma-api/lib/api-types'
 
 import * as Flowdock from "../lib/flowdock"
-import { withConfigOrReportIssues } from "../lib/config"
+import { withConfigOrReportIssues, issueReporterForRobot } from "../lib/config"
 
 const FIGMA_URL = "https://www.figma.com"
 
 module.exports = function(robot: Hubot.Robot<any>) {
   withConfigOrReportIssues(
-        robot,
+        issueReporterForRobot(robot),
         "FIGMA_TOKEN",
         "FIGMA_FLOWDOCK_TOKEN",
   )((figmaToken, figmaFlowdockToken) => {

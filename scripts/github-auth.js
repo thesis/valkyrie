@@ -24,7 +24,7 @@ let HOST = process.env["HUBOT_HOST"],
 
 module.exports = function(robot) {
   withConfigOrReportIssues(
-    robot,
+    issueReporterForRobot(robot),
     "GITHUB_CLIENT_ID",
     "GITHUB_CLIENT_SECRET",
   )((githubClientId, githubClientSecret) => {

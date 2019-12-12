@@ -110,7 +110,7 @@ function watchMeeting(meeting) {
 
 module.exports = function(robot) {
   withConfigOrReportIssues(
-    robot,
+    issueReporterForRobot(robot),
     "ZOOM_API_KEY",
     "ZOOM_API_SECRET",
   )((zoomApiKey, zoomApiSecret) => {
