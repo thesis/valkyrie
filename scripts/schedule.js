@@ -38,10 +38,11 @@ const {
   cancelScheduledJob,
   getScheduledJobList,
   formatJobsForListMessage,
+  RECURRING_JOB_STORAGE_KEY,
 } = require("../lib/schedule-util")
 
 const JOBS = {}
-const STORE_KEY = "hubot_schedule"
+const STORE_KEY = RECURRING_JOB_STORAGE_KEY
 
 module.exports = function(robot) {
   robot.brain.on("loaded", () => {
