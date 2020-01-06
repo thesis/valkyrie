@@ -18,7 +18,7 @@
     "hubot-even-better-help": "github:thesis/hubot-even-better-help#c5398810c58a0cda67ac7c4eacdabe7e333c78fb",
     "hubot-gif-locker": "^1.0.7",
     "hubot-redis-brain": "^1.0.0",
-    "hubot-reload-flowdock": "github:thesis/hubot-flowdock#98894f5a5089bd2c47182d858375efdbe346d75f",
+    "hubot-reload-flowdock": "github:thesis/hubot-flowdock#7370c583068eceee8482a066d75d9f30a98e1745",
     "hubot-reload": "0.0.2",
     "hubot-rules": "^0.1.2",
     "hubot-scripts": "^2.17.2",
