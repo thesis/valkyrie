@@ -86,4 +86,21 @@ module.exports = function(robot) {
       )
     }
   })
+
+  robot.respond(/eth-account create/i, async function(msg) {
+    try {
+      msg.send(`Creating account on the keep test network`)
+      let newAccount = await web3.eth.accounts.create()
+      msg.send(
+        `New account created! Here's your not-so-secret secret info:\n${require("util").inspect(
+          newAccount,
+        )}`,
+      )
+    } catch (error) {
+      robot.logger.error(`Error creating account: ${error.message}`)
+      return msg.send(
+        "There was an issue creating a new keep-test account, ask for an adult!",
+      )
+    }
+  })
 }
