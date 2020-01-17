@@ -4,7 +4,7 @@
 //
 //
 // Commands:
-//   eth-faucet [fund] "ETH account address"
+//   hubot eth-faucet fund <ETH account address> - Transfers 10 ether to the specified address.
 //
 // Author:
 //   sthompson22
