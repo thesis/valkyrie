@@ -1,7 +1,8 @@
 // Description:
-//  Get some cold hard fake ETH from the keep-test private ETH chain.
-//  This is an extraordinarily basic first pass, most things are hardcoded with purpose.
+//  Create an account, and/ or get some cold hard fake ETH from the keep-test
+//  private ETH chain.
 //
+//  Most things are hardcoded with purpose.
 //
 // Commands:
 //   hubot eth-faucet fund <ETH account address> - Transfers 10 ether to the specified address.
@@ -9,11 +10,11 @@
 //
 // Author:
 //   sthompson22
-//   with referenced hubot code examples from: kb0rg
+//   kb0rg
 //
 
-// WARNING: THIS ONLY WORKS FOR KEEP-TEST AT THE MOMENT.  In the future this can be
-// extended to pass an environment to the commands provided here.
+// WARNING: THIS ONLY WORKS FOR KEEP-TEST AT THE MOMENT.  In the future this can
+// be extended to pass an environment to the commands provided here.
 
 const Web3 = require("web3")
 
