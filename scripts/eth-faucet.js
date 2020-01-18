@@ -5,6 +5,7 @@
 //
 // Commands:
 //   hubot eth-faucet fund <ETH account address> - Transfers 10 ether to the specified address.
+//   hubot eth-account [create|create-and-fund] - Creates a new account on the Keep ethereum testnet and returns an object with account info (including private key! This is not for production!). Optionally funds the new account as well.
 //
 // Author:
 //   sthompson22
