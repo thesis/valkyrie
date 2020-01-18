@@ -45,6 +45,7 @@ const web3 = new Web3(
   null,
   web3_options,
 )
+const { TextMessage } = require("hubot")
 
 module.exports = function(robot) {
   robot.respond(/eth-faucet fund (.*)/i, async function(msg) {
@@ -87,7 +88,8 @@ module.exports = function(robot) {
     }
   })
 
-  robot.respond(/eth-account create/i, async function(msg) {
+  robot.respond(/eth-account (create(-and-fund)?)/i, async function(msg) {
+    let commandOption = msg.match[1]
     try {
       msg.send(`Creating account on the keep test network`)
       let newAccount = await web3.eth.accounts.create()
@@ -96,6 +98,14 @@ module.exports = function(robot) {
           newAccount,
         )}`,
       )
+      if (commandOption == "create-and-fund") {
+        let callRobot = new TextMessage(
+          msg.message.user,
+          `${robot.alias}eth-faucet fund ${newAccount.address}`,
+        )
+        robot.adapter.receive(callRobot)
+        msg.send(`Trying to fund account, please hold....`)
+      }
     } catch (error) {
       robot.logger.error(`Error creating account: ${error.message}`)
       return msg.send(
