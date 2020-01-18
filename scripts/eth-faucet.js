@@ -104,6 +104,7 @@ module.exports = function(robot) {
           msg.message.user,
           `${robot.alias}eth-faucet fund ${newAccount.address}`,
         )
+        callRobot.metadata = msg.message.metadata
         robot.adapter.receive(callRobot)
         msg.send(`Trying to fund account, please hold....`)
       }
