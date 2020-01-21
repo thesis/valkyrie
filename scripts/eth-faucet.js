@@ -101,12 +101,12 @@ module.exports = function(robot) {
         )}`,
       )
       if (commandOption == "create-and-fund") {
-        let callRobot = new TextMessage(
+        let messageToRobot = new TextMessage(
           msg.message.user,
           `${robot.alias}eth-faucet fund ${newAccount.address}`,
         )
-        callRobot.metadata = msg.message.metadata
-        robot.adapter.receive(callRobot)
+        messageToRobot.metadata = msg.message.metadata
+        robot.adapter.receive(messageToRobot)
         msg.send(`Trying to fund account, please hold....`)
       }
     } catch (error) {
