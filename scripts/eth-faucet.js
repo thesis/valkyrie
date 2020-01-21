@@ -50,7 +50,7 @@ const web3 = new Web3(
 const { TextMessage } = require("hubot")
 
 module.exports = function(robot) {
-  robot.respond(/eth-faucet fund (.*)/i, async function(msg) {
+  robot.respond(/eth-faucet fund (.*)/i, function(msg) {
     let account = msg.match[1]
     let transferAmount = web3.utils.toWei(etherToTransfer, "ether")
 
@@ -62,39 +62,45 @@ module.exports = function(robot) {
       )
     }
 
-    try {
-      msg.send(`Unlocking purse account: ${purse}`)
-      await web3.eth.personal.unlockAccount(purse, purseAccountPassword, 150000)
-    } catch (error) {
-      robot.logger.error(`ETH account unlock error: ${error.message}`)
-      return msg.send(
-        "There was an issue unlocking the purse account, ask for an adult!",
-      )
-    }
-
-    try {
-      msg.send(
-        `Funding account ${account} with ${etherToTransfer} ETH.  Don't panic, this may take several seconds.`,
-      )
-      await web3.eth.sendTransaction({
-        from: purse,
-        to: account,
-        value: transferAmount,
+    msg.send(`Unlocking purse account: ${purse}`)
+    web3.eth.personal
+      .unlockAccount(purse, purseAccountPassword, 150000)
+      .then(receipt => {
+        msg.send(
+          `Purse account unlocked! Funding account ${account} with ${etherToTransfer} ETH.  Don't panic, this may take several seconds.`,
+        )
+        web3.eth
+          .sendTransaction({
+            from: purse,
+            to: account,
+            value: transferAmount,
+          })
+          .then(receipt => {
+            robot.logger.info(
+              `Funded account ${account}, txHash: ${receipt.transactionHash}`,
+            )
+            msg.send(`Account ${account} funded!`)
+          })
+          .catch(error => {
+            robot.logger.error(`ETH account funding error: ${error.message}`)
+            return msg.send(
+              "There was an issue funding the ETH account, ask for an adult!",
+            )
+          })
       })
-      msg.send(`Account ${account} funded!`)
-    } catch (error) {
-      robot.logger.error(`ETH account funding error: ${error.message}`)
-      return msg.send(
-        "There was an issue funding the ETH account, ask for an adult!",
-      )
-    }
+      .catch(error => {
+        robot.logger.error(`ETH account unlock error: ${error.message}`)
+        return msg.send(
+          "There was an issue unlocking the purse account, ask for an adult!",
+        )
+      })
   })
 
-  robot.respond(/eth-account (create(-and-fund)?)/i, async function(msg) {
+  robot.respond(/eth-account (create(-and-fund)?)/i, function(msg) {
     let commandOption = msg.match[1]
     try {
       msg.send(`Creating account on the keep test network`)
-      let newAccount = await web3.eth.accounts.create()
+      let newAccount = web3.eth.accounts.create()
       msg.send(
         `New account created! Here's your not-so-secret secret info:\n${require("util").inspect(
           newAccount,
@@ -106,8 +112,8 @@ module.exports = function(robot) {
           `${robot.alias}eth-faucet fund ${newAccount.address}`,
         )
         messageToRobot.metadata = msg.message.metadata
-        robot.adapter.receive(messageToRobot)
         msg.send(`Trying to fund account, please hold....`)
+        robot.adapter.receive(messageToRobot)
       }
     } catch (error) {
       robot.logger.error(`Error creating account: ${error.message}`)
