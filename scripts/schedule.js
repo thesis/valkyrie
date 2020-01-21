@@ -4,9 +4,8 @@
 //
 //
 // Commands:
-//   hubot schedule [add|new] "<datetime pattern>" <message> - Schedule a message that runs on a specific date and time. "YYYY-MM-DDTHH:mm" for UTC, or "YYYY-MM-DDTHH:mm-HH:mm" to specify a timezone offset. See http://www.ecma-international.org/ecma-262/5.1/#sec-15.9.1.15 for more on datetime pattern syntax.
 //   hubot schedule [add|new] "<cron pattern>" <message> - Schedule a message that runs recurrently. For the wizards only. See https://crontab.guru/ or http://crontab.org/ for cron pattern syntax.
-//   hubot schedule [add|new] <flow> "[<datetime pattern>|<cron pattern>]" <message> - Schedule a message to a specific flow, using either the datetime pattern or the cron pattern syntax as specified above.
+//   hubot schedule [add|new] <flow> "<cron pattern>" <message> - Schedule a message to a specific flow, using the cron pattern syntax as specified above.
 //   hubot schedule [cancel|del|delete|remove] <id> - Cancel the schedule
 //   hubot schedule [upd|update] <id> <message> - Update scheduled message
 //   hubot schedule list - List all scheduled messages for current flow. NOTE all times are listed in UTC
@@ -38,10 +37,11 @@ const {
   cancelScheduledJob,
   getScheduledJobList,
   formatJobsForListMessage,
+  RECURRING_JOB_STORAGE_KEY,
 } = require("../lib/schedule-util")
 
 const JOBS = {}
-const STORE_KEY = "hubot_schedule"
+const STORE_KEY = RECURRING_JOB_STORAGE_KEY
 
 module.exports = function(robot) {
   robot.brain.on("loaded", () => {
@@ -76,6 +76,14 @@ module.exports = function(robot) {
             `Can't create schedule for ${targetRoom}: I'm not in that flow, or there's a typo in the name.`,
           )
         }
+      }
+
+      if (!isCronPattern(pattern)) {
+        return msg.send(`\"${pattern}\" is an invalid pattern.
+          See http://crontab.org/ or https://crontab.guru/ for cron-style format pattern.
+          If you're trying to schedule a one-time reminder, try using the \`remind\` command:
+          See \`help remind\` for more information.
+          `)
       }
 
       try {
