@@ -6,7 +6,7 @@
 //
 // Commands:
 //   hubot eth-faucet fund <ETH account address> - Transfers 10 ether to the specified address.
-//   hubot eth-account [create|create-and-fund] - Creates a new account on the Keep ethereum testnet and returns an object with account info (including private key! This is not for production!). Optionally funds the new account as well.
+//   hubot eth-account create - Creates a new account on the Keep ethereum testnet and returns an keyfile JSON (including private key! This is not for production!). This command funds the new account as well.
 //
 // Author:
 //   sthompson22
@@ -96,7 +96,7 @@ module.exports = function(robot) {
       })
   })
 
-  robot.respond(/eth-account (create(-and-fund)?)/i, function(msg) {
+  robot.respond(/eth-account create/i, function(msg) {
     let commandOption = msg.match[1]
     try {
       msg.send(`Creating account on the keep test network`)
@@ -110,15 +110,13 @@ module.exports = function(robot) {
           keyfileJSON,
         )}\``,
       )
-      if (commandOption == "create-and-fund") {
-        let messageToRobot = new TextMessage(
-          msg.message.user,
-          `${robot.alias}eth-faucet fund ${newAccount.address}`,
-        )
-        messageToRobot.metadata = msg.message.metadata
-        msg.send(`Trying to fund account, please hold....`)
-        robot.adapter.receive(messageToRobot)
-      }
+      let messageToRobot = new TextMessage(
+        msg.message.user,
+        `${robot.alias}eth-faucet fund ${newAccount.address}`,
+      )
+      messageToRobot.metadata = msg.message.metadata
+      msg.send(`Trying to fund account, please hold....`)
+      robot.adapter.receive(messageToRobot)
     } catch (error) {
       robot.logger.error(`Error creating account: ${error.message}`)
       return msg.send(
