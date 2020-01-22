@@ -101,10 +101,14 @@ module.exports = function(robot) {
     try {
       msg.send(`Creating account on the keep test network`)
       let newAccount = web3.eth.accounts.create()
+      let keyfileJSON = web3.eth.accounts.encrypt(
+        newAccount.privateKey,
+        purseAccountPassword,
+      )
       msg.send(
-        `New account created! Here's your not-so-secret secret info:\n${require("util").inspect(
-          newAccount,
-        )}`,
+        `New account created! Here's your not-so-secret secret info:\n\`${require("util").inspect(
+          keyfileJSON,
+        )}\``,
       )
       if (commandOption == "create-and-fund") {
         let messageToRobot = new TextMessage(
