@@ -22,6 +22,8 @@ const dadJokeUrl = "https://icanhazdadjoke.com",
     Accept: "application/json",
   }
 
+const { TextMessage } = require("hubot")
+
 module.exports = robot => {
   robot.hear(
     /\bdad\b/i,
@@ -41,4 +43,9 @@ module.exports = robot => {
         .catch(err => res.send("Looks like Dad borked the internet: ", err))
     },
   )
+  robot.respond(/shrug(?!\W)/, res => {
+    let messageToRobot = new TextMessage(res.message.user, `shrug.gif`)
+    messageToRobot.metadata = res.message.metadata
+    robot.adapter.receive(messageToRobot)
+  })
 }
