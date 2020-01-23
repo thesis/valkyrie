@@ -99,17 +99,39 @@ module.exports = function(robot) {
   robot.respond(/eth-account create/i, function(msg) {
     let commandOption = msg.match[1]
     try {
-      msg.send(`Creating account on the keep test network`)
+      msg.send(`Creating account on the keep test network.`)
       let newAccount = web3.eth.accounts.create()
-      let keyfileJSON = web3.eth.accounts.encrypt(
-        newAccount.privateKey,
-        purseAccountPassword,
+      let keyfileJSON = JSON.stringify(
+        web3.eth.accounts.encrypt(newAccount.privateKey, purseAccountPassword),
       )
-      msg.send(
-        `New account created! Here's your not-so-secret secret info:\n\`${require("util").inspect(
-          keyfileJSON,
-        )}\``,
-      )
+
+      let content = Buffer.from(keyfileJSON, "binary").toString("base64")
+      let postParams = {
+        event: "file",
+        thread_id: msg.message.metadata.thread_id,
+        flow: msg.message.user.room,
+        content: {
+          data: content,
+          content_type: "application/json",
+          file_name: "keyfile.json",
+        },
+      }
+
+      let extraHeader = { "X-flowdock-wait-for-message": true }
+
+      robot.adapter.bot.post("/messages", postParams, extraHeader, function(
+        err,
+        res,
+        body,
+      ) {
+        if (err) {
+          robot.send("something borked")
+          robot.logger.error(`POST returned: ${require("util").inspect(err)}`)
+        } else {
+          robot.send("I did a thing.")
+          robot.logger.info(`POST returned: ${require("util").inspect(body)}`)
+        }
+      })
       let messageToRobot = new TextMessage(
         msg.message.user,
         `${robot.alias}eth-faucet fund ${newAccount.address}`,
