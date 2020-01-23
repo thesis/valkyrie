@@ -49,6 +49,37 @@ const web3 = new Web3(
 )
 const { TextMessage } = require("hubot")
 
+function postMessageCallback(robot, msg, accountAddress) {
+  return function(err, res, body) {
+    const messageEnvelope = {
+      user: msg.message.user,
+      room: msg.message.user.room,
+      metadata: { thread_id: msg.message.metadata.thread_id },
+    }
+    if (err) {
+      robot.send(
+        messageEnvelope,
+        `Something went wrong trying to post the keyfile for ${accountAddress}`,
+      )
+      robot.logger.error(`POST returned: ${require("util").inspect(err)}`)
+    } else if (res) {
+      let postReplyMessage = `Download the above \`keyfile.json\` to send with the bundle for account: ${accountAddress}.`
+      robot.send(messageEnvelope, postReplyMessage)
+      let messageToRobot = new TextMessage(
+        msg.message.user,
+        `${robot.alias}eth-faucet fund ${accountAddress}`,
+      )
+      messageToRobot.metadata = msg.message.metadata
+      robot.adapter.receive(messageToRobot)
+    } else {
+      robot.logger.info(
+        `Something happened after posting keyfile for ${accountAddress}. FLowdock API response: %o`,
+        body,
+      )
+    }
+  }
+}
+
 module.exports = function(robot) {
   robot.respond(/eth-faucet fund (.*)/i, function(msg) {
     let account = msg.match[1]
@@ -116,29 +147,13 @@ module.exports = function(robot) {
           file_name: "keyfile.json",
         },
       }
-
       let extraHeader = { "X-flowdock-wait-for-message": true }
-
-      robot.adapter.bot.post("/messages", postParams, extraHeader, function(
-        err,
-        res,
-        body,
-      ) {
-        if (err) {
-          robot.send("something borked")
-          robot.logger.error(`POST returned: ${require("util").inspect(err)}`)
-        } else {
-          robot.send("I did a thing.")
-          robot.logger.info(`POST returned: ${require("util").inspect(body)}`)
-        }
-      })
-      let messageToRobot = new TextMessage(
-        msg.message.user,
-        `${robot.alias}eth-faucet fund ${newAccount.address}`,
+      robot.adapter.bot.post(
+        "/messages",
+        postParams,
+        extraHeader,
+        postMessageCallback(robot, msg, newAccount.address),
       )
-      messageToRobot.metadata = msg.message.metadata
-      msg.send(`Trying to fund account, please hold....`)
-      robot.adapter.receive(messageToRobot)
     } catch (error) {
       robot.logger.error(`Error creating account: ${error.message}`)
       return msg.send(
