@@ -5,8 +5,8 @@
 //  Most things are hardcoded with purpose.
 //
 // Commands:
-//   hubot eth-faucet fund <ETH account address> - Transfers 10 ether to the specified address.
-//   hubot eth-account create - Creates a new account on the Keep ethereum testnet and returns an keyfile JSON (including private key! This is not for production!). This command funds the new account as well.
+//   hubot eth-account fund <ETH account address> - Transfers 10 ether to the specified address.
+//   hubot eth-account create - Creates a new account on the Keep ethereum testnet and returns a keyfile JSON (including private key! This is not for use in production!). This command funds the new account as well.
 //
 // Author:
 //   sthompson22
@@ -81,7 +81,7 @@ function postMessageCallback(robot, msg, accountAddress) {
 }
 
 module.exports = function(robot) {
-  robot.respond(/eth-faucet fund (.*)/i, function(msg) {
+  robot.respond(/eth-account fund (.*)/i, function(msg) {
     let account = msg.match[1]
     let transferAmount = web3.utils.toWei(etherToTransfer, "ether")
 
