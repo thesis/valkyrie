@@ -4,6 +4,9 @@
 //
 //  Most things are hardcoded with purpose.
 //
+// Configuration:
+//   ETH_PURSE_ACCOUNT_PASSWORD_KEEP_TEST - Passphrase for the keep-test network purse account. Note: since this is an internal private testnet, we're storing the password in plaintext.
+//
 // Commands:
 //   hubot eth-account fund <ETH account address> - Transfers 10 ether to the specified address.
 //   hubot eth-account create - Creates a new account on the Keep ethereum testnet and returns a keyfile JSON (including private key! This is not for use in production!). This command funds the new account as well.
@@ -27,8 +30,10 @@ const ethNetworkId = "1101"
 const purse = "0x0f0977c4161a371b5e5ee6a8f43eb798cd1ae1db"
 
 // These are throw away accounts on an internal private testnet, hence the plaintext.
-const purseAccountPassword =
-  "doughnut_armenian_parallel_firework_backbite_employer_singlet"
+const purseAccountPassword = {
+  keepTest: process.env.ETH_PURSE_ACCOUNT_PASSWORD_KEEP_TEST,
+}
+
 const etherToTransfer = "10"
 
 // We override transactionConfirmationBlocks and transactionBlockTimeout because they're
@@ -95,7 +100,7 @@ module.exports = function(robot) {
 
     msg.send(`Unlocking purse account: ${purse}`)
     web3.eth.personal
-      .unlockAccount(purse, purseAccountPassword, 150000)
+      .unlockAccount(purse, purseAccountPassword.keepTest, 150000)
       .then(receipt => {
         msg.send(
           `Purse account unlocked! Funding account ${account} with ${etherToTransfer} ETH.  Don't panic, this may take several seconds.`,
@@ -133,7 +138,10 @@ module.exports = function(robot) {
       msg.send(`Creating account on the keep test network.`)
       let newAccount = web3.eth.accounts.create()
       let keyfileJSON = JSON.stringify(
-        web3.eth.accounts.encrypt(newAccount.privateKey, purseAccountPassword),
+        web3.eth.accounts.encrypt(
+          newAccount.privateKey,
+          purseAccountPassword.keepTest,
+        ),
       )
 
       let content = Buffer.from(keyfileJSON, "binary").toString("base64")

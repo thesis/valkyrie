@@ -79,6 +79,11 @@ spec:
                   key: zoom_api_secret
             - name: ZOOM_EXPECTED_MEETING_DURATION
               value: "60"
+            - name: ETH_PURSE_ACCOUNT_PASSWORD_KEEP_TEST
+              valueFrom:
+                secretKeyRef:
+                  name: heimdall-hubot
+                  key: eth_purse_account_password_keep_test
           ports:
             - containerPort: 8080
           resources:
