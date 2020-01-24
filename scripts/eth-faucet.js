@@ -63,7 +63,7 @@ function postMessageCallback(robot, msg, accountAddress) {
       )
       robot.logger.error(`POST returned: ${require("util").inspect(err)}`)
     } else if (res) {
-      let postReplyMessage = `Download the above \`keyfile.json\` to send with the bundle for account: ${accountAddress}.`
+      let postReplyMessage = `Download the above \`keyfile.json\` for account: ${accountAddress}.`
       robot.send(messageEnvelope, postReplyMessage)
       let messageToRobot = new TextMessage(
         msg.message.user,
