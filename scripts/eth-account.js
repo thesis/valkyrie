@@ -54,7 +54,7 @@ const web3 = new Web3(
 )
 const { TextMessage } = require("hubot")
 
-function postMessageCallback(robot, msg, accountAddress) {
+function postMessageCallback(robot, msg, accountAddress, filename) {
   return function(err, res, body) {
     const messageEnvelope = {
       user: msg.message.user,
@@ -68,7 +68,7 @@ function postMessageCallback(robot, msg, accountAddress) {
       )
       robot.logger.error(`POST returned: ${require("util").inspect(err)}`)
     } else if (res) {
-      let postReplyMessage = `Download the above \`keyfile.json\` for account: ${accountAddress}.`
+      let postReplyMessage = `Download the above keyfile: \`${filename}\` for account: ${accountAddress}.`
       robot.send(messageEnvelope, postReplyMessage)
       let messageToRobot = new TextMessage(
         msg.message.user,
@@ -145,6 +145,7 @@ module.exports = function(robot) {
       )
 
       let content = Buffer.from(keyfileJSON, "binary").toString("base64")
+      let filename = `${newAccount.address.slice(0, 7)}-keyfile.json`
       let postParams = {
         event: "file",
         thread_id: msg.message.metadata.thread_id,
@@ -152,7 +153,7 @@ module.exports = function(robot) {
         content: {
           data: content,
           content_type: "application/json",
-          file_name: "keyfile.json",
+          file_name: filename,
         },
       }
       let extraHeader = { "X-flowdock-wait-for-message": true }
@@ -160,7 +161,7 @@ module.exports = function(robot) {
         "/messages",
         postParams,
         extraHeader,
-        postMessageCallback(robot, msg, newAccount.address),
+        postMessageCallback(robot, msg, newAccount.address, filename),
       )
     } catch (error) {
       robot.logger.error(`Error creating account: ${error.message}`)
