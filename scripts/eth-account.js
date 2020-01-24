@@ -133,7 +133,6 @@ module.exports = function(robot) {
   })
 
   robot.respond(/eth-account create/i, function(msg) {
-    let commandOption = msg.match[1]
     try {
       msg.send(`Creating account on the keep test network.`)
       let newAccount = web3.eth.accounts.create()
