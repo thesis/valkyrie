@@ -67,7 +67,7 @@ function postMessageCallback(robot, msg, accountAddress) {
       robot.send(messageEnvelope, postReplyMessage)
       let messageToRobot = new TextMessage(
         msg.message.user,
-        `${robot.alias}eth-faucet fund ${accountAddress}`,
+        `${robot.alias}eth-account fund ${accountAddress}`,
       )
       messageToRobot.metadata = msg.message.metadata
       robot.adapter.receive(messageToRobot)
