@@ -137,7 +137,7 @@ module.exports = function(robot) {
           } else if (allFailed && failures[0].status == 422) {
             res.send(
               `User ${gitHubUsername} isn't in ${org} and there ` +
-                `are no available seats; please add one at` +
+                `are no available seats; please add one at ` +
                 `https://github.com/organizations/${org}/settings/billing/seats .`,
             )
           } else if (allFailed) {
