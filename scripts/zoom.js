@@ -10,7 +10,10 @@
 // Commands:
 //   hubot zoom - Responds with an available meeting from the registered accounts, follows up with a prompt to post meeting notes
 
-const { withConfigOrReportIssues } = require("../lib/config")
+const {
+  withConfigOrReportIssues,
+  issueReporterForRobot,
+} = require("../lib/config")
 const zoom = require("../lib/zoom"),
   util = require("util")
 

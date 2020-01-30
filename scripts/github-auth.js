@@ -16,7 +16,8 @@ let passport = require("passport"),
   UUIDV4 = require("uuid/v4"),
   cookieParser = require("cookie-parser"),
   GitHubStrategy = require("passport-github2").Strategy,
-  withConfigOrReportIssues = require("../lib/config").withConfigOrReportIssues
+  withConfigOrReportIssues = require("../lib/config").withConfigOrReportIssues,
+  issueReporterForRobot = require("../lib/config").issueReporterForRobot
 
 let HOST = process.env["HUBOT_HOST"],
   SECOND = 1000,
