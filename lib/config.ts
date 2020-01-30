@@ -111,4 +111,5 @@ module.exports = {
   withConfigOrReportIssues,
   fetchRoomInfoOrReportIssue,
   fetchConfigOrReportIssue,
+  issueReporterForRobot,
 }
