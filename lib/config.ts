@@ -60,8 +60,9 @@ export function fetchRoomInfoOrReportIssue(
 }
 
 /**
- * Given a robot and a config key, checks whether the config value is set, and
- * returns it if so.
+ * Given a config key and an issueReporter:
+ *
+ * checks whether the config value is set, and returns it if so.
  *
  * If the config value is not set:
  * - if the robot is using the shell adapter, logs and returns an empty string.
