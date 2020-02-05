@@ -53,7 +53,7 @@ module.exports = function(robot) {
   }
 
   robot.respond(
-    /schedule (?:new|add)(?: (.*))? "(.*?)" ((?:.|\s)*)$/i,
+    /schedule (?:new|add)(?: )([^"]*(?="))"(.*?)" ((?:.|\s)*)$/i,
     function(msg) {
       let targetRoom = msg.match[1] // optional name of room specified in msg
       let targetRoomId = null
@@ -63,7 +63,7 @@ module.exports = function(robot) {
       let metadata = msg.message.metadata
 
       if (!isBlank(targetRoom)) {
-        targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
+        targetRoomId = getRoomIdFromName(robot.adapter, targetRoom.trim())
 
         if (isRestrictedRoom(targetRoomId, robot, msg)) {
           return msg.send(
