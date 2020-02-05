@@ -25,24 +25,24 @@ const dadJokeUrl = "https://icanhazdadjoke.com",
 const { TextMessage } = require("hubot")
 
 module.exports = robot => {
-  robot.hear(
-    /\bdad\b/i,
-    {
-      id: "dad-jokes",
-    },
-    res => {
-      new Promise((resolve, reject) =>
-        robot
-          .http(dadJokeUrl)
-          .headers(requestHeaders)
-          .get()((err, response, body) => (err ? reject(err) : resolve(body))),
-      )
-        .then(body => JSON.parse(body))
-        .then(json => decode(json.joke))
-        .then(joke => res.send("Dad jokes? I got dad jokes! ", joke))
-        .catch(err => res.send("Looks like Dad borked the internet: ", err))
-    },
-  )
+  // robot.hear(
+  //   /\bdad\b/i,
+  //   {
+  //     id: "dad-jokes",
+  //   },
+  //   res => {
+  //     new Promise((resolve, reject) =>
+  //       robot
+  //         .http(dadJokeUrl)
+  //         .headers(requestHeaders)
+  //         .get()((err, response, body) => (err ? reject(err) : resolve(body))),
+  //     )
+  //       .then(body => JSON.parse(body))
+  //       .then(json => decode(json.joke))
+  //       .then(joke => res.send("Dad jokes? I got dad jokes! ", joke))
+  //       .catch(err => res.send("Looks like Dad borked the internet: ", err))
+  //   },
+  // )
   robot.respond(/shrug(?!\W)/, res => {
     let messageToRobot = new TextMessage(res.message.user, `shrug.gif`)
     messageToRobot.metadata = res.message.metadata
