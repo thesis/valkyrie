@@ -10,7 +10,10 @@
 // Commands:
 //   hubot zoom - Responds with an available meeting from the registered accounts, follows up with a prompt to post meeting notes
 
-const { fetchConfigOrReportIssue } = require("../lib/config")
+const {
+  withConfigOrReportIssues,
+  issueReporterForRobot,
+} = require("../lib/config")
 const zoom = require("../lib/zoom"),
   util = require("util")
 
@@ -109,81 +112,80 @@ function watchMeeting(meeting) {
 }
 
 module.exports = function(robot) {
-  zoom
-    .getSession(
-      process.env["ZOOM_API_KEY"],
-      process.env["ZOOM_API_SECRET"],
-      MEETING_DURATION_TIMEOUT_DELAY,
-    )
-    .then(session => (ZOOM_SESSION = session))
-    .catch(err => {
-      robot.logger.error("Failed to set up Zoom session:", util.inspect(err))
-    })
-
-  robot.respond(/zoom/, res => {
-    if (!ZOOM_SESSION) {
-      res.send("Zoom session failed to set up properly!")
-      return
-    }
-    ZOOM_SESSION.nextAvailableMeeting()
-      .then(([meeting, zoomUserEmail, zoomUserType]) => {
-        robot.logger.info(
-          `Created meeting: ${meeting.id}: using type ${zoomUserType} account for ${zoomUserEmail}`,
-        )
-        let replyMessage = `All set; open in [the app](${meeting.app_url}) or [your browser](${meeting.join_url})!`
-        if (zoomUserType == 1) {
-          replyMessage +=
-            "\n\nNote: this meeting has a limited duration of 40 minutes. All accounts with unlimited meetings are currently occupied. If you need a longer meeting, please try again later, or request a new meeting when this one ends."
-        }
-        res.send(replyMessage)
-        return meeting
-      })
+  withConfigOrReportIssues(
+    issueReporterForRobot(robot),
+    "ZOOM_API_KEY",
+    "ZOOM_API_SECRET",
+  )((zoomApiKey, zoomApiSecret) => {
+    zoom
+      .getSession(zoomApiKey, zoomApiSecret, MEETING_DURATION_TIMEOUT_DELAY)
+      .then(session => (ZOOM_SESSION = session))
       .catch(err => {
-        robot.logger.error(
-          "Failed to fetch next available meeting:",
-          util.inspect(err),
-        )
-        res.send("Uh-oh, there was an issue finding an available meeting :(")
+        robot.logger.error("Failed to set up Zoom session:", util.inspect(err))
       })
-      .then(meeting => {
-        robot.logger.info(`Start watching meeting: ${meeting.id}`)
-        return watchMeeting(meeting)
-          .then(finalMeetingStatus => {
-            if (!finalMeetingStatus) {
-              // if finalMeetingStatus is null, the meeting exceeded the timeout.
-              // We assume the meeting still happened, so we still want to reply
+
+    robot.respond(/zoom/, res => {
+      if (!ZOOM_SESSION) {
+        res.send("Zoom session failed to set up properly!")
+        return
+      }
+      ZOOM_SESSION.nextAvailableMeeting()
+        .then(([meeting, zoomUserEmail]) => {
+          robot.logger.info(
+            `Created meeting: ${meeting.id}: using account for ${zoomUserEmail}`,
+          )
+          res.send(
+            `All set; open in [the app](${meeting.app_url}) or [your browser](${meeting.join_url})!`,
+          )
+          return meeting
+        })
+        .catch(err => {
+          robot.logger.error(
+            "Failed to fetch next available meeting:",
+            util.inspect(err),
+          )
+          res.send("Uh-oh, there was an issue finding an available meeting :(")
+        })
+        .then(meeting => {
+          robot.logger.info(`Start watching meeting: ${meeting.id}`)
+          return watchMeeting(meeting)
+            .then(finalMeetingStatus => {
+              if (!finalMeetingStatus) {
+                // if finalMeetingStatus is null, the meeting exceeded the timeout.
+                // We assume the meeting still happened, so we still want to reply
+                res.send(
+                  `@${res.message.user.name} Don't forget to post meeting notes when your call ends!`,
+                )
+                robot.logger.info(
+                  `Stopped watching, meeting still going: ${meeting.id}`,
+                )
+              } else if (finalMeetingStatus === "never started") {
+                // log, send flowdock note but no `@` mention
+                robot.logger.info(
+                  `This meeting looks like it never started: ${meeting.id}`,
+                )
+                res.send(
+                  `Looks like you didn't need this meeting, after all. If do you still need a zoom, please start a new one :)`,
+                )
+              } else {
+                // otherwise, send flowdock prompt
+                res.send(`@${res.message.user.name} Please post call notes!`)
+                robot.logger.info(
+                  `Stopped watching, meeting ended: ${meeting.id}`,
+                )
+              }
+            })
+            .catch(err => {
+              robot.logger.error(
+                `Failed to fetch meeting details for ${meeting.id}. ERR:`,
+                util.inspect(err),
+              )
+              // We assume the meeting still happened, so reply (but without `@`)
               res.send(
-                `@${res.message.user.name} Don't forget to post meeting notes when your call ends!`,
+                `Something went wrong watching the meeting; don't forget to post meeting notes when your call ends!`,
               )
-              robot.logger.info(
-                `Stopped watching, meeting still going: ${meeting.id}`,
-              )
-            } else if (finalMeetingStatus === "never started") {
-              // log, send flowdock note but no `@` mention
-              robot.logger.info(
-                `This meeting looks like it never started: ${meeting.id}`,
-              )
-              res.send(
-                `Looks like you didn't need this meeting, after all. If do you still need a zoom, please start a new one :)`,
-              )
-            } else {
-              // otherwise, send flowdock prompt
-              res.send(`@${res.message.user.name} Please post call notes!`)
-              robot.logger.info(
-                `Stopped watching, meeting ended: ${meeting.id}`,
-              )
-            }
-          })
-          .catch(err => {
-            robot.logger.error(
-              `Failed to fetch meeting details for ${meeting.id}. ERR:`,
-              util.inspect(err),
-            )
-            // We assume the meeting still happened, so reply (but without `@`)
-            res.send(
-              `Something went wrong watching the meeting; don't forget to post meeting notes when your call ends!`,
-            )
-          })
-      })
+            })
+        })
+    })
   })
 }
