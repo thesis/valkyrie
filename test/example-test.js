@@ -10,12 +10,12 @@ const chat = new HubotChatTesting(
 const expect = require("chai").expect
 
 describe("Testing example scripts", function() {
-  chat
-    .when("user mentions a badger")
-    .user("alice")
-    .messagesRoom("did someone call for a badger?")
-    .bot.messagesRoom("Badgers? BADGERS? WE DON'T NEED NO STINKIN BADGERS")
-    .expect("doesn't need badgers")
+  // chat
+  //   .when("user mentions a badger")
+  //   .user("alice")
+  //   .messagesRoom("did someone call for a badger?")
+  //   .bot.messagesRoom("Badgers? BADGERS? WE DON'T NEED NO STINKIN BADGERS")
+  //   .expect("doesn't need badgers")
 
   chat
     .when("user asks about pod bay doors")
