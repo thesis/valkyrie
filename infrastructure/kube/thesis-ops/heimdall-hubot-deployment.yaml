@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: hubot
-          # image: gcr.io/thesis-ops-2748/heimdall:USE_CIRCLE_CI_BUILDS
+          # image: gcr.io/thesis-ops-2748/heimdall:USE_CIRCLE_CI_BUILDS # TEMP edit for testing gh action
           env:
             - name: HUBOT_CIRCLECI_TOKEN
               valueFrom:
