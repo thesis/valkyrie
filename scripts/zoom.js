@@ -135,7 +135,7 @@ module.exports = function(robot) {
             `Created meeting: ${meeting.id}: using account for ${zoomUserEmail}`,
           )
           res.send(
-            `All set; open in [the app](${meeting.app_url}) or [your browser](${meeting.join_url})!`,
+            `All set; open in [your browser](${meeting.join_url}) or [the app](${meeting.app_url})!`,
           )
           return meeting
         })
