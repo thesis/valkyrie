@@ -39,7 +39,7 @@ module.exports = function(robot) {
         // Bot is allowed access to this command
         next()
       } else {
-        // Restricted command, and bot isn't in whitelist
+        // Restricted command, and bot isn't in allowlist
         context.response.reply(`Sorry, only *some* bots are allowed to do that`)
         done()
       }
@@ -64,7 +64,7 @@ module.exports = function(robot) {
               // we're in the shell adapter: allow the command for local testing
               next()
             } else {
-              // Restricted command, and flow isn't in whitelist
+              // Restricted command, and flow isn't in allowlist
               context.response.reply(
                 `I'm sorry, but that command doesn't work here.`,
               )
