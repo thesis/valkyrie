@@ -5,8 +5,11 @@
 //   https://hubot.github.com/docs/patterns/#restricting-access-to-commands
 //   Modified to be room-based rather than user-based, and converted to js
 //
-// Configuration:
-//
+// Configuration: Listener middleware executes in the order in which it loads.
+//   If you have other listener middleware that must run in a specific order
+//   relative to this one, please rename your files accordingly to force them
+//   to load in the correct order!
+//   https://hubot.github.com/docs/scripting/#execution-process-and-api
 //
 // Commands:
 //   None
