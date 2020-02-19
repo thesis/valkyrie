@@ -19,25 +19,52 @@
 const { TextMessage } = require("hubot")
 
 module.exports = function(robot) {
-  robot.listenerMiddleware(function(context, next, done) {
-    robot.logger.debug(
-      `\n >>>>>>>>>>>>> This is the HELP ALIAS listenerMiddleware`,
-    )
-    if (
-      context.response.match[1] &&
-      context.response.match[1].trim().toLowerCase() === "help"
-    ) {
-      robot.logger.debug(`>>>> REDIRECTING TO HELP`)
-      // Recreate the message with the command order flipped, send to robot.
-      let flippedHelpRequest = `help ${context.response.match[0]}`
-      let messageToRobot = new TextMessage(
-        context.response.envelope.user,
-        flippedHelpRequest,
-      )
-      // TODO: Add metadata to message, if present.
-      robot.adapter.receive(messageToRobot)
-      // TODO: maybe make sure no one is calling "help help" because you know SOMEONE will try
-      done()
+  robot.receiveMiddleware(function(context, next, done) {
+    let robotRespondPatternInText =
+      context.response.message.text &&
+      context.response.message.text.match(robot.respondPattern(""))
+    if (robotRespondPatternInText) {
+      // Strip robot pattern from message, clean up for next steps.
+      let messageText = context.response.message.text
+        .replace(robotRespondPatternInText[0], "")
+        .trim()
+        .toLowerCase()
+
+      // Make sure the message contains "help" - but eliminate direct calls to help.
+      if (messageText.indexOf("help") <= 0) {
+        return next()
+      }
+
+      // Expect "help" to be the second or third word in the message.
+      // We want to avoid catching things like reminders with the word "help"
+      // in the reminder message.
+      if (messageText.split(" ").indexOf("help") <= 2) {
+        let possibleCommand = context.response.message.text
+          .replace(robotRespondPatternInText, "")
+          .trim()
+          .split(" ")[0]
+        let flippedHelpRequest = `help ${possibleCommand}`
+
+        // Do not DOS the robot
+        // TODO: Nix this? The indexOf checks should eliminate this possibility.
+        // Is there any case where this could still happen?
+        if (flippedHelpRequest === "help help") {
+          return done()
+        }
+
+        let messageToRobot = new TextMessage(
+          context.response.envelope.user,
+          `${robot.alias}${flippedHelpRequest}`,
+        )
+        // Add metadata to message, if present, so reply is properly threaded.
+        if (context.response.message && context.response.message.metadata) {
+          messageToRobot.metadata = context.response.message.metadata
+        }
+        robot.adapter.receive(messageToRobot)
+        return next()
+      } else {
+        next()
+      }
     } else {
       next()
     }
