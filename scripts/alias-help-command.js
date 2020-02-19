@@ -1,11 +1,12 @@
 // Description:
 //
-// Recognizes any command passed by the listener, immediately followed by
-//  "help", and re-sends the message to the robot in the correct syntax to
-//  trigger help.
+// Fires prior to listeners, and checks the message for a robot invocation
+//  that contains the word "help" as the 2nd or 3rd word. It then re-sends an
+//  abbreviated and flipped copy of the message to the robot, in the correct
+//   syntax trigger help if a valid command is present.
 //
-// Configuration: Listener middleware executes in the order in which it loads.
-//   If you have other listener middleware that must run in a specific order
+// Configuration: All middleware executes in the order in which it loads.
+//   If you have other middleware that must run in a specific order
 //   relative to this one, please rename your files accordingly to force them
 //   to load in the correct order!
 //   https://hubot.github.com/docs/scripting/#execution-process-and-api
