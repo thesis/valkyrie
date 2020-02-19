@@ -1,6 +1,5 @@
 // Description:
-//   A collection of utilities to get and set information in hubot's brain,
-//   related to flowdock usage.
+//   A collection of utilities to get information related to flowdock usage.
 //
 // Configuration:
 //   HUBOT_FLOWDOCK_API_TOKEN

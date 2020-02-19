@@ -1,6 +1,5 @@
 // Description:
-//   Allows a chat user registered via github-auth to perform certain actions:
-//    - Adding a user to the organization.
+//   Allows a chat user registered via github-auth to perform certain actions.
 //
 // Dependencies:
 //   github-auth

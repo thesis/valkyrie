@@ -1,6 +1,5 @@
 // Description:
-//  Create an account, and/ or get some cold hard fake ETH from the keep-test
-//  private ETH chain.
+//  Create an account, and/ or get some cold hard fake ETH from the keep-test private ETH chain.
 //
 //  Most things are hardcoded with purpose.
 //

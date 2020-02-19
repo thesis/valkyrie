@@ -5,7 +5,7 @@
 //   RELEASE_NOTIFICATION_ROOM - Id of the room for release notifications.
 //
 // Commands:
-//   hubot current build
+//   hubot current build - Responds with a link to the associated build in CircleCI.
 //
 // Author:
 //   shadowfiend
