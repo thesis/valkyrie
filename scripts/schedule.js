@@ -1,5 +1,5 @@
 // Description:
-//   Schedule a message in both cron-style and datetime-based format pattern
+//   Schedule a recurring message using crontab syntax.
 //   Modified for flowdock, and converted to JS
 //
 //
