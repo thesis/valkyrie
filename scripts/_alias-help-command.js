@@ -21,9 +21,9 @@ const { TextMessage } = require("hubot")
 
 module.exports = function(robot) {
   robot.receiveMiddleware(function(context, next, done) {
-    let robotRespondPatternInText =
-      context.response.message.text &&
-      context.response.message.text.match(robot.respondPattern(""))
+    let robotRespondPatternInText = robot
+      .respondPattern("")
+      .exec(context.response.message.text)
     if (robotRespondPatternInText) {
       // Strip robot pattern from message, clean up for next steps.
       let messageWords = context.response.message.text
