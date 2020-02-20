@@ -45,14 +45,6 @@ module.exports = function(robot) {
           .trim()
           .split(" ")[0]
         let flippedHelpRequest = `help ${possibleCommand}`
-
-        // Do not DOS the robot
-        // TODO: Nix this? The indexOf checks should eliminate this possibility.
-        // Is there any case where this could still happen?
-        if (flippedHelpRequest === "help help") {
-          return done()
-        }
-
         let messageToRobot = new TextMessage(
           context.response.envelope.user,
           `${robot.alias}${flippedHelpRequest}`,
