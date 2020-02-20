@@ -52,11 +52,8 @@ module.exports = function(robot) {
         }
         robot.adapter.receive(messageToRobot)
         return done()
-      } else {
-        next()
       }
-    } else {
-      next()
     }
+    next()
   })
 }
