@@ -51,7 +51,7 @@ module.exports = function(robot) {
           messageToRobot.metadata = context.response.message.metadata
         }
         robot.adapter.receive(messageToRobot)
-        return next()
+        return done()
       } else {
         next()
       }
