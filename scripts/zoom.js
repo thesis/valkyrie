@@ -1,6 +1,5 @@
 // Description:
-//   Allows a chat user to request a random zoom meeting from an available
-//   account.
+//   Allows a chat user to request a random zoom meeting from an available account.
 //
 // Configuration:
 //   ZOOM_API_SECRET - API secret for Zoom API, from https://developer.zoom.us/me/
