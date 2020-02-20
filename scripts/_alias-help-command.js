@@ -26,12 +26,12 @@ module.exports = function(robot) {
       context.response.message.text.match(robot.respondPattern(""))
     if (robotRespondPatternInText) {
       // Strip robot pattern from message, clean up for next steps.
-      let messageText = context.response.message.text
+      let messageWords = context.response.message.text
         .replace(robotRespondPatternInText[0], "")
         .trim()
         .toLowerCase()
+        .split(" ")
 
-      let messageWords = messageText.split(" ")
       // Make sure the message contains "help" - but eliminate direct calls to help.
       if (messageWords.indexOf("help") <= 0) {
         return next()
