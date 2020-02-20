@@ -31,19 +31,16 @@ module.exports = function(robot) {
         .trim()
         .toLowerCase()
 
+      let messageWords = messageText.split(" ")
       // Make sure the message contains "help" - but eliminate direct calls to help.
-      if (messageText.indexOf("help") <= 0) {
+      if (messageWords.indexOf("help") <= 0) {
         return next()
       }
-
       // Expect "help" to be the second or third word in the message.
       // We want to avoid catching things like reminders with the word "help"
       // in the reminder message.
-      if (messageText.split(" ").indexOf("help") <= 2) {
-        let possibleCommand = context.response.message.text
-          .replace(robotRespondPatternInText, "")
-          .trim()
-          .split(" ")[0]
+      if (messageWords.indexOf("help") <= 2) {
+        let possibleCommand = messageWords[0]
         let flippedHelpRequest = `help ${possibleCommand}`
         let messageToRobot = new TextMessage(
           context.response.envelope.user,
