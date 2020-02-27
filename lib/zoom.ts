@@ -55,7 +55,9 @@ async function getMeetingDetails(sessionToken: string, meetingId: string) {
     )
     return response.data
   } catch (err) {
-    throw `Something went wrong getting meeting details: ${util.inspect(err)}.`
+    throw `Something went wrong getting meeting details: ${util.inspect(err, {
+      depth: 0,
+    })}.`
   }
 }
 

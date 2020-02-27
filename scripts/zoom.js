@@ -67,6 +67,7 @@ function watchMeeting(meeting) {
           reject(
             `Something went wrong setting up START watch interval: ${util.inspect(
               err,
+              { depth: 0 },
             )}`,
           )
           return
@@ -96,6 +97,7 @@ function watchMeeting(meeting) {
             reject(
               `Something went wrong setting up END watch interval: ${util.inspect(
                 err,
+                { depth: 0 },
               )}`,
             )
             return
@@ -120,7 +122,9 @@ module.exports = function(robot) {
       .getSession(zoomApiKey, zoomApiSecret, MEETING_DURATION_TIMEOUT_DELAY)
       .then(session => (ZOOM_SESSION = session))
       .catch(err => {
-        robot.logger.error("Failed to set up Zoom session:", util.inspect(err))
+        robot.logger.error(
+          `Failed to set up Zoom session: ${util.inspect(err, { depth: 0 })}`,
+        )
       })
 
     robot.respond(/zoom/, res => {
@@ -140,8 +144,9 @@ module.exports = function(robot) {
         })
         .catch(err => {
           robot.logger.error(
-            "Failed to fetch next available meeting:",
-            util.inspect(err),
+            `Failed to fetch next available meeting: ${util.inspect(err, {
+              depth: 0,
+            })}`,
           )
           res.send("Uh-oh, there was an issue finding an available meeting :(")
         })
@@ -176,8 +181,9 @@ module.exports = function(robot) {
             })
             .catch(err => {
               robot.logger.error(
-                `Failed to fetch meeting details for ${meeting.id}. ERR:`,
-                util.inspect(err),
+                `Failed to fetch meeting details for ${
+                  meeting.id
+                }. ERR: ${util.inspect(err, { depth: 0 })}`,
               )
               // We assume the meeting still happened, so reply (but without `@`)
               res.send(

@@ -133,6 +133,7 @@ module.exports = function(robot) {
         throw new Error(
           `Did not get thread id from post message response: ${util.inspect(
             postResponse,
+            { depth: 0 },
           )}`,
         )
       }
@@ -147,7 +148,9 @@ module.exports = function(robot) {
       )
     } catch (err) {
       robot.logger.error(
-        `Failed to send user suggestion to target flow: ${util.inspect(err)}`,
+        `Failed to send user suggestion to target flow: ${util.inspect(err, {
+          depth: 0,
+        })}`,
       )
       res.send(
         `Something went wrong trying to post your suggestion. Please ask your friendly human robot-tender to look into it.`,
