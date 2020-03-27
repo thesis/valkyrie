@@ -4,10 +4,10 @@
 //  Most things are hardcoded with purpose.
 //
 // Configuration:
-//   ETH_PURSE_ACCOUNT_PASSWORD_KEEP_TEST - Passphrase for the keep-test network purse account. Note: since this is an internal private testnet, we're storing the password in plaintext.
+//   CONTRACT_OWNER_ETH_ACCOUNT_PRIVATE_KEY - Private key for the keep-test owner account on Ropsten.
 //
 // Commands:
-//   hubot eth-account fund <ETH account address> - Transfers 10 ether to the specified address.
+//   hubot eth-account fund <ETH account address> - Transfers 5 ether to the specified address.
 //   hubot eth-account create - Creates a new account on the Keep ethereum testnet and returns a keyfile JSON (including private key! This is not for use in production!). This command funds the new account as well.
 //
 // Author:
@@ -20,24 +20,23 @@
 
 const Web3 = require("web3")
 
+const HDWalletProvider = require("@truffle/hdwallet-provider")
+
 // ETH host info
-const ethHost = "http://eth-tx.test.keep.network"
-const ethRpcPort = "8545"
-const ethNetworkId = "1101"
+const ethUrl = "https://ropsten.infura.io/v3/59fb36a36fa4474b890c13dd30038be5"
+const ethNetworkId = "3"
 
-// ETH account info
-const purse = "0x0f0977c4161a371b5e5ee6a8f43eb798cd1ae1db"
+// Contract owner info
+const contractOwnerAddress = "0x923C5Dbf353e99394A21Aa7B67F3327Ca111C67D"
+const contractOwnerProvider = new HDWalletProvider(
+  process.env.CONTRACT_OWNER_ETH_ACCOUNT_PRIVATE_KEY,
+  ethUrl,
+)
+const authorizer = contractOwnerAddress
 
-// These are throw away accounts on an internal private testnet, hence the plaintext.
-const purseAccountPassword = {
-  keepTest: process.env.ETH_PURSE_ACCOUNT_PASSWORD_KEEP_TEST,
-}
-
-const etherToTransfer = "10"
-
-// We override transactionConfirmationBlocks and transactionBlockTimeout because they're
-// 25 and 50 blocks respectively at default.  The result of this on small private testnets
-// is long wait times for scripts to execute.
+// We override transactionConfirmationBlocks and transactionBlockTimeout because
+// they're 25 and 50 blocks respectively at default.  The result of this on
+// small private testnets is long wait times for scripts to execute.
 const web3_options = {
   defaultBlock: "latest",
   defaultGas: 4712388,
@@ -46,11 +45,12 @@ const web3_options = {
   transactionPollingTimeout: 480,
 }
 
-const web3 = new Web3(
-  new Web3.providers.HttpProvider(`${ethHost}:${ethRpcPort}`),
-  null,
-  web3_options,
-)
+// We use the contractOwner for all web3 calls except those where the operator
+// address is required.
+const web3 = new Web3(contractOwnerProvider, null, web3_options)
+
+const etherToTransfer = "10"
+
 const { TextMessage } = require("hubot")
 
 function postMessageCallback(robot, msg, accountAddress, filename) {
