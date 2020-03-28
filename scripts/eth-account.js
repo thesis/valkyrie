@@ -49,7 +49,7 @@ const web3_options = {
 // address is required.
 const web3 = new Web3(contractOwnerProvider, null, web3_options)
 
-const etherToTransfer = "10"
+const etherToTransfer = "5"
 
 const { TextMessage } = require("hubot")
 
