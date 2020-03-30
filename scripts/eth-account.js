@@ -1,22 +1,17 @@
 // Description:
-//  Create an account, and/ or get some cold hard fake ETH from the keep-test private ETH chain.
-//
-//  Most things are hardcoded with purpose.
+//  Create an account, and/ or get some cold hard fake ETH from the Ropsten ETH testnet.
 //
 // Configuration:
 //   CONTRACT_OWNER_ETH_ACCOUNT_PRIVATE_KEY - Private key for the keep-test owner account on Ropsten.
 //
 // Commands:
 //   hubot eth-account fund <ETH account address> - Transfers 5 ether to the specified address.
-//   hubot eth-account create - Creates a new account on the Keep ethereum testnet and returns a keyfile JSON (including private key! This is not for use in production!). This command funds the new account as well.
+//   hubot eth-account create <your-secret-passphrase> - Creates a new account on the Ropsten ETH testnet and returns a keyfile JSON (including private key! This is not for use in production!). This command funds the new account as well.
 //
 // Author:
 //   sthompson22
 //   kb0rg
 //
-
-// WARNING: THIS ONLY WORKS FOR KEEP-TEST AT THE MOMENT.  In the future this can
-// be extended to pass an environment to the commands provided here.
 
 const Web3 = require("web3")
 
