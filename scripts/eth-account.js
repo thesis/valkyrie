@@ -131,9 +131,12 @@ module.exports = function(robot) {
       let keyfileJSON = JSON.stringify(
         web3.eth.accounts.encrypt(newAccount.privateKey, passphrase),
       )
-      if (robot.adapterName.toLowerCase() != "reload-flowdock") {
+      if (
+        !msg.envelope.room ||
+        robot.adapterName.toLowerCase() != "reload-flowdock"
+      ) {
         msg.send(
-          `Account ${newAccount.address} has been created!\nThe info below is your keyfile. Save it as a json file:\n\n ${keyfileJSON}`,
+          `Account ${newAccount.address} has been created!\nThe info below is your keyfile. Save it as a json file:\n\n \`\`\`${keyfileJSON}\`\`\``,
         )
         let messageToRobot = new TextMessage(
           msg.message.user,
@@ -145,32 +148,18 @@ module.exports = function(robot) {
       let content = Buffer.from(keyfileJSON, "binary").toString("base64")
       let filename = `${newAccount.address.slice(0, 7)}-keyfile.json`
       let extraHeader = { "X-flowdock-wait-for-message": true }
-      let endpoint = "/messages"
-      let postParams = {}
-      if (!msg.envelope.room) {
-        endpoint = `/private/${msg.message.user.id}/messages`
-        postParams = {
-          event: "file",
-          content: {
-            data: content,
-            content_type: "application/json",
-            file_name: filename,
-          },
-        }
-      } else {
-        postParams = {
-          event: "file",
-          thread_id: msg.message.metadata.thread_id,
-          flow: msg.message.user.room,
-          content: {
-            data: content,
-            content_type: "application/json",
-            file_name: filename,
-          },
-        }
+      let postParams = {
+        event: "file",
+        thread_id: msg.message.metadata.thread_id,
+        flow: msg.message.user.room,
+        content: {
+          data: content,
+          content_type: "application/json",
+          file_name: filename,
+        },
       }
       robot.adapter.bot.post(
-        endpoint,
+        "/messages",
         postParams,
         extraHeader,
         postMessageCallback(robot, msg, newAccount.address, filename),
