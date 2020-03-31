@@ -53,8 +53,8 @@ function postMessageCallback(robot, msg, accountAddress, filename) {
     const messageEnvelope = {
       user: msg.message.user,
       room: msg.message.user.room,
-      metadata: { thread_id: msg.message.metadata.thread_id },
     }
+    messageEnvelope.metadata = msg.message.metadata
     if (err) {
       robot.send(
         messageEnvelope,
@@ -131,8 +131,6 @@ module.exports = function(robot) {
       let keyfileJSON = JSON.stringify(
         web3.eth.accounts.encrypt(newAccount.privateKey, passphrase),
       )
-      let content = Buffer.from(keyfileJSON, "binary").toString("base64")
-      let filename = `${newAccount.address.slice(0, 7)}-keyfile.json`
       if (robot.adapterName.toLowerCase() != "reload-flowdock") {
         msg.send(
           `Account ${newAccount.address} has been created!\nThe info below is your keyfile. Save it as a json file:\n\n ${keyfileJSON}`,
@@ -144,19 +142,35 @@ module.exports = function(robot) {
         messageToRobot.metadata = msg.message.metadata
         return robot.adapter.receive(messageToRobot)
       }
-      let postParams = {
-        event: "file",
-        thread_id: msg.message.metadata.thread_id,
-        flow: msg.message.user.room,
-        content: {
-          data: content,
-          content_type: "application/json",
-          file_name: filename,
-        },
-      }
+      let content = Buffer.from(keyfileJSON, "binary").toString("base64")
+      let filename = `${newAccount.address.slice(0, 7)}-keyfile.json`
       let extraHeader = { "X-flowdock-wait-for-message": true }
+      let endpoint = "/messages"
+      let postParams = {}
+      if (!msg.envelope.room) {
+        endpoint = `/private/${msg.message.user.id}/messages`
+        postParams = {
+          event: "file",
+          content: {
+            data: content,
+            content_type: "application/json",
+            file_name: filename,
+          },
+        }
+      } else {
+        postParams = {
+          event: "file",
+          thread_id: msg.message.metadata.thread_id,
+          flow: msg.message.user.room,
+          content: {
+            data: content,
+            content_type: "application/json",
+            file_name: filename,
+          },
+        }
+      }
       robot.adapter.bot.post(
-        "/messages",
+        endpoint,
         postParams,
         extraHeader,
         postMessageCallback(robot, msg, newAccount.address, filename),
