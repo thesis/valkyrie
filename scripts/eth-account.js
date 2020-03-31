@@ -92,36 +92,22 @@ module.exports = function(robot) {
       )
     }
 
-    msg.send(`Unlocking purse account: ${purse}`)
-    web3.eth.personal
-      .unlockAccount(purse, purseAccountPassword.keepTest, 150000)
+    web3.eth
+      .sendTransaction({
+        from: contractOwnerAddress, // contract owner:
+        to: account,
+        value: transferAmount,
+      })
       .then(receipt => {
-        msg.send(
-          `Purse account unlocked! Funding account ${account} with ${etherToTransfer} ETH.  Don't panic, this may take several seconds.`,
+        robot.logger.info(
+          `Funded account ${account}, txHash: ${receipt.transactionHash}`,
         )
-        web3.eth
-          .sendTransaction({
-            from: purse,
-            to: account,
-            value: transferAmount,
-          })
-          .then(receipt => {
-            robot.logger.info(
-              `Funded account ${account}, txHash: ${receipt.transactionHash}`,
-            )
-            msg.send(`Account ${account} funded!`)
-          })
-          .catch(error => {
-            robot.logger.error(`ETH account funding error: ${error.message}`)
-            return msg.send(
-              "There was an issue funding the ETH account, ask for an adult!",
-            )
-          })
+        msg.send(`Account ${account} funded!`)
       })
       .catch(error => {
-        robot.logger.error(`ETH account unlock error: ${error.message}`)
+        robot.logger.error(`ETH account funding error: ${error.message}`)
         return msg.send(
-          "There was an issue unlocking the purse account, ask for an adult!",
+          "There was an issue funding the ETH account, ask for an adult!",
         )
       })
   })
