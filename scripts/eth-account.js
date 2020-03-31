@@ -151,7 +151,7 @@ module.exports = function(robot) {
     } catch (error) {
       robot.logger.error(`Error creating account: ${error.message}`)
       return msg.send(
-        "There was an issue creating a new keep-test account, ask for an adult!",
+        "There was an issue creating a new Ropsten account, ask for an adult!",
       )
     }
   })
