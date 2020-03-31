@@ -131,6 +131,17 @@ module.exports = function(robot) {
 
       let content = Buffer.from(keyfileJSON, "binary").toString("base64")
       let filename = `${newAccount.address.slice(0, 7)}-keyfile.json`
+      if (robot.adapterName != "flowdock") {
+        msg.send(
+          `Account ${newAccount.address} has been created!\nThe info below is your keyfile. Save it as a json file:\n\n ${keyfileJSON}`,
+        )
+        let messageToRobot = new TextMessage(
+          msg.message.user,
+          `${robot.alias}eth-account fund ${newAccount.address}`,
+        )
+        messageToRobot.metadata = msg.message.metadata
+        return robot.adapter.receive(messageToRobot)
+      }
       let postParams = {
         event: "file",
         thread_id: msg.message.metadata.thread_id,
