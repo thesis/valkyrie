@@ -113,15 +113,20 @@ module.exports = function(robot) {
       })
   })
 
-  robot.respond(/eth-account create/i, function(msg) {
+  robot.respond(/eth-account create(?: )(\S*)/i, function(msg) {
     try {
-      msg.send(`Creating account on the keep test network.`)
+      let passphrase = msg.match[1]
+      if (!passphrase) {
+        return msg.send(
+          "You must provide a passphrase with this command.\nI recommend using [a bip39 mnemonic phrase](https://en.bitcoinwiki.org/wiki/Mnemonic_phrase).\nPlease try again with a passphrase If you're concerned about the privacy of this account, you may want to call this command in a DM with me.",
+        )
+      }
+      msg.send(
+        `Creating account on the Ropsten test network.\nDon't forget to save your passphrase somewhere secure!`,
+      )
       let newAccount = web3.eth.accounts.create()
       let keyfileJSON = JSON.stringify(
-        web3.eth.accounts.encrypt(
-          newAccount.privateKey,
-          purseAccountPassword.keepTest,
-        ),
+        web3.eth.accounts.encrypt(newAccount.privateKey, passphrase),
       )
 
       let content = Buffer.from(keyfileJSON, "binary").toString("base64")
