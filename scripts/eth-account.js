@@ -113,9 +113,9 @@ module.exports = function(robot) {
       })
   })
 
-  robot.respond(/eth-account create(?: )?(\S*)/i, function(msg) {
+  robot.respond(/eth-account create(?: )?(.*)/i, function(msg) {
     try {
-      let passphrase = msg.match[1]
+      let passphrase = msg.match[1].trim()
       if (!passphrase) {
         return msg.send(
           "You must provide a passphrase with this command.\nI recommend using [a bip39 mnemonic phrase](https://en.bitcoinwiki.org/wiki/Mnemonic_phrase).\nPlease try again with a passphrase If you're concerned about the privacy of this account, you may want to call this command in a DM with me.",
