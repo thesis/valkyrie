@@ -83,7 +83,8 @@ module.exports = function(robot) {
   robot.respond(/eth-account fund (\S+)(?: *)(\d*\.?\d*)?/i, function(msg) {
     let account = msg.match[1]
     let amount = msg.match[2] || ""
-    let transferAmount = web3.utils.toWei(amount || etherToTransfer, "ether")
+    amount = amount || etherToTransfer
+    let transferAmount = web3.utils.toWei(amount, "ether")
 
     if (!/^(0x)?[0-9a-f]{40}$/i.test(account)) {
       // check if it has the basic requirements of an address
@@ -92,7 +93,9 @@ module.exports = function(robot) {
         "Improperly formatted account address, please try a valid one.",
       )
     }
-
+    msg.send(
+      `Funding account ${account} with ${amount} ETH.  Don't panic, this may take several seconds.`,
+    )
     web3.eth
       .sendTransaction({
         from: contractOwnerAddress, // contract owner:
