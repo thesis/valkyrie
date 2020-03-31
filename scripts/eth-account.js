@@ -113,7 +113,7 @@ module.exports = function(robot) {
       })
   })
 
-  robot.respond(/eth-account create(?: )(\S*)/i, function(msg) {
+  robot.respond(/eth-account create(?: )?(\S*)/i, function(msg) {
     try {
       let passphrase = msg.match[1]
       if (!passphrase) {
