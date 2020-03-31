@@ -80,7 +80,7 @@ function postMessageCallback(robot, msg, accountAddress, filename) {
 }
 
 module.exports = function(robot) {
-  robot.respond(/eth-account fund (\S+)(?: *)(\d+\.?\d*)?/i, function(msg) {
+  robot.respond(/eth-account fund (\S+)(?: *)(\d*\.?\d*)?/i, function(msg) {
     let account = msg.match[1]
     let amount = msg.match[2] || ""
     let transferAmount = web3.utils.toWei(amount || etherToTransfer, "ether")
