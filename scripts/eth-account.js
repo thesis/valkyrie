@@ -131,10 +131,9 @@ module.exports = function(robot) {
       let keyfileJSON = JSON.stringify(
         web3.eth.accounts.encrypt(newAccount.privateKey, passphrase),
       )
-
       let content = Buffer.from(keyfileJSON, "binary").toString("base64")
       let filename = `${newAccount.address.slice(0, 7)}-keyfile.json`
-      if (robot.adapterName != "flowdock") {
+      if (robot.adapterName.toLowerCase() != "reload-flowdock") {
         msg.send(
           `Account ${newAccount.address} has been created!\nThe info below is your keyfile. Save it as a json file:\n\n ${keyfileJSON}`,
         )
