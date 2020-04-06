@@ -2,7 +2,9 @@
 //  Create an account, and/ or get some cold hard fake ETH from the Ropsten ETH testnet.
 //
 // Configuration:
-//   CONTRACT_OWNER_ETH_ACCOUNT_PRIVATE_KEY - Private key for the keep-test owner account on Ropsten.
+//   CONTRACT_OWNER_ADDRESS - Address for the keep-test owner account on Ropsten.
+//   CONTRACT_OWNER_ETH_ACCOUNT_PRIVATE_KEY - Private key for the keep-test owner account on Ropsten. This value should NEVER be committed to source control.
+//   ETH_HOST_URL - Url for the specified network (in this case Ropsten).
 //
 // Commands:
 //   hubot eth-account fund <ETH account address> - Transfers 5 ether to the specified address.
@@ -18,13 +20,12 @@ const Web3 = require("web3")
 const HDWalletProvider = require("@truffle/hdwallet-provider")
 
 // ETH host info
-const ethUrl = "https://ropsten.infura.io/v3/59fb36a36fa4474b890c13dd30038be5"
-const ethNetworkId = "3"
+const ethUrl = process.env.ETH_HOST_URL
 
 // Contract owner info
-const contractOwnerAddress = "0x923C5Dbf353e99394A21Aa7B67F3327Ca111C67D"
+const contractOwnerAddress = process.env.CONTRACT_OWNER_ADDRESS
 const contractOwnerProvider = new HDWalletProvider(
-  process.env.CONTRACT_OWNER_ETH_ACCOUNT_PRIVATE_KEY,
+  process.env.CONTRACT_OWNER_ETH_ACCOUNT_PRIVATE_KEY, // This value should NEVER be committed to source control.
   ethUrl,
 )
 const authorizer = contractOwnerAddress
