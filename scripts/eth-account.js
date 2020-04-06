@@ -148,7 +148,6 @@ module.exports = function(robot) {
       }
       let content = Buffer.from(keyfileJSON, "binary").toString("base64")
       let filename = `${newAccount.address.slice(0, 7)}-keyfile.json`
-      let extraHeader = { "X-flowdock-wait-for-message": true }
       let postParams = {
         event: "file",
         thread_id: msg.message.metadata.thread_id,
@@ -162,7 +161,6 @@ module.exports = function(robot) {
       robot.adapter.bot.post(
         "/messages",
         postParams,
-        extraHeader,
         postMessageCallback(robot, msg, newAccount.address, filename),
       )
     } catch (error) {
