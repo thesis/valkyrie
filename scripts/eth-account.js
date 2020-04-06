@@ -5,9 +5,10 @@
 //   CONTRACT_OWNER_ADDRESS - Address for the keep-test owner account on Ropsten.
 //   CONTRACT_OWNER_ETH_ACCOUNT_PRIVATE_KEY - Private key for the keep-test owner account on Ropsten. This value should NEVER be committed to source control.
 //   ETH_HOST_URL - Url for the specified network (in this case Ropsten).
+//   ETH_FAUCET_AMOUNT - Default amount, in ETH, to send when fund is called without optional amount
 //
 // Commands:
-//   hubot eth-account fund <ETH account address> - Transfers 5 ether to the specified address.
+//   hubot eth-account fund <ETH account address> <optional: requested amount in ETH>- Transfers ether to the specified address (default amount, if none provided, is 5).
 //   hubot eth-account create <your-secret-passphrase> - Creates a new account on the Ropsten ETH testnet and returns a keyfile JSON (including private key! This is not for use in production!). This command funds the new account as well.
 //
 // Author:
@@ -24,8 +25,9 @@ const ethUrl = process.env.ETH_HOST_URL
 
 // Contract owner info
 const contractOwnerAddress = process.env.CONTRACT_OWNER_ADDRESS
+// The value for CONTRACT_OWNER_ETH_ACCOUNT_PRIVATE_KEY should NEVER be committed to source control.
 const contractOwnerProvider = new HDWalletProvider(
-  process.env.CONTRACT_OWNER_ETH_ACCOUNT_PRIVATE_KEY, // This value should NEVER be committed to source control.
+  process.env.CONTRACT_OWNER_ETH_ACCOUNT_PRIVATE_KEY,
   ethUrl,
 )
 const authorizer = contractOwnerAddress
@@ -45,7 +47,7 @@ const web3_options = {
 // address is required.
 const web3 = new Web3(contractOwnerProvider, null, web3_options)
 
-const etherToTransfer = "5"
+const etherToTransfer = process.env.ETH_FAUCET_AMOUNT
 
 const { TextMessage } = require("hubot")
 

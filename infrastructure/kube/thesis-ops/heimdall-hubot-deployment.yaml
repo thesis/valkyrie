@@ -88,6 +88,8 @@ spec:
                   key: contract-owner-eth-account-private-key
             - name: ETH_HOST_URL
               value: "https://ropsten.infura.io/v3/59fb36a36fa4474b890c13dd30038be5"
+            - name: ETH_FAUCET_AMOUNT
+              value: "5"
           ports:
             - containerPort: 8080
           resources:
