@@ -2,6 +2,7 @@ import axios from "axios"
 import * as jwt from "jsonwebtoken"
 import * as moment from "moment"
 import * as util from "util"
+import * as crypto from "crypto"
 
 const API_BASE_URL = "https://api.zoom.us/v2",
   APP_BASE_URL = "zoommtg://zoom.us"
@@ -9,7 +10,7 @@ const URLs = {
   meetings: `${API_BASE_URL}/users/{userId}/meetings`,
   meetingDetail: `${API_BASE_URL}/meetings/{meetingId}`,
   users: `${API_BASE_URL}/users`,
-  appJoin: `${APP_BASE_URL}/join?action=join&confno={meetingId}`,
+  appJoin: `${APP_BASE_URL}/join?action=join&confno={meetingId}&pwd={meetingPassword}`,
 }
 
 function tokenFrom(apiKey: string, apiSecret: string) {
@@ -19,6 +20,33 @@ function tokenFrom(apiKey: string, apiSecret: string) {
   }
 
   return jwt.sign(payload, apiSecret)
+}
+
+function shuffleArray(inputArray: array) {
+  for (var i = inputArray.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1))
+    var temp = inputArray[i]
+    inputArray[i] = inputArray[j]
+    inputArray[j] = temp
+  }
+  return inputArray
+}
+
+// Generates a pseudo-random string that meets the Zoom requirements for a
+// meeting password. May only contain the following characters:
+// [a-z A-Z 0-9 @ - _ * !]. Max of 10.
+function generateZoomPassword() {
+  let symbols = "@-_*!"
+  let substrings = [
+    crypto.randomBytes(2).toString("hex"),
+    crypto
+      .randomBytes(2)
+      .toString("hex")
+      .toUpperCase(),
+    symbols[Math.floor(Math.random() * symbols.length)],
+    symbols[Math.floor(Math.random() * symbols.length)],
+  ]
+  return shuffleArray(substrings).join("")
 }
 
 async function getSession(
@@ -208,10 +236,12 @@ class Account {
   }
 
   async createMeeting() {
+    let newMeetingPassword = generateZoomPassword()
     const response = await axios.post(
         URLs.meetings.replace(/{userId}/, this.email),
         {
           topic: "Heimdall-initiated Zoom meeting",
+          password: newMeetingPassword,
           settings: {
             join_before_host: true,
             host_video: true,
@@ -224,7 +254,9 @@ class Account {
       ),
       meeting: Meeting = response.data
 
-    meeting.app_url = URLs.appJoin.replace(/{meetingId}/, meeting.id)
+    meeting.app_url = URLs.appJoin
+      .replace(/{meetingId}/, meeting.id)
+      .replace(/{meetingPassword}/, meeting.encrypted_password)
     return [meeting, this.email, this.type]
   }
 
