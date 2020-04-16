@@ -30,7 +30,6 @@ const contractOwnerProvider = new HDWalletProvider(
   process.env.CONTRACT_OWNER_ETH_ACCOUNT_PRIVATE_KEY,
   ethUrl,
 )
-const authorizer = contractOwnerAddress
 
 // We override transactionConfirmationBlocks and transactionBlockTimeout because
 // they're 25 and 50 blocks respectively at default.  The result of this on
