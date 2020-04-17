@@ -1,4 +1,5 @@
-Copyright (c) 2011-2017 GitHub Inc.
+Hubot Code Copyright (c) 2011-2017 GitHub Inc.
+Thesis Changes Copyright (c) 2018-2020 Thesis Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
