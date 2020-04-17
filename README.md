@@ -89,7 +89,8 @@ Add the following to the "configurations" list in your VS Code's `launch.json`:
 ```
 
 You can then select either "Launch Valkyrie Shell Adapter" or "Launch Valkyrie
-Flowdock Adapter" from the "Run" menu of the debugging pane.
+Flowdock Adapter" (see [section on Adpaters](#adapters)) from the "Run" menu of
+the debugging pane.
 
 ### Running locally with Docker
 
@@ -279,7 +280,7 @@ as Campfire or IRC. There are a number of third party adapters that the
 community have contributed. Check [Hubot Adapters][hubot-adapters] for the
 available ones.
 
-If you would like to run a non-Campfire or shell adapter you will need to add
+If you would like to run a non-Flowdock or shell adapter you will need to add
 the adapter package as a dependency to the `package.json` file in the
 `dependencies` section.
 
