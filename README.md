@@ -23,14 +23,75 @@ using the Flowdock adapter, and clearly differeniate which robot we are calling.
 (Note that both robots will reply to `robot.hear` commands since those don't
 require a direct invocation of the robot).
 
-To run locally, the quickest path is using node:
+You can test your hubot by running the following, however some plugins will not
+behave as expected unless the [environment variables](#configuration) they
+rely upon have been set.
+
+If you don't have local values for env vars referenced in `./env-var.list`, ask
+someone how to get these values.
+
+### Running locally in the terminal
+
+Install npm if you don't already have it:
 
 ```
-$ brew install npm
-$ npm install
-$ npm audit fix
-$ bin/hubot -n "Heimdall"
+brew install npm
 ```
+
+You can start Valkyrie locally by running:
+
+```
+$ bin/valkyrie
+```
+
+You'll see some start up output (it can get pretty verbose - `npm i` is run at
+this time) and a prompt:
+
+`valkyrie>`
+
+Then you can interact with Valkyrie. If you don't know where to start, try
+typing `?help`:
+
+```
+valkyrie> ?help
+valkyrie> Shell: I can do a lot of things!  Which would you like to know more about? You can say:
+```
+
+(followed by a list of available commands)
+
+### Running locally with VS Code
+
+We strongly recommend running locally using Visual Studio Code, to
+make use of its robust debugging functionality.
+
+Add the following to the "configurations" list in your VS Code's `launch.json`:
+
+```
+{
+    "type": "node",
+    "request": "launch",
+    "name": "Launch Valkyrie Shell Adapter",
+    "program": "${workspaceFolder}/node_modules/hubot/bin/hubot.js",
+    "args": ["--alias", "?", "--name", "valkyrie"],
+    "runtimeArgs": ["-r", "coffeescript/register"],
+    "console": "integratedTerminal"
+},
+{
+    "type": "node",
+    "request": "launch",
+    "name": "Launch Valkyrie Flowdock Adapter",
+    "program": "${workspaceFolder}/node_modules/hubot/bin/hubot.js",
+    "args": ["--alias", "?", "--name", "valkyrie", "-a", "reload-flowdock"],
+    "runtimeArgs": ["-r", "coffeescript/register"],
+    "console": "integratedTerminal"
+},
+
+```
+
+You can then select either "Launch Valkyrie Shell Adapter" or "Launch Valkyrie
+Flowdock Adapter" from the "Run" menu of the debugging pane.
+
+### Running locally with Docker
 
 You can also run using docker, which is what is deployed to kube:
 
@@ -41,9 +102,6 @@ $ npm audit fix
 $ docker build -f infrastructure/docker/Dockerfile -t heimdall .
 $ docker run -it --env-file ./env-var.list --entrypoint "bin/hubot" heimdall:latest
 ```
-
-If you don't have local values for env vars referenced in `./env-var.list`, ask
-someone how to get these values.
 
 To log in to your running hubot container:
 
@@ -99,28 +157,6 @@ Edit `infrastructure/kube/thesis-ops/heimdall-hubot-deployment.yaml` to referenc
 ```
 $ kubectl apply -f infrastructure/kube/thesis-ops/heimdall-hubot-deployment.yaml
 ```
-
-### Running heimdall Locally
-
-You can test your hubot by running the following, however some plugins will not
-behave as expected unless the [environment variables](#configuration) they rely
-upon have been set.
-
-You can start heimdall locally by running:
-
-    % bin/hubot
-
-You'll see some start up output and a prompt:
-
-    [Sat Feb 28 2015 12:38:27 GMT+0000 (GMT)] INFO Using default redis on localhost:6379
-    heimdall>
-
-Then you can interact with heimdall by typing `heimdall help`.
-
-    heimdall> heimdall help
-    heimdall animate me <query> - The same thing as `image me`, except adds [snip]
-    heimdall help - Displays all of the help commands that heimdall knows about.
-    ...
 
 ### Configuration
 
