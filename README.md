@@ -124,6 +124,23 @@ run `npm test` from the repo root.
 
 ## Deploying
 
+We use Circle CI in conjunction with Github for our deployment.
+
+Merges to master (via Pull Requests) trigger an automatic deploy of that
+merge's build.
+
+However, if there have been any changes to the `heimdall-hubot-deployment.yaml`,
+those changes will need to be manually applied.
+
+Edit `infrastructure/kube/thesis-ops/heimdall-hubot-deployment.yaml` to replace
+`USE_CIRCLE_CI_BUILDS` with the relevant build number, and then apply:
+
+```
+$ kubectl apply -f infrastructure/kube/thesis-ops/heimdall-hubot-deployment.yaml
+```
+
+### Manual deployment
+
 To deploy a new build, you'll need to set up Google Cloud SDK, authenticate,
 install `kubectl`, and authenticate docker; again, on macOS:
 
@@ -136,7 +153,7 @@ $ gcloud auth configure-docker
 ```
 
 When running `gcloud init` you'll want to authenticate with your Thesis
-credentials and use the `heimdall` cluster in region `us-east4-c`.
+credentials and use the `heimdall` cluster in region `us-central-1`.
 
 You'll need to make google-cloud-sdk available on your path.
 `brew cask info google-cloud-sdk` gives general guidance on properly
