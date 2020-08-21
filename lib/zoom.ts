@@ -39,10 +39,7 @@ function generateZoomPassword() {
   let symbols = "@-_*!"
   let substrings = [
     crypto.randomBytes(2).toString("hex"),
-    crypto
-      .randomBytes(2)
-      .toString("hex")
-      .toUpperCase(),
+    crypto.randomBytes(2).toString("hex").toUpperCase(),
     symbols[Math.floor(Math.random() * symbols.length)],
     symbols[Math.floor(Math.random() * symbols.length)],
   ]
@@ -195,6 +192,7 @@ type Meeting = {
   agenda: string
   start_time: string
   join_url: string
+  encrypted_password?: string
   app_url?: string
 }
 
@@ -256,7 +254,7 @@ class Account {
 
     meeting.app_url = URLs.appJoin
       .replace(/{meetingId}/, meeting.id)
-      .replace(/{meetingPassword}/, meeting.encrypted_password)
+      .replace(/{meetingPassword}/, meeting.encrypted_password || "")
     return [meeting, this.email, this.type]
   }
 
