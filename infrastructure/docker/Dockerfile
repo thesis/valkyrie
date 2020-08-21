@@ -1,4 +1,4 @@
-FROM node:10.9.0-alpine AS runtime
+FROM node:14-alpine3.12 AS runtime
 
 WORKDIR /
 
