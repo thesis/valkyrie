@@ -14,7 +14,7 @@ const { isRoomNameValid } = require("../lib/flowdock-util")
 
 let fs = require("fs")
 
-let buildNumberBuffer = new Buffer("")
+let buildNumberBuffer = Buffer.from("")
 try {
   buildNumberBuffer = fs.readFileSync(`${__dirname}/../BUILD`)
 } catch (e) {
@@ -45,10 +45,10 @@ function attachToStream(fn) {
   })
 }
 
-module.exports = function(robot) {
+module.exports = function (robot) {
   sendReleaseNotification(robot)
 
-  robot.respond(/current build/, response =>
+  robot.respond(/current build/, (response) =>
     response.send(`I'm on ${buildString}!`),
   )
 }

@@ -39,10 +39,7 @@ function generateZoomPassword() {
   let symbols = "@-_*!"
   let substrings = [
     crypto.randomBytes(2).toString("hex"),
-    crypto
-      .randomBytes(2)
-      .toString("hex")
-      .toUpperCase(),
+    crypto.randomBytes(2).toString("hex").toUpperCase(),
     symbols[Math.floor(Math.random() * symbols.length)],
     symbols[Math.floor(Math.random() * symbols.length)],
   ]
@@ -120,50 +117,54 @@ class Session {
       "milliseconds",
     )
 
-    const accountMeetings = await Promise.all(
-      Array.from(
-        this.users.map(u => this.accountFromUser(u.email, u.type)),
-      ).map(async function(accountSession): Promise<[Account, boolean]> {
-        // filter out any upcoming or scheduled meetings starting within meetingLengthBuffer
-        let upcoming = await accountSession.upcomingMeetings()
-        let upcomingMeetingsInBuffer = upcoming.filter(meeting =>
-          meeting.start_time
-            ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
-            : false,
-        )
-        let scheduled = await accountSession.scheduledMeetings()
-        let scheduledMeetingsInBuffer = scheduled.filter(meeting =>
-          meeting.start_time
-            ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
-            : false,
-        )
-        let live = await accountSession.liveMeetings()
-        return [
-          accountSession,
-          live.length == 0 &&
-            upcomingMeetingsInBuffer.length == 0 &&
-            scheduledMeetingsInBuffer.length == 0,
-        ]
-      }),
-    )
+    const accounts: Account[] = this.users
+      .map((u) => this.accountFromUser(u.email, u.type))
+      // Separate pro and basic accounts.
+      .reduce(
+        ([pro, basic], account) => {
+          if (account.isBasic()) {
+            return [pro, basic.concat([account])]
+          } else {
+            return [pro.concat([account]), basic]
+          }
+        },
+        [[] as Account[], [] as Account[]],
+      )
+      // Shuffle both arrays.
+      .map((accountGroups) => {
+        return accountGroups
+          .map((_) => ({ sort: Math.random(), value: _ }))
+          .sort((a, b) => a.sort - b.sort)
+          .map((_) => _.value)
+      })
+      // Join them back into one sorted, randomized array.
+      .flat()
 
-    const availableSessions = accountMeetings
-      .filter(([, availableForMeeting]) => availableForMeeting)
-      .map(([session]) => session)
+    for (const account of accounts) {
+      // filter out any upcoming or scheduled meetings starting within meetingLengthBuffer
+      const upcoming = await account.upcomingMeetings()
+      const upcomingMeetingsInBuffer = upcoming.filter((meeting) =>
+        meeting.start_time
+          ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
+          : false,
+      )
+      const scheduled = await account.scheduledMeetings()
+      const scheduledMeetingsInBuffer = scheduled.filter((meeting) =>
+        meeting.start_time
+          ? moment(meeting.start_time).isBetween(now, bufferExpiryTime)
+          : false,
+      )
+      const live = await account.liveMeetings()
 
-    const availableProSessions = availableSessions.filter(
-      session => session.type == UserType.Pro,
-    )
-    const availableBasicSessions = availableSessions.filter(
-      session => session.type != UserType.Pro,
-    )
+      const availableForMeeting =
+        live.length == 0 &&
+        upcomingMeetingsInBuffer.length == 0 &&
+        scheduledMeetingsInBuffer.length == 0
 
-    const candidateSessions =
-      (availableProSessions.length > 0 && availableProSessions) ||
-      availableBasicSessions
-
-    const chosenIndex = Math.floor(Math.random() * candidateSessions.length)
-    return await candidateSessions[chosenIndex].createMeeting()
+      if (availableForMeeting) {
+        return await account.createMeeting()
+      }
+    }
   }
 
   private get token() {
@@ -195,6 +196,7 @@ type Meeting = {
   agenda: string
   start_time: string
   join_url: string
+  encrypted_password?: string
   app_url?: string
 }
 
@@ -221,6 +223,10 @@ class Account {
       ),
       meetings: Meeting[] = response.data.meetings
     return meetings
+  }
+
+  isBasic() {
+    return this.type == UserType.Basic
   }
 
   async liveMeetings() {
@@ -256,7 +262,7 @@ class Account {
 
     meeting.app_url = URLs.appJoin
       .replace(/{meetingId}/, meeting.id)
-      .replace(/{meetingPassword}/, meeting.encrypted_password)
+      .replace(/{meetingPassword}/, meeting.encrypted_password || "")
     return [meeting, this.email, this.type]
   }
 

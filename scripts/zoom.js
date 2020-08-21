@@ -27,7 +27,7 @@ const MEETING_DURATION_TIMEOUT_DELAY =
 function isMeetingStarted(meeting) {
   return zoom
     .getMeetingDetails(ZOOM_SESSION.token, meeting.id)
-    .then(meetingDetail => {
+    .then((meetingDetail) => {
       if ("status" in meetingDetail && meetingDetail.status === "started") {
         return true
       } else {
@@ -39,7 +39,7 @@ function isMeetingStarted(meeting) {
 function isMeetingFinished(meeting, meetingDidStart) {
   return zoom
     .getMeetingDetails(ZOOM_SESSION.token, meeting.id)
-    .then(meetingDetail => {
+    .then((meetingDetail) => {
       if (
         "status" in meetingDetail &&
         meetingDetail.status == "waiting" &&
@@ -54,16 +54,16 @@ function isMeetingFinished(meeting, meetingDidStart) {
 
 function watchMeeting(meeting) {
   let meetingStartedPromise = new Promise((resolve, reject) => {
-    let startIntervalId = setInterval(function() {
+    let startIntervalId = setInterval(function () {
       isMeetingStarted(meeting)
-        .then(isStarted => {
+        .then((isStarted) => {
           if (isStarted === true) {
             clearInterval(startIntervalId)
             clearTimeout(startTimeoutId)
             resolve(true)
           }
         })
-        .catch(err => {
+        .catch((err) => {
           reject(
             `Something went wrong setting up START watch interval: ${util.inspect(
               err,
@@ -78,22 +78,22 @@ function watchMeeting(meeting) {
       resolve(false)
     }, MEETING_START_TIMEOUT_DELAY)
   })
-  return meetingStartedPromise.then(meetingStartStatus => {
+  return meetingStartedPromise.then((meetingStartStatus) => {
     let meetingFinishedPromise = new Promise((resolve, reject) => {
       if (meetingStartStatus === false) {
         resolve("never started")
         return
       }
-      let endIntervalId = setInterval(function() {
+      let endIntervalId = setInterval(function () {
         isMeetingFinished(meeting, meetingStartStatus)
-          .then(isFinished => {
+          .then((isFinished) => {
             if (isFinished === true) {
               clearInterval(endIntervalId)
               clearTimeout(endTimeoutId)
               resolve(true)
             }
           })
-          .catch(err => {
+          .catch((err) => {
             reject(
               `Something went wrong setting up END watch interval: ${util.inspect(
                 err,
@@ -112,7 +112,7 @@ function watchMeeting(meeting) {
   })
 }
 
-module.exports = function(robot) {
+module.exports = function (robot) {
   withConfigOrReportIssues(
     issueReporterForRobot(robot),
     "ZOOM_API_KEY",
@@ -120,14 +120,14 @@ module.exports = function(robot) {
   )((zoomApiKey, zoomApiSecret) => {
     zoom
       .getSession(zoomApiKey, zoomApiSecret, MEETING_DURATION_TIMEOUT_DELAY)
-      .then(session => (ZOOM_SESSION = session))
-      .catch(err => {
+      .then((session) => (ZOOM_SESSION = session))
+      .catch((err) => {
         robot.logger.error(
           `Failed to set up Zoom session: ${util.inspect(err, { depth: 0 })}`,
         )
       })
 
-    robot.respond(/zoom/, res => {
+    robot.respond(/zoom/, (res) => {
       if (!ZOOM_SESSION) {
         res.send("Zoom session failed to set up properly!")
         return
@@ -142,18 +142,10 @@ module.exports = function(robot) {
           )
           return meeting
         })
-        .catch(err => {
-          robot.logger.error(
-            `Failed to fetch next available meeting: ${util.inspect(err, {
-              depth: 0,
-            })}`,
-          )
-          res.send("Uh-oh, there was an issue finding an available meeting :(")
-        })
-        .then(meeting => {
+        .then((meeting) => {
           robot.logger.info(`Start watching meeting: ${meeting.id}`)
           return watchMeeting(meeting)
-            .then(finalMeetingStatus => {
+            .then((finalMeetingStatus) => {
               if (!finalMeetingStatus) {
                 // if finalMeetingStatus is null, the meeting exceeded the timeout.
                 // We assume the meeting still happened, so we still want to reply
@@ -179,7 +171,7 @@ module.exports = function(robot) {
                 )
               }
             })
-            .catch(err => {
+            .catch((err) => {
               robot.logger.error(
                 `Failed to fetch meeting details for ${
                   meeting.id
@@ -190,6 +182,14 @@ module.exports = function(robot) {
                 `Something went wrong watching the meeting; don't forget to post meeting notes when your call ends!`,
               )
             })
+        })
+        .catch((err) => {
+          robot.logger.error(
+            `Failed to fetch next available meeting: ${util.inspect(err, {
+              depth: 0,
+            })}`,
+          )
+          res.send("Uh-oh, there was an issue finding an available meeting :(")
         })
     })
   })
