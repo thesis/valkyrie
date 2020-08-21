@@ -221,6 +221,10 @@ class Account {
     return meetings
   }
 
+  isBasic() {
+    return this.type == UserType.Basic
+  }
+
   async liveMeetings() {
     return this.getMeetings(MeetingScheduleCategory.LIVE)
   }
