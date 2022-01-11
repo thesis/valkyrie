@@ -133,12 +133,16 @@ module.exports = function (robot) {
         return
       }
       ZOOM_SESSION.nextAvailableMeeting()
-        .then(([meeting, zoomUserEmail]) => {
+        .then(([meeting, zoomUserEmail, , hostKey]) => {
           robot.logger.info(
-            `Created meeting: ${meeting.id}: using account for ${zoomUserEmail}`,
+            `Created meeting: ${meeting.id}: using account for ${zoomUserEmail}, host key ${hostKey}.`,
           )
           res.send(
-            `All set; open in [your browser](${meeting.join_url}) or [the app](${meeting.app_url})!`,
+            `All set${
+              typeof hostKey !== "undefined" ? " with host key " + hostKey : ""
+            }; open in [your browser](${meeting.join_url}) or [the app](${
+              meeting.app_url
+            })!`,
           )
           return meeting
         })

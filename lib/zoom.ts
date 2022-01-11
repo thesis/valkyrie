@@ -53,7 +53,10 @@ async function getSession(
 ) {
   const token = tokenFrom(apiKey, apiSecret),
     userResponse = await axios.get(URLs.users, {
-      params: { access_token: token },
+      params: {
+        access_token: token,
+        include_fields: "host_key",
+      },
     })
 
   if (userResponse.status != 200) {
@@ -97,6 +100,7 @@ type User = {
   email: string
   type: UserType
   timezone: string
+  host_key?: string
 }
 
 class Session {
@@ -118,7 +122,7 @@ class Session {
     )
 
     const accounts: Account[] = this.users
-      .map((u) => this.accountFromUser(u.email, u.type))
+      .map((u) => this.accountFromUser(u))
       // Separate pro and basic accounts.
       .reduce(
         ([pro, basic], account) => {
@@ -171,8 +175,8 @@ class Session {
     return tokenFrom(this.apiKey, this.apiSecret)
   }
 
-  private accountFromUser(email: string, type: number) {
-    return new Account(email, this.apiKey, this.apiSecret, type)
+  private accountFromUser({ email, type, host_key: hostKey }: User) {
+    return new Account(email, this.apiKey, this.apiSecret, type, hostKey)
   }
 }
 
@@ -206,6 +210,7 @@ class Account {
     private apiKey: string,
     private apiSecret: string,
     private type: UserType,
+    private hostKey: string | undefined,
   ) {}
 
   // NB: we may run into pagination issues at some point, especially for
@@ -263,7 +268,7 @@ class Account {
     meeting.app_url = URLs.appJoin
       .replace(/{meetingId}/, meeting.id)
       .replace(/{meetingPassword}/, meeting.encrypted_password || "")
-    return [meeting, this.email, this.type]
+    return [meeting, this.email, this.type, this.hostKey] as const
   }
 
   private get token() {
