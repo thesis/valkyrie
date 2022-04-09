@@ -25,7 +25,7 @@
     "hubot-shipit": "github:kb0rg/hubot-shipit#cb51773ede8c3bf8fff409cb110936f158801d83",
     "jsonwebtoken": "~8.3.0",
     "lodash": "^4.17.21",
-    "moment": "^2.24.0",
+    "moment": "^2.29.2",
     "node-schedule": "1.3.2",
     "passport": "^0.4.0",
     "passport-github2": "^0.1.11",
