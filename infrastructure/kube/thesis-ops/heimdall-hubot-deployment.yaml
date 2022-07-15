@@ -18,11 +18,20 @@ spec:
         - name: hubot
           # image: gcr.io/thesis-ops-2748/heimdall:USE_CIRCLE_CI_BUILDS
           env:
-            - name: HUBOT_CIRCLECI_TOKEN
+            - name: HUBOT_FLOWDOCK_API_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: heimdall-hubot
-                  key: circle_ci_token
+                  key: flowdock_token
+            - name: HUBOT_MATRIX_USER
+              value: "@valkyrie:thesis.co"
+            - name: HUBOT_MATRIX_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: heimdall-hubot
+                  key: matrix_valkyrie_password
+            - name: HUBOT_MATRIX_HOST_SERVER
+              value: "https://thesisco.ems.host"
             - name: HUBOT_FLOWDOCK_API_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -79,17 +88,6 @@ spec:
                   key: zoom_api_secret
             - name: ZOOM_EXPECTED_MEETING_DURATION
               value: "60"
-            - name: CONTRACT_OWNER_ADDRESS
-              value: "0x923C5Dbf353e99394A21Aa7B67F3327Ca111C67D"
-            - name: CONTRACT_OWNER_ETH_ACCOUNT_PRIVATE_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: heimdall-hubot
-                  key: contract_owner_eth_account_private_key
-            - name: ETH_HOST_URL
-              value: "https://ropsten.infura.io/v3/59fb36a36fa4474b890c13dd30038be5"
-            - name: ETH_FAUCET_AMOUNT
-              value: "5"
           ports:
             - containerPort: 8080
           resources:
