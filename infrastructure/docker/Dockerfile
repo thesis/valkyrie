@@ -1,4 +1,4 @@
-FROM node:14-alpine3.11 AS runtime
+FROM node:18-alpine3.15 AS runtime
 
 WORKDIR /
 
@@ -9,7 +9,7 @@ RUN mkdir hubot
 WORKDIR /hubot
 
 RUN apk add --no-cache \
-  python \
+  python2 \
   make \
   g++ \
 	git && \

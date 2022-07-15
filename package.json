@@ -34,7 +34,7 @@
     "uuid": "^3.2.1"
   },
   "engines": {
-    "node": "10.9.0"
+    "node": "18"
   },
   "devDependencies": {
     "@types/cookie": "^0.3.1",
