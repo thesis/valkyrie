@@ -21,6 +21,10 @@ const { notUsingFlowdock } = require("../lib/flowdock-util"),
   flowdock = require("@reloaddk/flowdock")
 
 module.exports = function(robot) {
+  if (notUsingFlowdock(robot.adapter)) {
+    return
+  }
+
   const apiToken = fetchConfigOrReportIssue(
     "HUBOT_FLOWDOCK_API_TOKEN",
     issueReporterForRobot(robot),
