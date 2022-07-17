@@ -30,8 +30,8 @@ export function withConfigOrReportIssues(
   ...keys: string[]
 ) {
   const values = keys
-    .map(_ => fetchConfigOrReportIssue(_, issueReporter))
-    .filter(_ => _.length > 0)
+    .map((_) => fetchConfigOrReportIssue(_, issueReporter))
+    .filter((_) => _.length > 0)
 
   return (valueHandler: (...configValues: string[]) => void) => {
     if (values.length == keys.length) {
@@ -54,7 +54,9 @@ export function fetchRoomInfoOrReportIssue(
   roomName: string,
 ): string {
   if (!isRoomNameValid(robot.adapter, roomName)) {
-    logOrThrow(robot, `Could not get flow object for: ${roomName}.`)
+    robot.logger.warning(
+      `Could not get flow object for: ${roomName}. This will break the build when connected to flowdock.`,
+    )
   }
   return getRoomInfoFromIdOrName(robot.adapter, roomName)
 }
