@@ -8,7 +8,7 @@ executors:
       - image: thesisco/docker-buildpack:bionic
 
 orbs:
-  gcp-gcr: circleci/gcp-gcr@0.0.4
+  gcp-gcr: circleci/gcp-gcr@0.15.0
 
 jobs:
   build-and-test:
@@ -80,13 +80,13 @@ workflows:
           context: thesis-ops
           filters:
             branches:
-              only: master
+              only: main
           requires:
             - build-and-test
       - deploy:
           context: thesis-ops
           filters:
             branches:
-              only: master
+              only: main
           requires:
             - publish-docker-image
