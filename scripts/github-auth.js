@@ -23,7 +23,7 @@ let HOST = process.env["HUBOT_HOST"],
   SECOND = 1000,
   MINUTE = 60 * SECOND
 
-module.exports = function(robot) {
+module.exports = function (robot) {
   withConfigOrReportIssues(
     issueReporterForRobot(robot),
     "GITHUB_CLIENT_ID",
@@ -38,7 +38,7 @@ module.exports = function(robot) {
           callbackURL: `${HOST}/github/auth`,
           userAgent: "https://thesis.co",
         },
-        function(accessToken, refreshToken, profile, done) {
+        function (accessToken, refreshToken, profile, done) {
           done(null, { token: accessToken, profile: profile })
         },
       ),
@@ -50,7 +50,7 @@ module.exports = function(robot) {
 
       for (let [userID, pendingInfo] of Object.entries(pendingGitHubTokens)) {
         if (now - pendingInfo.date > 5 * MINUTE) {
-          delete robot.brain.pendingGitHubTokens[userID]
+          delete pendingGitHubTokens[userID]
         }
       }
 
@@ -60,7 +60,7 @@ module.exports = function(robot) {
     setInterval(cleanPending, 30 * SECOND)
     cleanPending()
 
-    robot.respond(/github auth/, res => {
+    robot.respond(/github auth/, (res) => {
       let user = res.message.user,
         token = UUIDV4()
 
