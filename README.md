@@ -10,13 +10,13 @@ available, etc!
 [hubot]: http://hubot.github.com
 [generator-hubot]: https://github.com/github/generator-hubot
 
-Heimdall is the name of the Hubot we run in production.
-Heimdall can be summoned by name (`@Heimdall`) or via his alias (`\`).
+Valkyrie is the name of the Hubot we run in production.
+Valkyrie can be summoned by name (`@Valkyrie`) or via her alias (`\`).
 
 ## Running Locally
 
-Valkyrie is the name of the Hubot we run when working locally on Hubot.
-Valkyrie can be summoned by name (`@Valkyrie`) or via her alias (`?`).
+Heimdall is the name of the Hubot we run when working locally on Hubot.
+Heimdall can be summoned by name (`@Heimdall`) or via his alias (`?`).
 
 This allows us to run both production and development Hubots at the same time
 using the Flowdock adapter, and clearly differeniate which robot we are calling.
@@ -38,23 +38,23 @@ Install npm if you don't already have it:
 brew install npm
 ```
 
-You can start Valkyrie locally by running:
+You can start Heimdall locally by running:
 
 ```
-$ bin/valkyrie
+$ bin/heimdall
 ```
 
 You'll see some start up output (it can get pretty verbose - `npm i` is run at
 this time) and a prompt:
 
-`valkyrie>`
+`heimdall>`
 
-Then you can interact with Valkyrie. If you don't know where to start, try
+Then you can interact with Heimdall. If you don't know where to start, try
 typing `?help`:
 
 ```
-valkyrie> ?help
-valkyrie> Shell: I can do a lot of things!  Which would you like to know more about? You can say:
+heimdall> ?help
+heimdall> Shell: I can do a lot of things!  Which would you like to know more about? You can say:
 ```
 
 (followed by a list of available commands)
@@ -70,7 +70,7 @@ Add the following to the "configurations" list in your VS Code's `launch.json`:
 {
     "type": "node",
     "request": "launch",
-    "name": "Launch Valkyrie Shell Adapter",
+    "name": "Launch Heimdall Shell Adapter",
     "program": "${workspaceFolder}/node_modules/hubot/bin/hubot.js",
     "args": ["--alias", "?", "--name", "valkyrie"],
     "runtimeArgs": ["-r", "coffeescript/register"],
@@ -79,7 +79,7 @@ Add the following to the "configurations" list in your VS Code's `launch.json`:
 {
     "type": "node",
     "request": "launch",
-    "name": "Launch Valkyrie Flowdock Adapter",
+    "name": "Launch Heimdall Flowdock Adapter",
     "program": "${workspaceFolder}/node_modules/hubot/bin/hubot.js",
     "args": ["--alias", "?", "--name", "valkyrie", "-a", "reload-flowdock"],
     "runtimeArgs": ["-r", "coffeescript/register"],
@@ -88,7 +88,7 @@ Add the following to the "configurations" list in your VS Code's `launch.json`:
 
 ```
 
-You can then select either "Launch Valkyrie Shell Adapter" or "Launch Valkyrie
+You can then select either "Launch Heimdall Shell Adapter" or "Launch Heimdall
 Flowdock Adapter" (see [section on Adpaters](#adapters)) from the "Run" menu of
 the debugging pane.
 
