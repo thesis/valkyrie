@@ -7,4 +7,9 @@ export PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 export HUBOT_MATRIX_USER="@heimdall:thesis.co"
 export HUBOT_MATRIX_HOST_SERVER="https://thesisco.ems.host"
 
+if test -f matrix-password.gpg; then
+	echo "Found encrypted Matrix password, decrypting and exporting as HUBOT_MATRIX_PASSWORD"
+	export HUBOT_MATRIX_PASSWORD=`gpg -q -d matrix-password.gpg`
+fi
+
 exec node_modules/.bin/hubot --alias "?" --name "heimdall" "$@"

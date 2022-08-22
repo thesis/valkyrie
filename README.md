@@ -30,6 +30,16 @@ rely upon have been set.
 If you don't have local values for env vars referenced in `./env-var.list`, ask
 someone how to get these values.
 
+One exception is the Matrix password (when using the Matrix adapter to connect
+to the Thesis chat server ;see [section on Adapters](#adapters)). When using the
+`bin/heimdall` script, the script will search for a file `matrix-password.gpg`
+that can be decrypted using the `gpg` tool. If the file exists, the decrypted
+value will be placed into the `HUBOT_MATRIX_PASSWORD` environment variable for
+use by the adapter.
+
+Note that this file is gitignored, and should be encrypted locally with a key
+accessible to your local gpg, and never committed to source control.
+
 ### Running locally in the terminal
 
 Install npm if you don't already have it:
@@ -89,7 +99,7 @@ Add the following to the "configurations" list in your VS Code's `launch.json`:
 ```
 
 You can then select either "Launch Heimdall Shell Adapter" or "Launch Heimdall
-Matrix Adapter" (see [section on Adpaters](#adapters)) from the "Run" menu of
+Matrix Adapter" (see [section on Adapters](#adapters)) from the "Run" menu of
 the debugging pane.
 
 ### Running locally with Docker
