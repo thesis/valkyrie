@@ -72,16 +72,16 @@ Add the following to the "configurations" list in your VS Code's `launch.json`:
     "request": "launch",
     "name": "Launch Heimdall Shell Adapter",
     "program": "${workspaceFolder}/node_modules/hubot/bin/hubot.js",
-    "args": ["--alias", "?", "--name", "valkyrie"],
+    "args": ["--alias", "?", "--name", "heimdall"],
     "runtimeArgs": ["-r", "coffeescript/register"],
     "console": "integratedTerminal"
 },
 {
     "type": "node",
     "request": "launch",
-    "name": "Launch Heimdall Flowdock Adapter",
+    "name": "Launch Heimdall Matrix Adapter",
     "program": "${workspaceFolder}/node_modules/hubot/bin/hubot.js",
-    "args": ["--alias", "?", "--name", "valkyrie", "-a", "reload-flowdock"],
+    "args": ["--alias", "?", "--name", "heimdall", "-a", "matrix"],
     "runtimeArgs": ["-r", "coffeescript/register"],
     "console": "integratedTerminal"
 },
@@ -89,7 +89,7 @@ Add the following to the "configurations" list in your VS Code's `launch.json`:
 ```
 
 You can then select either "Launch Heimdall Shell Adapter" or "Launch Heimdall
-Flowdock Adapter" (see [section on Adpaters](#adapters)) from the "Run" menu of
+Matrix Adapter" (see [section on Adpaters](#adapters)) from the "Run" menu of
 the debugging pane.
 
 ### Running locally with Docker
