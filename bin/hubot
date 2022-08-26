@@ -2,7 +2,7 @@
 
 set -e
 
-npm install
+yarn install
 export PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 
-exec node_modules/.bin/hubot --alias "\\" --name "valkyrie" "$@"
+exec ts-node --loader ts-node/esm node_modules/hubot/bin/hubot.js --alias "\\" --name "valkyrie" "$@"
