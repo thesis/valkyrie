@@ -45,7 +45,7 @@ const {
 const REMINDER_JOBS = {}
 const REMINDER_KEY = "hubot_reminders"
 
-module.exports = function(robot) {
+module.exports = function (robot) {
   robot.brain.on("loaded", () => {
     return syncSchedules(robot, REMINDER_KEY, REMINDER_JOBS)
   })
@@ -54,7 +54,7 @@ module.exports = function(robot) {
     robot.brain.set(REMINDER_KEY, {})
   }
 
-  robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, function(msg) {
+  robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, function (msg) {
     const whoToTag = {
       me: `@${msg.message.user.name}, `,
       team: "@team, ",
@@ -63,7 +63,6 @@ module.exports = function(robot) {
     let who = msg.match[1]
     let message = whoToTag[who] || ""
     let metadata = msg.message.metadata
-
     try {
       let inputString = msg.match[2]
       let refDate = Date.now()
@@ -73,7 +72,7 @@ module.exports = function(robot) {
         robot.logger.error(
           `Could not parse datetime from text: ${inputString}.`,
         )
-        return msg.send(`Sorry, I can't extract a date from your request.
+        return msg.reply(`Sorry, I can't extract a date from your request.
           See https://www.npmjs.com/package/chrono-node for examples of accepted date formats.
           If you're trying to schedule a recurring reminder, try using the \`schedule\` command:
           See \`help schedule\` for more information.
@@ -95,14 +94,14 @@ module.exports = function(robot) {
         metadata,
         true, // remindInThread: default to true for remind jobs
       )
-      msg.send(resp)
+      msg.reply(resp)
     } catch (error) {
       robot.logger.error(`createScheduledJob Error: ${error.message}`)
-      msg.send("Something went wrong adding this reminder.")
+      msg.reply("Something went wrong adding this reminder.")
     }
   })
 
-  robot.respond(/reminder list(?: (all|.*))?/i, function(msg) {
+  robot.respond(/reminder list(?: (all|.*))?/i, function (msg) {
     let id, job, rooms, showAll, outputPrefix
     const targetRoom = msg.match[1]
     const roomId = msg.message.user.room // room command is called from
@@ -114,13 +113,13 @@ module.exports = function(robot) {
     if (!isBlank(targetRoom) && targetRoom != "all") {
       targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
       if (!robotIsInRoom(robot.adapter, targetRoomId)) {
-        return msg.send(
+        return msg.reply(
           `Sorry, I'm not in the ${targetRoom} flow - or maybe you mistyped?`,
         )
       }
       if (isRoomInviteOnly(robot.adapter, robot.adapterName, targetRoomId)) {
         if (msg.message.user.room != targetRoomId) {
-          return msg.send(
+          return msg.reply(
             `Sorry, that's a private flow. I can only show jobs scheduled from that flow from within the flow.`,
           )
         }
@@ -171,20 +170,20 @@ module.exports = function(robot) {
 
       if (!!output.length) {
         output = outputPrefix + "===\n" + output
-        return msg.send(output)
+        return msg.reply(output)
       } else {
-        return msg.send("No reminders have been scheduled")
+        return msg.reply("No reminders have been scheduled")
       }
     } catch (error) {
       robot.logger.error(
         `Error getting or formatting reminder job list: ${error.message}\nFull error: %o`,
         error,
       )
-      msg.send("Something went wrong getting the reminder list.")
+      msg.reply("Something went wrong getting the reminder list.")
     }
   })
 
-  robot.respond(/reminder (?:upd|update) (\d+) ((?:.|\s)*)/i, msg => {
+  robot.respond(/reminder (?:upd|update) (\d+) ((?:.|\s)*)/i, (msg) => {
     try {
       let resp = updateScheduledJob(
         robot,
@@ -194,26 +193,29 @@ module.exports = function(robot) {
         msg.match[1],
         msg.match[2],
       )
-      msg.send(resp)
+      msg.reply(resp)
     } catch (error) {
       robot.logger.error(`updateScheduledJob Error: ${error.message}`)
-      msg.send("Something went wrong updating this reminder.")
+      msg.reply("Something went wrong updating this reminder.")
     }
   })
 
-  return robot.respond(/reminder (?:del|delete|remove|cancel) (\d+)/i, msg => {
-    try {
-      let resp = cancelScheduledJob(
-        robot,
-        REMINDER_JOBS,
-        REMINDER_KEY,
-        msg,
-        msg.match[1],
-      )
-      msg.send(resp)
-    } catch (error) {
-      robot.logger.error(`updateScheduledJob Error: ${error.message}`)
-      msg.send("Something went wrong deleting this reminder.")
-    }
-  })
+  return robot.respond(
+    /reminder (?:del|delete|remove|cancel) (\d+)/i,
+    (msg) => {
+      try {
+        let resp = cancelScheduledJob(
+          robot,
+          REMINDER_JOBS,
+          REMINDER_KEY,
+          msg,
+          msg.match[1],
+        )
+        msg.reply(resp)
+      } catch (error) {
+        robot.logger.error(`updateScheduledJob Error: ${error.message}`)
+        msg.reply("Something went wrong deleting this reminder.")
+      }
+    },
+  )
 }
