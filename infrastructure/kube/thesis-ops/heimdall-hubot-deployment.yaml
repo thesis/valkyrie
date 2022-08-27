@@ -32,11 +32,6 @@ spec:
                   key: matrix_valkyrie_password
             - name: HUBOT_MATRIX_HOST_SERVER
               value: "https://thesisco.ems.host"
-            - name: HUBOT_FLOWDOCK_API_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: heimdall-hubot
-                  key: flowdock_token
             - name: HUBOT_HOST
               valueFrom:
                 secretKeyRef:

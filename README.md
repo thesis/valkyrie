@@ -10,13 +10,13 @@ available, etc!
 [hubot]: http://hubot.github.com
 [generator-hubot]: https://github.com/github/generator-hubot
 
-Heimdall is the name of the Hubot we run in production.
-Heimdall can be summoned by name (`@Heimdall`) or via his alias (`\`).
+Valkyrie is the name of the Hubot we run in production.
+Valkyrie can be summoned by name (`@Valkyrie`) or via her alias (`\`).
 
 ## Running Locally
 
-Valkyrie is the name of the Hubot we run when working locally on Hubot.
-Valkyrie can be summoned by name (`@Valkyrie`) or via her alias (`?`).
+Heimdall is the name of the Hubot we run when working locally on Hubot.
+Heimdall can be summoned by name (`@Heimdall`) or via his alias (`?`).
 
 This allows us to run both production and development Hubots at the same time
 using the Flowdock adapter, and clearly differeniate which robot we are calling.
@@ -30,6 +30,16 @@ rely upon have been set.
 If you don't have local values for env vars referenced in `./env-var.list`, ask
 someone how to get these values.
 
+One exception is the Matrix password (when using the Matrix adapter to connect
+to the Thesis chat server ;see [section on Adapters](#adapters)). When using the
+`bin/heimdall` script, the script will search for a file `matrix-password.gpg`
+that can be decrypted using the `gpg` tool. If the file exists, the decrypted
+value will be placed into the `HUBOT_MATRIX_PASSWORD` environment variable for
+use by the adapter.
+
+Note that this file is gitignored, and should be encrypted locally with a key
+accessible to your local gpg, and never committed to source control.
+
 ### Running locally in the terminal
 
 Install npm if you don't already have it:
@@ -38,23 +48,23 @@ Install npm if you don't already have it:
 brew install npm
 ```
 
-You can start Valkyrie locally by running:
+You can start Heimdall locally by running:
 
 ```
-$ bin/valkyrie
+$ bin/heimdall
 ```
 
 You'll see some start up output (it can get pretty verbose - `npm i` is run at
 this time) and a prompt:
 
-`valkyrie>`
+`heimdall>`
 
-Then you can interact with Valkyrie. If you don't know where to start, try
+Then you can interact with Heimdall. If you don't know where to start, try
 typing `?help`:
 
 ```
-valkyrie> ?help
-valkyrie> Shell: I can do a lot of things!  Which would you like to know more about? You can say:
+heimdall> ?help
+heimdall> Shell: I can do a lot of things!  Which would you like to know more about? You can say:
 ```
 
 (followed by a list of available commands)
@@ -70,26 +80,26 @@ Add the following to the "configurations" list in your VS Code's `launch.json`:
 {
     "type": "node",
     "request": "launch",
-    "name": "Launch Valkyrie Shell Adapter",
+    "name": "Launch Heimdall Shell Adapter",
     "program": "${workspaceFolder}/node_modules/hubot/bin/hubot.js",
-    "args": ["--alias", "?", "--name", "valkyrie"],
+    "args": ["--alias", "?", "--name", "heimdall"],
     "runtimeArgs": ["-r", "coffeescript/register"],
     "console": "integratedTerminal"
 },
 {
     "type": "node",
     "request": "launch",
-    "name": "Launch Valkyrie Flowdock Adapter",
+    "name": "Launch Heimdall Matrix Adapter",
     "program": "${workspaceFolder}/node_modules/hubot/bin/hubot.js",
-    "args": ["--alias", "?", "--name", "valkyrie", "-a", "reload-flowdock"],
+    "args": ["--alias", "?", "--name", "heimdall", "-a", "matrix"],
     "runtimeArgs": ["-r", "coffeescript/register"],
     "console": "integratedTerminal"
 },
 
 ```
 
-You can then select either "Launch Valkyrie Shell Adapter" or "Launch Valkyrie
-Flowdock Adapter" (see [section on Adpaters](#adapters)) from the "Run" menu of
+You can then select either "Launch Heimdall Shell Adapter" or "Launch Heimdall
+Matrix Adapter" (see [section on Adapters](#adapters)) from the "Run" menu of
 the debugging pane.
 
 ### Running locally with Docker

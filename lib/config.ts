@@ -98,10 +98,10 @@ export function issueReporterForRobot(
  * - if the robot is using any other adapter, throws an error.
  */
 function logOrThrow(robot: Hubot.Robot<any>, errorMessage: string) {
-  if (robot.adapterName.toLowerCase() == "shell") {
+  if (robot.adapterName.toLowerCase() !== "flowdock") {
     // this is local dev, just log it
     robot.logger.warning(
-      `${errorMessage} This will break the build in production.`,
+      `${errorMessage} This will break the build when connected to flowdock.`,
     )
     return ""
   } else {
