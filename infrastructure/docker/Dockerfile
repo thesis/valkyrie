@@ -12,12 +12,13 @@ RUN apk add --no-cache \
   python2 \
   make \
   g++ \
+  openssh \
 	git && \
 	rm -rf /usr/share/man/
 
-COPY package-lock.json package.json ./
+COPY yarn.lock package.json ./
 
-RUN npm install
+RUN yarn install
 
 RUN mkdir bin scripts lib test
 COPY external-scripts.json .
