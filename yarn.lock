@@ -1011,10 +1011,9 @@ hubot-diagnostics@^1.0.0:
   resolved "https://registry.npmjs.org/hubot-diagnostics/-/hubot-diagnostics-1.0.0.tgz"
   integrity sha512-4kuR04lULoDDra/Z7B/rgMQMZW531Ve5hwhd8xNOKAl8e1cb5bZNqVpGFYF174eYcN54+RZuWQFHsntjvczyag==
 
-"hubot-even-better-help@github:thesis/hubot-even-better-help#3192eedf2a0f11dd0b5fa736e0b9033741a59050":
+"hubot-even-better-help@git+https://github.com/thesis/hubot-even-better-help.git#3192eedf2a0f11dd0b5fa736e0b9033741a59050":
   version "0.1.2"
-  resolved "git+ssh://git@github.com/thesis/hubot-even-better-help.git#3192eedf2a0f11dd0b5fa736e0b9033741a59050"
-  integrity sha512-ZhObQ8QQft/At23pxUFWc3DyzF//VpsEbTB5AX6xPLWZHTNZ4xPN9hyG9NTsFpeQMKwlSHbSh4x55c6Q1jucGw==
+  resolved "git+https://github.com/thesis/hubot-even-better-help.git#3192eedf2a0f11dd0b5fa736e0b9033741a59050"
   dependencies:
     coffeescript "~2.4"
     stopwords "^0.0.5"
@@ -1026,9 +1025,9 @@ hubot-gif-locker@^1.0.7:
   dependencies:
     coffee-script "~1.6"
 
-"hubot-matrix@github:thesis/hubot-matrix#45a2c62":
+"hubot-matrix@git+https://github.com/thesis/hubot-matrix.git#45a2c62":
   version "3.0.0"
-  resolved "https://codeload.github.com/thesis/hubot-matrix/tar.gz/45a2c62bcca245549dfb41f5b68e690222fcdf89"
+  resolved "git+https://github.com/thesis/hubot-matrix.git#45a2c62bcca245549dfb41f5b68e690222fcdf89"
   dependencies:
     image-size "^0.5.1"
     matrix-js-sdk "^19.0.0"
@@ -1043,10 +1042,9 @@ hubot-redis-brain@^1.0.0:
   dependencies:
     redis "^2.7.1"
 
-"hubot-reload-flowdock@github:thesis/hubot-flowdock#7370c583068eceee8482a066d75d9f30a98e1745":
+"hubot-reload-flowdock@git+https://github.com/thesis/hubot-flowdock.git#7370c583068eceee8482a066d75d9f30a98e1745":
   version "0.8.2"
-  resolved "git+ssh://git@github.com/thesis/hubot-flowdock.git#7370c583068eceee8482a066d75d9f30a98e1745"
-  integrity sha512-ZvVcFY1FAO8cbRBwZc/yOgUAxkgTEXYaVxqh8XTOJ8w0CWrHpsl0wNb9mVyMvb2NaOWD6WmJ7hdezqHhOEVv7g==
+  resolved "git+https://github.com/thesis/hubot-flowdock.git#7370c583068eceee8482a066d75d9f30a98e1745"
   dependencies:
     "@reloaddk/flowdock" "github:thesis/node-flowdock#51503efcd6f61a88cd5bd01d61c9d0d12e6999f0"
     parent-require "^1.0.0"
@@ -1068,10 +1066,9 @@ hubot-scripts@^2.17.2:
   dependencies:
     redis "0.8.4"
 
-"hubot-shipit@github:kb0rg/hubot-shipit#cb51773ede8c3bf8fff409cb110936f158801d83":
+"hubot-shipit@git+https://github.com/kb0rg/hubot-shipit.git#cb51773ede8c3bf8fff409cb110936f158801d83":
   version "0.2.1"
-  resolved "git+ssh://git@github.com/kb0rg/hubot-shipit.git#cb51773ede8c3bf8fff409cb110936f158801d83"
-  integrity sha512-X7Hx0kqAy1Z8aOIzRCLPwQKIVvdrl7zZrvcAJ6XDxtxGqRTd+0Ic8zmvRNDZ3G+MACNdtgdXChQ4Ae4ImmKW7w==
+  resolved "git+https://github.com/kb0rg/hubot-shipit.git#cb51773ede8c3bf8fff409cb110936f158801d83"
 
 hubot-test-helper@^1.8.1:
   version "1.9.0"
