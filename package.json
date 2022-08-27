@@ -18,8 +18,6 @@
     "hubot-gif-locker": "^1.0.7",
     "hubot-matrix": "git+https://github.com/thesis/hubot-matrix.git#45a2c62",
     "hubot-redis-brain": "^1.0.0",
-    "hubot-reload": "0.0.2",
-    "hubot-reload-flowdock": "git+https://github.com/thesis/hubot-flowdock.git#7370c583068eceee8482a066d75d9f30a98e1745",
     "hubot-rules": "^0.1.2",
     "hubot-scripts": "^2.17.2",
     "hubot-shipit": "git+https://github.com/kb0rg/hubot-shipit.git#cb51773ede8c3bf8fff409cb110936f158801d83",

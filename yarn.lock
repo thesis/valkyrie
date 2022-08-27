@@ -9,14 +9,6 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
-"@reloaddk/flowdock@github:thesis/node-flowdock#51503efcd6f61a88cd5bd01d61c9d0d12e6999f0":
-  version "0.10.2"
-  resolved "git+ssh://git@github.com/thesis/node-flowdock.git#51503efcd6f61a88cd5bd01d61c9d0d12e6999f0"
-  integrity sha512-oU5SNa3Jb46e7squeEiIS4dUUvQMy+OUWCfAsJ1ldnaLntnSIzhbgWE8bRuq7r4gW/2nBIXbYZdCvb9OkJWOZA==
-  dependencies:
-    buffer-indexof "^1.0.0"
-    request "^2.88.0"
-
 "@types/body-parser@*":
   version "1.19.2"
   resolved "https://registry.npmjs.org/@types/body-parser/-/body-parser-1.19.2.tgz"
@@ -310,11 +302,6 @@ buffer-from@^1.0.0, buffer-from@^1.1.0:
   version "1.1.1"
   resolved "https://registry.npmjs.org/buffer-from/-/buffer-from-1.1.1.tgz"
   integrity sha512-MQcXEUbCKtEo7bhqEs6560Hyd4XaovZlO/k9V3hjVUF/zwW7KBVdSK4gIt/bzwS9MbR5qob+F5jusZsb0YQK2A==
-
-buffer-indexof@^1.0.0:
-  version "1.1.1"
-  resolved "https://registry.npmjs.org/buffer-indexof/-/buffer-indexof-1.1.1.tgz"
-  integrity sha512-4/rOEg86jivtPTeOUUT61jJO1Ya1TrR/OkqCSZDyq84WJh3LuuiphBYJN+fm5xufIk4XAFcEwte/8WzC8If/1g==
 
 bytes@3.1.0:
   version "3.1.0"
@@ -1041,18 +1028,6 @@ hubot-redis-brain@^1.0.0:
   integrity sha512-F3udeIfYZ+49ezeWKQgcI41PblsyRnHvAWrqjJV/HGApPCxX1P0cPiNna3B/ml6V5EOOZLsVeelukwtxDhh09A==
   dependencies:
     redis "^2.7.1"
-
-"hubot-reload-flowdock@git+https://github.com/thesis/hubot-flowdock.git#7370c583068eceee8482a066d75d9f30a98e1745":
-  version "0.8.2"
-  resolved "git+https://github.com/thesis/hubot-flowdock.git#7370c583068eceee8482a066d75d9f30a98e1745"
-  dependencies:
-    "@reloaddk/flowdock" "github:thesis/node-flowdock#51503efcd6f61a88cd5bd01d61c9d0d12e6999f0"
-    parent-require "^1.0.0"
-
-hubot-reload@0.0.2:
-  version "0.0.2"
-  resolved "https://registry.npmjs.org/hubot-reload/-/hubot-reload-0.0.2.tgz"
-  integrity sha512-LKrWEFfIsDhHX334eRiEWNRNVlluFKxgOM5JmK+AaMa7OFb5fnelMwZeFrFojssPDUsJhQ1nDMQgHsP95cAWTg==
 
 hubot-rules@^0.1.2:
   version "0.1.2"
