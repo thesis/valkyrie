@@ -23,21 +23,18 @@
 // configuration settings
 
 import * as moment from "moment"
-// @ts-ignore No definitions for now.
-import scheduler from "node-schedule"
+import * as scheduler from "node-schedule"
 import * as cronParser from "cron-parser"
 import cronstrue from "cronstrue"
 import * as hubot from "hubot"
 import { Robot } from "hubot"
-const { TextMessage } = hubot
-import * as util from "util"
-import * as flowdock from "../lib/flowdock"
 
 import {
   getRoomInfoFromIdOrName,
   getRoomNameFromId,
   encodeThreadId,
-} from "../lib/flowdock-util"
+} from "../lib/adapter-util"
+import { Matrix, MatrixMessage } from "hubot-matrix"
 
 export type ScheduledJob = Job
 
@@ -45,13 +42,14 @@ export type ScheduledJobMap = {
   [jobId: string]: ScheduledJob
 }
 
-export type JobUser = Pick<hubot.User, "id" | "name" | "room">
+export type JobUser = Pick<hubot.User, "id" | "name"> & { room: string }
 
 export type MessageMetadata = {
-  thread_id?: string
-  message_id?: string
+  threadId?: string
+  messageId: string
   lastUrl?: string
 }
+
 const CONFIG = {
   debug: process.env.HUBOT_SCHEDULE_DEBUG,
   dontReceive: process.env.HUBOT_SCHEDULE_DONT_RECEIVE,
@@ -78,7 +76,7 @@ function createScheduledJob(
   message: string,
   metadata: MessageMetadata,
   remindInThread: boolean,
-) {
+): string {
   let id
   if (JOB_MAX_COUNT <= Object.keys(jobsInMemory).length) {
     return "Too many scheduled messages."
@@ -115,15 +113,9 @@ function createScheduledJob(
       metadata,
       remindInThread,
     )
-    if (job) {
-      logSerializedJobDetails(
-        robot.logger,
-        job,
-        "New job created",
-        id.toString(),
-      )
-      return `Schedule created:\n${formattedJob}`
-    }
+
+    logSerializedJobDetails(robot.logger, job, "New job created", id.toString())
+    return `Schedule created:\n${formattedJob}`
   } catch (err: any) {
     robot.logger.error(err)
     return `There was an issue trying to create this schedule/ reminder: ${err.message}.`
@@ -175,16 +167,16 @@ function lastUrl(
   if (inputString == "self") {
     ret = "metadata" in runningJob ? runningJob.metadata.lastUrl : undefined
   } else {
-    let jobId = inputString
+    const jobId = inputString
 
     // This feature is only enabled for cron jobs, so we can hard-code the storage key here
     let serializedJob = robotBrain.get(RECURRING_JOB_STORAGE_KEY)[jobId]
     if (!serializedJob) {
       throw new Error(`${jobId}: Scheduled job not found.`)
     }
-    ret = serializedJob[3] && serializedJob[3].lastUrl
+    ret = serializedJob[3]?.lastUrl
   }
-  return ret || "(last url not found)"
+  return ret ?? "(last url not found)"
 }
 
 /**
@@ -312,7 +304,7 @@ function updateJobInBrain(
   robotBrain: hubot.Brain<any>,
   storageKey: string,
   job: Job,
-): string {
+): ReturnType<Job["serialize"]> {
   let serializedJob = job.serialize()
   return (robotBrain.get(storageKey)[job.id] = serializedJob)
 }
@@ -399,30 +391,19 @@ function syncSchedules(
   if (!robot.brain.get(storageKey)) {
     robot.brain.set(storageKey, {})
   }
+  console.log(storageKey, robot.brain.get(storageKey))
 
   const nonCachedScheduleIds = missingKeys(
     robot.brain.get(storageKey),
     jobsInMemory,
   )
   nonCachedScheduleIds.forEach((id) => {
-    const job = jobsInMemory[id]
-    scheduleFromBrain(
-      robot,
-      jobsInMemory,
-      storageKey,
-      id,
-      job.pattern,
-      job.user,
-      job.message,
-      job.metadata,
-    )
+    const jobData = robot.brain.get(storageKey)[id] as ReturnType<
+      Job["serialize"]
+    >
+    scheduleFromBrain(robot, jobsInMemory, storageKey, id, ...jobData)
 
-    logSerializedJobDetails(
-      robot.logger,
-      job.serialize(),
-      "Synced job FROM brain",
-      id,
-    )
+    logSerializedJobDetails(robot.logger, jobData, "Synced job FROM brain", id)
   })
 
   const nonStoredScheduleIds = missingKeys(
@@ -570,7 +551,7 @@ function getScheduledJobList(
 
 // TODO: pull formatters back into script, or out to a different lib
 function formatJobForMessage(
-  robotAdapter: any,
+  robotAdapter: hubot.Adapter,
   jobPattern: string,
   isCron: boolean,
   jobId: string,
@@ -599,16 +580,9 @@ function formatJobForMessage(
   if (metadata && jobRoom && remindInThread) {
     let jobFlow = getRoomInfoFromIdOrName(robotAdapter, jobRoom)
     if (jobFlow) {
-      let jobRoomPath = robotAdapter.flowPath(jobFlow)
-      let encodedId = encodeThreadId(metadata.message_id || metadata.thread_id)
-
-      let reminderURL = metadata.thread_id
-        ? flowdock.URLs.thread
-        : flowdock.URLs.messageDetail
-
-      reminderURL = reminderURL
-        .replace(/{flowPath}/, jobRoomPath)
-        .replace(/{messageId}|{threadId}/, encodedId)
+      robotAdapter
+      let encodedId = encodeThreadId(metadata.threadId ?? metadata.messageId)
+      let reminderURL = urlFor(jobRoom, "thesis.co", encodedId)
 
       roomDisplayText = `(to [thread in ${jobRoomDisplayName}](${reminderURL}))`
     }
@@ -639,7 +613,7 @@ function sortJobsByDate(jobs: Job[]) {
 }
 
 function formatJobsForListMessage(
-  robotAdapter: any,
+  robotAdapter: hubot.Adapter,
   jobs: Job[],
   isCron: boolean,
 ) {
@@ -665,7 +639,7 @@ function formatJobsForListMessage(
 
 function logSerializedJobDetails(
   logger: any,
-  serializedJob: string,
+  serializedJob: ReturnType<Job["serialize"]>,
   messagePrefix: string,
   jobId: string,
 ) {
@@ -698,12 +672,19 @@ class Job {
     }
   }
 
+  isCron(): boolean {
+    return isCronPattern(this.pattern)
+  }
+
   start(robot: hubot.Robot<any>) {
     return (this.job = scheduler.scheduleJob(this.pattern, () => {
+      const { lastUrl: _, threadId, ...threadlessMetadata } = this.metadata
       const envelope = {
         user: this.user,
         room: this.user.room,
-        metadata: (this.remindInThread && this.metadata) || {},
+        metadata: this.remindInThread
+          ? { ...threadlessMetadata, threadId }
+          : (threadlessMetadata as MessageMetadata),
       }
 
       let processedMessage = ""
@@ -724,33 +705,31 @@ class Job {
         processedMessage = this.message
       }
 
-      if (
-        !isCronPattern(this.pattern) ||
-        robot.adapter.name.toLowerCase() != "reload-flowdock" ||
-        !this.user.room
-      ) {
-        // Send via adapter in the following cases:
-        // - if the job is a DateTime, not recurring job (these get deleted after sending, so there is no way to look up their lastUrl).
-        // - if not using the Flowdock adapter (to enable local testing and avoid API errors).
-        // - if the job is in a private message (these have no thread_id).
+      if (!isCronPattern(this.pattern)) {
+        // Send via adapter if the job is a DateTime, not recurring job (these
+        // get deleted after sending, so there is no way to look up their
+        // lastUrl).
         robot.adapter.send(envelope, processedMessage)
 
         if (CONFIG.dontReceive !== "1") {
           // Send message to the adapter, to allow hubot to process the message.
           // We handle this case in the postMessageCallback for all API-posted jobs.
-          let messageObj = new TextMessage(
+          let messageObj = new MatrixMessage(
             new hubot.User(this.user.id, this.user),
             processedMessage,
             "",
+            // Datetime jobs created via `remind` retain thread_id in metadata.
+            envelope.metadata,
           )
-          // Datetime jobs created via `remind` retain thread_id in metadata.
-          // @ts-expect-error Metadata is not properly reflected in Message type.
-          messageObj.metadata = envelope.metadata
           robot.adapter.receive(messageObj)
         }
       } else {
-        // Recurring jobs should post via API instead, so we can save thread id.
-        postMessageAndSaveThreadId(robot, this, processedMessage)
+        try {
+          // Recurring jobs should post via API instead, so we can save thread id.
+          postMessageAndSaveThreadId(robot, envelope, this, processedMessage)
+        } catch (err) {
+          robot.logger.error("Error posting scheduled message", err)
+        }
       }
 
       return typeof this.cb === "function" ? this.cb() : undefined
@@ -764,134 +743,73 @@ class Job {
     return typeof this.cb === "function" ? this.cb() : undefined
   }
 
-  serialize(): string {
-    return JSON.stringify([
+  serialize(): readonly [string, JobUser, string, MessageMetadata, boolean] {
+    return [
       this.pattern,
       this.user,
       this.message,
       this.metadata,
       this.remindInThread,
-    ])
+    ] as const
   }
 }
 
-function postMessageAndSaveThreadId(
+function urlFor(roomId: string, serverName: string, eventId: string): string {
+  return `https://matrix.to/#/${roomId}/${eventId}?via=${serverName}`
+}
+
+async function postMessageAndSaveThreadId(
   robot: hubot.Robot<any>,
+  envelope: Omit<hubot.Envelope, "message">,
   job: Job,
   messageText: string,
 ) {
-  // This uses the Flowdock API to post instead of robot.send, so that we can
-  // capture the thread id of the posted message.
-
-  let postParams = {
-    event: "message",
-    content: messageText,
-    flow: job.user.room,
+  if (robot.adapter.constructor !== Matrix) {
+    return
   }
 
-  let extraHeader = { "X-flowdock-wait-for-message": true }
+  const postedEvent = await robot.adapter.sendThreaded(
+    { ...envelope, message: new hubot.TextMessage(envelope.user, "", "") },
+    // Though the job may have an associated thread id, reminders spawn their
+    // own threads.
+    undefined,
+    messageText,
+  )
 
-  robot.adapter.bot.post(
-    "/messages",
-    postParams,
-    extraHeader,
-    postMessageCallback(robot, job, messageText),
+  if (postedEvent === undefined) {
+    throw new Error("Unexpected undefined Matrix client")
+  }
+
+  const threadId = postedEvent.event_id
+  const eventId = postedEvent.event_id
+  const url = urlFor(envelope.room, "thesis.co", eventId)
+
+  if (CONFIG.dontReceive !== "1") {
+    // Send message to the adapter, to allow hubot to process the message.
+    let messageObj = new MatrixMessage(envelope.user, messageText, "", {
+      threadId,
+    })
+    robot.adapter.receive(messageObj)
+  }
+
+  // Update the job in memory, and ensure metadata exists
+  job.metadata.lastUrl = url
+
+  // Update the job in brain and log the update.
+  const serializedJob = updateJobInBrain(
+    robot.brain,
+    RECURRING_JOB_STORAGE_KEY,
+    job,
+  )
+  logSerializedJobDetails(
+    robot.logger,
+    serializedJob,
+    "Updated job's last url after posting latest occurrence",
+    job.id,
   )
 }
 
-function postMessageCallback(
-  robot: hubot.Robot<any>,
-  runningJob: Job,
-  messageText: string,
-) {
-  return function (err: any, res: any, body: any) {
-    let logMessage = ""
-    let lastUrl, serializedJob
-    let baseURL = "https://www.flowdock.com/app/{flowPath}/threads/{messageId}"
-    let threadId = ""
-    if (err) {
-      // Send job via adapter if there's an error posting via API. Since we
-      // won't get back a thread_id to save into the lastUrl, we clear the
-      // lastUrl param currently set on the recurring job.
-
-      robot.logger.error(
-        `Problem posting scheduled job message via Flowdock API: ${util.inspect(
-          err,
-          { depth: 0 },
-        )}`,
-      )
-
-      const messageEnvelope = {
-        user: runningJob.user,
-        room: runningJob.user.room,
-        // We exclude the job's metadata here: cron jobs are not remindInThread.
-      }
-
-      logMessage =
-        "Updated job after falling back to robot send, no thread_id available to save in last url."
-
-      robot.adapter.send(messageEnvelope, messageText)
-    } else if (res && res.flow && res.thread_id) {
-      // Build the url.
-      let lastPostedFlow = getRoomInfoFromIdOrName(robot.adapter, res.flow)
-      if (lastPostedFlow) {
-        threadId = res.thread_id // We may need this from `robot.adapter.receive()`
-        let lastPostedFlowPath = robot.adapter.flowPath(lastPostedFlow)
-        let encodedId = encodeThreadId(threadId)
-        lastUrl = baseURL
-          .replace(/{flowPath}/, lastPostedFlowPath)
-          .replace(/{messageId}|{threadId}/, encodedId)
-
-        logMessage = "Updated job's last url after posting latest occurrence"
-      }
-    } else {
-      // Something went wrong getting a thread_id back from the API for the job
-      // that just fired, even though the job's message posted without error.
-      // Clear the job's lastUrl param.
-
-      robot.logger.info(
-        `Could not get thread_id for schedule job # ${runningJob.id}`,
-        `FLowdock API response: ${util.inspect(body, { depth: 0 })}`,
-      )
-      logMessage =
-        "Updated job after posting via API, but no thread_id available to save in last url."
-    }
-    if (CONFIG.dontReceive !== "1") {
-      // Send message to the adapter, to allow hubot to process the message.
-      let messageObj = new TextMessage(
-        new hubot.User(runningJob.user.id, runningJob.user),
-        messageText,
-        "",
-      )
-      // If we got a threadId from the API, include it as metadata
-      // @ts-expect-error Metadata is not properly reflected in Message type.
-      messageObj.metadata = { thread_id: threadId }
-      robot.adapter.receive(messageObj)
-    }
-
-    // Update the job in memory, and ensure metadata exists
-    if (!!runningJob.metadata) {
-      runningJob.metadata.lastUrl = lastUrl
-    } else {
-      runningJob.metadata = { lastUrl: lastUrl }
-    }
-
-    // Update the job in brain and log the update.
-    serializedJob = updateJobInBrain(
-      robot.brain,
-      RECURRING_JOB_STORAGE_KEY,
-      runningJob,
-    )
-    logSerializedJobDetails(
-      robot.logger,
-      serializedJob,
-      logMessage,
-      runningJob.id,
-    )
-  }
-}
-
-module.exports = {
+export {
   CONFIG,
   RECURRING_JOB_STORAGE_KEY,
   syncSchedules,

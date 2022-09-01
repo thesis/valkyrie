@@ -19,33 +19,34 @@
 //   kb0rg
 //
 
-const _ = require("lodash")
-const chrono = require("chrono-node")
+import * as _ from "lodash"
+import * as chrono from "chrono-node"
 
-const {
+import {
   getRoomIdFromName,
-  getPublicJoinedFlowIds,
-  isRoomInviteOnly,
   robotIsInRoom,
-} = require("../lib/flowdock-util")
+  isRoomNonPublic,
+  getPublicJoinedRoomIds,
+} from "../lib/adapter-util"
 
-const {
+import {
   CONFIG,
   syncSchedules,
-  isRestrictedRoom,
   createScheduledJob,
   isBlank,
-  isCronPattern,
   updateScheduledJob,
   cancelScheduledJob,
   getScheduledJobList,
   formatJobsForListMessage,
-} = require("../lib/schedule-util")
+  MessageMetadata,
+} from "../lib/schedule-util"
+import { Robot } from "hubot"
+import { MatrixMessage } from "hubot-matrix"
 
 const REMINDER_JOBS = {}
 const REMINDER_KEY = "hubot_reminders"
 
-module.exports = function (robot) {
+module.exports = function (robot: Robot) {
   robot.brain.on("loaded", () => {
     return syncSchedules(robot, REMINDER_KEY, REMINDER_JOBS)
   })
@@ -55,18 +56,27 @@ module.exports = function (robot) {
   }
 
   robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, function (msg) {
-    const whoToTag = {
+    const whoToTag: { [name: string]: string } = {
       me: `@${msg.message.user.name}, `,
-      team: "@team, ",
+      here: "@here, ",
+      team: "@room, ",
     }
 
-    let who = msg.match[1]
-    let message = whoToTag[who] || ""
-    let metadata = msg.message.metadata
+    const who = msg.match[1]
+    const message = whoToTag[who] ?? ""
+    const metadata: MessageMetadata =
+      "metadata" in msg.message
+        ? {
+            ...(msg.message as MatrixMessage).metadata,
+            messageId: msg.message.id,
+          }
+        : { messageId: msg.message.id }
+
     try {
-      let inputString = msg.match[2]
-      let refDate = Date.now()
-      let parsedText = chrono.parse(inputString, refDate, { forwardDate: true })
+      const inputString = msg.match[2]
+      const parsedText = chrono.parse(inputString, new Date(), {
+        forwardDate: true,
+      })
 
       if (!parsedText[0]) {
         robot.logger.error(
@@ -81,7 +91,7 @@ module.exports = function (robot) {
 
       let { index: dateTextIndex, text: dateText, start: date } = parsedText[0]
       let messageText = inputString.substring(dateTextIndex + dateText.length)
-      message += messageText.replace(/^\s*to\s*/i, "")
+      messageText += messageText.replace(/^\s*to\s*/i, "")
 
       let resp = createScheduledJob(
         robot,
@@ -94,15 +104,18 @@ module.exports = function (robot) {
         metadata,
         true, // remindInThread: default to true for remind jobs
       )
-      msg.reply(resp)
+
+      if (resp !== undefined) {
+        msg.reply(resp)
+      }
     } catch (error) {
       robot.logger.error(`createScheduledJob Error: ${error.message}`)
       msg.reply("Something went wrong adding this reminder.")
     }
   })
 
-  robot.respond(/reminder list(?: (all|.*))?/i, function (msg) {
-    let id, job, rooms, showAll, outputPrefix
+  robot.respond(/reminder list(?: (all|.*))?/i, async function (msg) {
+    let rooms, outputPrefix
     const targetRoom = msg.match[1]
     const roomId = msg.message.user.room // room command is called from
     let targetRoomId = null
@@ -112,12 +125,15 @@ module.exports = function (robot) {
     // If targetRoom is specified, check whether list for is permitted.
     if (!isBlank(targetRoom) && targetRoom != "all") {
       targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
-      if (!robotIsInRoom(robot.adapter, targetRoomId)) {
+      if (
+        targetRoomId === undefined ||
+        !(await robotIsInRoom(robot.adapter, targetRoomId))
+      ) {
         return msg.reply(
           `Sorry, I'm not in the ${targetRoom} flow - or maybe you mistyped?`,
         )
       }
-      if (isRoomInviteOnly(robot.adapter, robot.adapterName, targetRoomId)) {
+      if (targetRoomId && isRoomNonPublic(robot.adapter, targetRoomId)) {
         if (msg.message.user.room != targetRoomId) {
           return msg.reply(
             `Sorry, that's a private flow. I can only show jobs scheduled from that flow from within the flow.`,
@@ -136,7 +152,7 @@ module.exports = function (robot) {
       rooms = [roomId]
     } else if (targetRoom === "all") {
       // Get list of public rooms.
-      rooms = getPublicJoinedFlowIds(robot.adapter)
+      rooms = getPublicJoinedRoomIds(robot.adapter)
       // If called from a private room, add to list.
       calledFromPrivateRoom = !calledFromDm
         ? isRoomInviteOnly(robot.adapter, robot.adapterName, roomId)

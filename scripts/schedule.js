@@ -22,9 +22,9 @@ const _ = require("lodash")
 const {
   getRoomIdFromName,
   getPublicJoinedFlowIds,
-  isRoomInviteOnly,
+  isRoomNonPublic,
   robotIsInRoom,
-} = require("../lib/flowdock-util")
+} = require("../lib/adapter-util")
 
 const {
   CONFIG,
@@ -43,7 +43,12 @@ const {
 const JOBS = {}
 const STORE_KEY = RECURRING_JOB_STORAGE_KEY
 
-module.exports = function(robot) {
+/** @typedef { import("hubot").Robot } Robot */
+
+/**
+ * @param {Robot} robot
+ */
+module.exports = function (robot) {
   robot.brain.on("loaded", () => {
     return syncSchedules(robot, STORE_KEY, JOBS)
   })
@@ -54,17 +59,25 @@ module.exports = function(robot) {
 
   robot.respond(
     /schedule (?:new|add)(?: )([^"]*(?="))"(.*?)" ((?:.|\s)*)$/i,
-    function(msg) {
-      let targetRoom = msg.match[1] // optional name of room specified in msg
-      let targetRoomId = null
+    function (msg) {
+      // optional name of room specified in msg
+      const targetRoom = msg.match[1]?.trim() ?? ""
+      const targetRoomId = isBlank(targetRoom)
+        ? msg.room
+        : getRoomIdFromName(robot.adapter, targetRoom)
       let pattern = _.trim(msg.match[2])
 
       // store the metadata, but do not use it to post the job
       let metadata = msg.message.metadata
 
-      if (!isBlank(targetRoom)) {
-        targetRoomId = getRoomIdFromName(robot.adapter, targetRoom.trim())
+      // If the room id wasn't found at all, flag an error.
+      if (!isBlank(targetRoom) && targetRoomId === undefined) {
+        return msg.reply(
+          `Couldn't find room named ${targetRoom} - maybe you mistyped or I haven't been invited?`,
+        )
+      }
 
+      if (!isBlank(targetRoom)) {
         if (isRestrictedRoom(targetRoomId, robot, msg)) {
           return msg.send(
             `Creating schedule for the ${targetRoom} flow is restricted.`,
@@ -106,28 +119,48 @@ module.exports = function(robot) {
     },
   )
 
-  robot.respond(/schedule list(?: (all|.*))?/i, function(msg) {
+  robot.respond(/schedule list(?: (all|.*))?/i, function (msg) {
     let id, job, rooms, outputPrefix, calledFromPrivateRoom
-    const targetRoom = msg.match[1]
-    const roomId = msg.message.user.room // room command is called from
-    let targetRoomId = null
-    let output = ""
-    let calledFromDm = typeof roomId === "undefined"
+    const targetRoom = msg.match[1]?.trim()
+    const specificRoomTargeted = !isBlank(targetRoom) && targetRoom !== "all"
+    const targetRoomId = isBlank(targetRoom)
+      ? // blank means use this room
+        messageRoomId
+      : targetRoom === "all"
+      ? // all means we'll look up rooms separately
+        undefined
+      : // otherwise it's a room name
+        getRoomIdFromName(robot.adapter, targetRoom)
 
-    // If targetRoom is specified, check whether list for is permitted.
-    if (!isBlank(targetRoom) && targetRoom != "all") {
-      targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
+    const messageRoomId = msg.message.user.room // room command is called from
+
+    let output = ""
+    // FIXME May not be true in Matrix.
+    let calledFromDm = messageRoomId === undefined
+
+    // If the room id wasn't found at all, flag an error.
+    if (specificRoomTargeted && targetRoomId === undefined) {
+      return msg.reply(
+        `Couldn't find room named ${targetRoom} - maybe you mistyped or I haven't been invited?`,
+      )
+    }
+
+    // If targetRoom is specified, check whether listing that room is
+    // permitted.
+    if (targetRoomId !== undefined) {
       if (!robotIsInRoom(robot.adapter, targetRoomId)) {
-        return msg.send(
-          `Sorry, I'm not in the ${targetRoom} flow - or maybe you mistyped?`,
+        return msg.reply(
+          `Sorry, I'm not in ${targetRoom} - or maybe you mistyped?`,
         )
       }
-      if (isRoomInviteOnly(robot.adapter, robot.adapterName, targetRoomId)) {
-        if (msg.message.user.room != targetRoomId) {
-          return msg.send(
-            `Sorry, that's a private flow. I can only show jobs scheduled from that flow from within the flow.`,
-          )
-        }
+
+      if (
+        isRoomNonPublic(robot.adapter, robot.adapterName, targetRoomId) &&
+        messageRoomId !== targetRoomId
+      ) {
+        return msg.reply(
+          `Sorry, that's not a public room. I can only show jobs scheduled from that room from within the room.`,
+        )
       }
     }
 
@@ -138,16 +171,16 @@ module.exports = function(robot) {
     if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
       // If targetRoom is undefined or blank, show schedule for current room.
       // Room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
-      rooms = [roomId]
+      rooms = [messageRoomId]
     } else if (targetRoom === "all") {
       // Get list of public rooms.
       rooms = getPublicJoinedFlowIds(robot.adapter)
       // If called from a private room, add to list.
       calledFromPrivateRoom = !calledFromDm
-        ? isRoomInviteOnly(robot.adapter, robot.adapterName, roomId)
+        ? isRoomNonPublic(robot.adapter, robot.adapterName, messageRoomId)
         : false
       if (calledFromPrivateRoom) {
-        rooms.push(roomId)
+        rooms.push(messageRoomId)
       }
     } else {
       // If targetRoom is specified, show jobs for that room.
@@ -170,26 +203,34 @@ module.exports = function(robot) {
     }
 
     try {
-      let [dateJobs, cronJobs] = getScheduledJobList(JOBS, rooms, userIdForDMs)
-      output = formatJobsForListMessage(robot.adapter, dateJobs, false)
-      output += formatJobsForListMessage(robot.adapter, cronJobs, true)
+      const allJobs = getScheduledJobList(JOBS, rooms, userIdForDMs)
+      const jobsList = allJobs
+        .flatMap((jobs) =>
+          formatJobsForListMessage(
+            robot.adapter,
+            jobs,
+            jobs[0]?.isCron() ?? false,
+          ),
+        )
+        .join("")
 
-      if (!!output.length) {
+      if (output.length > 0) {
         output = outputPrefix + "===\n" + output
-        return msg.send(output)
+        return msg.reply(`${outputPrefix}===
+          ${jobsList}`)
       } else {
-        return msg.send("No messages have been scheduled")
+        return msg.reply("No messages have been scheduled")
       }
     } catch (error) {
       robot.logger.error(
         `Error getting or formatting job list: ${error.message}\nFull error: %o`,
         error,
       )
-      msg.send("Something went wrong getting the schedule list.")
+      msg.reply("Something went wrong getting the schedule list.")
     }
   })
 
-  robot.respond(/schedule (?:upd|update) (\d+) ((?:.|\s)*)/i, msg => {
+  robot.respond(/schedule (?:upd|update) (\d+)\s((?:.|\s)*)/i, (msg) => {
     try {
       let resp = updateScheduledJob(
         robot,
@@ -199,20 +240,20 @@ module.exports = function(robot) {
         msg.match[1],
         msg.match[2],
       )
-      msg.send(resp)
+      msg.reply(resp)
     } catch (error) {
       robot.logger.error(`updateScheduledJob Error: ${error.message}`)
-      msg.send("Something went wrong updating this schedule.")
+      msg.reply("Something went wrong updating this schedule.")
     }
   })
 
-  robot.respond(/schedule (?:del|delete|remove|cancel) (\d+)/i, msg => {
+  robot.respond(/schedule (?:del|delete|remove|cancel) (\d+)/i, (msg) => {
     try {
       let resp = cancelScheduledJob(robot, JOBS, STORE_KEY, msg, msg.match[1])
-      msg.send(resp)
+      msg.reply(resp)
     } catch (error) {
       robot.logger.error(`updateScheduledJob Error: ${error.message}`)
-      msg.send("Something went wrong deleting this schedule.")
+      msg.reply("Something went wrong deleting this schedule.")
     }
   })
 }
