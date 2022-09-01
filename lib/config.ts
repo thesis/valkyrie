@@ -1,6 +1,6 @@
 // Provides a collection of configuration validation helpers
 
-import { getRoomInfoFromIdOrName, isRoomNameValid } from "../lib/flowdock-util"
+import { getRoomInfoFromIdOrName, isRoomNameValid } from "../lib/adapter-util"
 
 /**
  * Given a robot and a set of config keys, reads all of the config values as
@@ -42,8 +42,8 @@ export function withConfigOrReportIssues(
 
 /**
  * Given a robot and a room name, checks the validity of the room name based on
- * the criteria outlined in the flowdock-utils.isRoomNameValid function, and
- * returns the room object if valid.
+ * the criteria outlined in the isRoomNameValid function, and returns the room
+ * object if valid.
  *
  * If the room name is invalid:
  * - if the robot is using the shell adapter, logs and returns an empty string.
@@ -58,7 +58,7 @@ export function fetchRoomInfoOrReportIssue(
       `Could not get flow object for: ${roomName}. This will break the build when connected to flowdock.`,
     )
   }
-  return getRoomInfoFromIdOrName(robot.adapter, roomName)
+  return getRoomInfoFromIdOrName(robot.adapter, roomName)?.id
 }
 
 /**
