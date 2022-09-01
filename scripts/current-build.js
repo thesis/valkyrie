@@ -10,7 +10,7 @@
 // Author:
 //   shadowfiend
 
-const { isRoomNameValid } = require("../lib/flowdock-util")
+const { isRoomNameValid } = require("../lib/adapter-util")
 
 let fs = require("fs")
 

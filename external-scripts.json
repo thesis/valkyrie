@@ -2,7 +2,6 @@
   "hubot-diagnostics",
   "hubot-even-better-help",
   "hubot-redis-brain",
-  "hubot-reload",
   "hubot-rules",
   "hubot-shipit"
 ]

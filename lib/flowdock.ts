@@ -1,5 +1,6 @@
 import { default as axios, AxiosResponse, AxiosRequestConfig } from "axios"
 
+// @ts-ignore No types available.
 import { Base64 } from "js-base64"
 
 const API_BASE_URL = "https://api.flowdock.com",
@@ -53,7 +54,7 @@ type DiscussionMessage = {
  * Session represents a session of interactions with a Flowdock server.
  */
 abstract class Session {
-  private postFn: (
+  protected readonly postFn: (
     url: string,
     data?: any,
     config?: AxiosRequestConfig,
@@ -64,7 +65,7 @@ abstract class Session {
       this.postFn = axios.post.bind(axios)
     } else {
       this.postFn = (url: string, data?: any, config?: AxiosRequestConfig) => {
-        return new Promise<AxiosResponse>(resolve => {
+        return new Promise<AxiosResponse>((resolve) => {
           setTimeout(() => {
             console.log(
               `Flowdock POST to URL ${url} with data:\n`,
@@ -92,12 +93,6 @@ abstract class Session {
  * integration for a third-party app.
  */
 class AppSession extends Session {
-  private postFn: (
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig,
-  ) => Promise<AxiosResponse>
-
   constructor(private apiToken: string, doPost: boolean = true) {
     super(doPost)
     this.apiToken = apiToken
@@ -128,12 +123,6 @@ class AppSession extends Session {
  * Flowdock account.
  */
 class BasicAuthSession extends Session {
-  private postFn: (
-    url: string,
-    data?: any,
-    config?: AxiosRequestConfig,
-  ) => Promise<AxiosResponse>
-
   constructor(private apiToken: string, doPost: boolean = true) {
     super(doPost)
     this.apiToken = apiToken

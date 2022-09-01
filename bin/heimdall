@@ -2,7 +2,7 @@
 
 set -e
 
-npm install
+yarn install
 export PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 export HUBOT_MATRIX_USER="@heimdall:thesis.co"
 export HUBOT_MATRIX_HOST_SERVER="https://thesisco.ems.host"

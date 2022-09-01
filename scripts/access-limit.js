@@ -17,7 +17,7 @@
 // Author:
 //   kb0rg
 
-const { getRoomNameFromId } = require("../lib/flowdock-util")
+const { getRoomNameFromId } = require("../lib/adapter-util")
 
 var ALLOWED_ROOMS,
   ALLOWED_BOTS,
@@ -35,8 +35,8 @@ ALLOWED_ROOMS = [
   "Playground Private (for hubot dev)",
 ] // string that matches the room name
 
-module.exports = function(robot) {
-  robot.listenerMiddleware(function(context, next, done) {
+module.exports = function (robot) {
+  robot.listenerMiddleware(function (context, next, done) {
     if (BOT_RESTICTED_COMMANDS.indexOf(context.listener.options.id) >= 0) {
       if (ALLOWED_BOTS.indexOf(robot.name) >= 0) {
         // Bot is allowed access to this command

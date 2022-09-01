@@ -12,12 +12,13 @@ RUN apk add --no-cache \
   python2 \
   make \
   g++ \
+  openssh \
 	git && \
 	rm -rf /usr/share/man/
 
-COPY package-lock.json package.json ./
+COPY yarn.lock package.json ./
 
-RUN npm install
+RUN yarn install
 
 RUN mkdir bin scripts lib test
 COPY external-scripts.json .
@@ -27,7 +28,7 @@ COPY lib ./lib
 COPY BUILD ./BUILD
 COPY test ./test
 
-RUN npm test
+RUN yarn test
 RUN rm -r test
 RUN echo $?
 
