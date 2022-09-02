@@ -111,10 +111,10 @@ module.exports = function (robot) {
           metadata,
           false, // remindInThread: default to false for schedule jobs
         )
-        msg.send(resp)
+        msg.reply(resp)
       } catch (error) {
         robot.logger.error(`createScheduledJob Error: ${error.message}`)
-        msg.send("Something went wrong adding this schedule.")
+        msg.reply("Something went wrong adding this schedule.")
       }
     },
   )
