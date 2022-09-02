@@ -120,7 +120,10 @@ module.exports = function (robot) {
   )
 
   robot.respond(/schedule list(?: (all|.*))?/i, function (msg) {
-    let id, job, rooms, outputPrefix, calledFromPrivateRoom
+    let rooms, outputPrefix, calledFromPrivateRoom
+
+    const messageRoomId = msg.message.user.room // room command is called from
+
     const targetRoom = msg.match[1]?.trim()
     const specificRoomTargeted = !isBlank(targetRoom) && targetRoom !== "all"
     const targetRoomId = isBlank(targetRoom)
@@ -131,8 +134,6 @@ module.exports = function (robot) {
         undefined
       : // otherwise it's a room name
         getRoomIdFromName(robot.adapter, targetRoom)
-
-    const messageRoomId = msg.message.user.room // room command is called from
 
     let output = ""
     // FIXME May not be true in Matrix.
