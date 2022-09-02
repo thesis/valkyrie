@@ -199,7 +199,7 @@ module.exports = function (robot: Robot) {
     }
   })
 
-  robot.respond(/reminder (?:upd|update) (\d+) ((?:.|\s)*)/i, (msg) => {
+  robot.respond(/reminder (?:upd|update) (\d+)\s((?:.|\s)*)/i, (msg) => {
     try {
       let resp = updateScheduledJob(
         robot,
