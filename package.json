@@ -11,7 +11,7 @@
     "cron-parser": "^2.7.3",
     "cronstrue": "^1.68.0",
     "decode-html": "^2.0.0",
-    "github-api": "^3.2.2",
+    "github-api": "^3.4.0",
     "hubot": "^3.3.2",
     "hubot-diagnostics": "^1.0.0",
     "hubot-even-better-help": "git+https://github.com/thesis/hubot-even-better-help.git#3192eedf2a0f11dd0b5fa736e0b9033741a59050",
@@ -27,7 +27,6 @@
     "node-schedule": "1.3.2",
     "passport": "0.6.0",
     "passport-github2": "0.1.12",
-    "request": "^2.88.0",
     "typescript": "~4.7.0",
     "uuid": "^3.2.1"
   },
