@@ -27,6 +27,7 @@ COPY scripts ./scripts
 COPY lib ./lib
 COPY BUILD ./BUILD
 COPY test ./test
+COPY tsconfig.json ./tsconfig.json
 
 RUN yarn test
 RUN rm -r test
