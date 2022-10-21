@@ -34,13 +34,21 @@
     "node": "18"
   },
   "devDependencies": {
+    "@thesis-co/eslint-config": "^0.3.0",
     "@types/cookie": "^0.3.1",
     "@types/hubot": "^3.3.1",
     "@types/jsonwebtoken": "~7.2.8",
+    "@typescript-eslint/eslint-plugin": "^5.40.1",
+    "@typescript-eslint/parser": "^5.40.1",
+    "eslint": "^8.25.0",
     "hubot-chat-testing": "git+https://github.com/thesis/hubot-chat-testing.git#v2.0.0-beta.1",
-    "mocha": "10.0.0"
+    "hubot-test-helper": "^1.9.0",
+    "mocha": "10.0.0",
+    "prettier": "^2.7.1"
   },
   "scripts": {
-    "test": "mocha --require coffeescript/register"
+    "test": "mocha --require coffeescript/register",
+    "lint:js": "eslint .",
+    "lint:js:fix": "eslint . --fix"
   }
 }
