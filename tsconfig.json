@@ -9,9 +9,10 @@
     "noImplicitThis": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
+    "types": ["mocha"],
     "target": "esnext"
   },
   "typeAcquisition": {
     "enable": true
-  }
+  },
 }
