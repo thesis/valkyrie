@@ -10,43 +10,43 @@
 //   hubot github who am i - returns your profile info
 //   hubot github add <username> to [cardforcoin|keep-network] [<team>+] - Adds the given GitHub username to the specified teams in the given group. Teams are the URL name of the team, which has no spaces or special characters other than dashes. The username is a *chat* username, and that user must already have logged in using `github auth` to prove they own that username. If the user has not, the request to add them will be stored until they have.
 
-let GitHubApi = require("github-api"),
-  axios = require("axios")
+const GitHubApi = require("github-api")
+const axios = require("axios")
 
-let CLIENT_CACHE = new Map(),
-  HOST = process.env["HUBOT_HOST"]
+const CLIENT_CACHE = new Map()
+const HOST = process.env.HUBOT_HOST
 
 function apiFor(bot, user) {
-  let api = CLIENT_CACHE[user],
-    gitHubTokens = bot.brain.get("gitHubTokens") || {}
+  let api = CLIENT_CACHE[user]
+  const gitHubTokens = bot.brain.get("gitHubTokens") || {}
 
   if (!api) {
-    let token = gitHubTokens[user.id]
+    const token = gitHubTokens[user.id]
     if (token) {
-      api = new GitHubApi({ token: token })
+      api = new GitHubApi({ token })
     }
   }
 
   return api
 }
 
-module.exports = function(robot) {
-  robot.respond(/github who am (i|I)/, res => {
-    let api = apiFor(robot, res.message.user)
+module.exports = function (robot) {
+  robot.respond(/github who am (i|I)/, (res) => {
+    const api = apiFor(robot, res.message.user)
 
     if (api) {
       api
         .getUser()
         .getProfile()
-        .then(response => {
-          var string = ""
-          for (let [key, value] of Object.entries(response.data)) {
+        .then((response) => {
+          let string = ""
+          for (const [key, value] of Object.entries(response.data)) {
             string += `${key}: ${value}\n`
           }
 
           res.send(`You are:\n${string}`)
         })
-        .catch(error => {
+        .catch((error) => {
           robot.logger.error("Error looking up user profile: ", error)
           res.send("Something went wrong looking you up :(")
         })
@@ -57,19 +57,19 @@ module.exports = function(robot) {
     }
   })
 
-  robot.respond(/github add ([^ ]+) to ([^ ]+)( .*)/, res => {
-    let api = apiFor(robot, res.message.user)
+  robot.respond(/github add ([^ ]+) to ([^ ]+)( .*)/, (res) => {
+    const api = apiFor(robot, res.message.user)
 
-    let [gitHubUsername, org, teamsString] = res.match.slice(1, 4)
+    const [gitHubUsername, org, teamsString] = res.match.slice(1, 4)
 
-    var teamSlugs = teamsString.split(/,? +/),
-      slugsById = {}
+    const teamSlugs = teamsString.split(/,? +/)
+    let slugsById = {}
 
     if (api) {
       api
         .getOrganization(org)
         .getTeams()
-        .then(result => {
+        .then((result) => {
           if (result.status != 200) {
             robot.logger.error(
               `Error looking up org teams for ${org}: ${JSON.stringify(
@@ -78,8 +78,8 @@ module.exports = function(robot) {
             )
             throw `Failed to look up org teams for org ${org}.`
           } else {
-            let selectedTeams = result.data.filter(
-              _ => teamSlugs.indexOf(_.slug) > -1,
+            const selectedTeams = result.data.filter(
+              (_) => teamSlugs.indexOf(_.slug) > -1,
             )
 
             slugsById = selectedTeams.reduce((slugsById, team) => {
@@ -88,17 +88,17 @@ module.exports = function(robot) {
             }, {})
 
             return Promise.all(
-              selectedTeams.map(_ =>
+              selectedTeams.map((_) =>
                 api
                   .getTeam(_.id)
                   .addMembership(gitHubUsername)
-                  .catch(err => err.response),
+                  .catch((err) => err.response),
               ),
             )
           }
         })
-        .then(teamResponses => {
-          let { successes, failures } = teamResponses.reduce(
+        .then((teamResponses) => {
+          const { successes, failures } = teamResponses.reduce(
             ({ successes, failures }, res) => {
               if (res.status == 200) {
                 successes.push(res)
@@ -106,27 +106,25 @@ module.exports = function(robot) {
                 failures.push(res)
               }
 
-              return { successes: successes, failures: failures }
+              return { successes, failures }
             },
             { successes: [], failures: [] },
           )
 
-          let allFailed = successes.length == 0,
-            pending = successes.some(_ => _.data.state == "pending")
+          const allFailed = successes.length == 0
+          const pending = successes.some((_) => _.data.state == "pending")
 
           if (failures.length > 0) {
             robot.logger.error(
               `Got failures adding ${gitHubUsername} to ${teamSlugs.join(
                 ", ",
-              )} in ${org}: ` +
-                failures.map(_ => _.data.message).join(", ") +
-                ".",
+              )} in ${org}: ${failures.map((_) => _.data.message).join(", ")}.`,
             )
           }
 
-          let successTeams = successes
+          const successTeams = successes
             .map(
-              _ =>
+              (_) =>
                 slugsById[_.data.url.replace(/^.*teams\/([^/]+)\/.*$/, "$1")],
             )
             .join(", ")
@@ -136,7 +134,7 @@ module.exports = function(robot) {
           } else if (allFailed && failures[0].status == 422) {
             res.send(
               `User ${gitHubUsername} isn't in ${org} and there ` +
-                `are no available seats; please add one at ` +
+                "are no available seats; please add one at " +
                 `https://github.com/organizations/${org}/settings/billing/seats .`,
             )
           } else if (allFailed) {
@@ -155,7 +153,7 @@ module.exports = function(robot) {
             res.send(`Added ${gitHubUsername} to ${successTeams} in ${org}.`)
           }
         })
-        .catch(error => {
+        .catch((error) => {
           robot.logger.error("Error looking up user profile: ", error)
           res.send(`Error adding ${gitHubUsername} to ${org}: ${error}.`)
         })

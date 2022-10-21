@@ -29,12 +29,12 @@ import cronstrue from "cronstrue"
 import * as hubot from "hubot"
 import { Robot } from "hubot"
 
+import { Matrix, MatrixMessage } from "hubot-matrix"
 import {
   getRoomInfoFromIdOrName,
   getRoomNameFromId,
   encodeThreadId,
-} from "../lib/adapter-util"
-import { Matrix, MatrixMessage } from "hubot-matrix"
+} from "./adapter-util"
 
 export type ScheduledJob = Job
 
@@ -129,14 +129,14 @@ const TEMPLATE_STRING_DISPATCHER: {
     runningJob: ScheduledJob | {},
   ) => string
 } = {
-  test: test,
+  test,
   "last-url": lastUrl,
 }
 
 // This is a temporary function to test the template string behavior.
 // It takes a string, coverts it to an int, and returns its square.
 function test(inputString: string): string {
-  let inputValue = parseInt(inputString)
+  const inputValue = parseInt(inputString)
   if (isNaN(inputValue)) {
     throw new Error(
       `Could not complete test function because \"${inputString}\" does not convert to an integer.`,
@@ -170,7 +170,7 @@ function lastUrl(
     const jobId = inputString
 
     // This feature is only enabled for cron jobs, so we can hard-code the storage key here
-    let serializedJob = robotBrain.get(RECURRING_JOB_STORAGE_KEY)[jobId]
+    const serializedJob = robotBrain.get(RECURRING_JOB_STORAGE_KEY)[jobId]
     if (!serializedJob) {
       throw new Error(`${jobId}: Scheduled job not found.`)
     }
@@ -188,16 +188,16 @@ function processTemplateString(
   robotBrain: hubot.Brain<any>,
   runningJob: ScheduledJob | {},
 ): string {
-  let templateStringMatch = message.match(/\{\{(.*?):(.*?)\}\}/i)
+  const templateStringMatch = message.match(/\{\{(.*?):(.*?)\}\}/i)
   if (!templateStringMatch) {
     return message
   }
-  let [templateString, templateStringCommand, templateStringValue] =
+  const [templateString, templateStringCommand, templateStringValue] =
     templateStringMatch
   let templateStringFormatted = ""
 
   try {
-    let allowedCommand =
+    const allowedCommand =
       TEMPLATE_STRING_DISPATCHER[templateStringCommand.trim()]
 
     if (!allowedCommand) {
@@ -305,7 +305,7 @@ function updateJobInBrain(
   storageKey: string,
   job: Job,
 ): ReturnType<Job["serialize"]> {
-  let serializedJob = job.serialize()
+  const serializedJob = job.serialize()
   return (robotBrain.get(storageKey)[job.id] = serializedJob)
 }
 
@@ -330,7 +330,7 @@ function updateScheduledJob(
 
   job.message = message
 
-  let serializedJob = updateJobInBrain(robot.brain, storageKey, job)
+  const serializedJob = updateJobInBrain(robot.brain, storageKey, job)
   logSerializedJobDetails(robot.logger, serializedJob, "Updated job", id)
 
   const formattedJob = formatJobForMessage(
@@ -484,7 +484,7 @@ function missingKeys<A extends ScheduledJobMap, B extends ScheduledJobMap>(
   obj2: B,
 ): string[] {
   const diff: string[] = []
-  for (let id in obj1) {
+  for (const id in obj1) {
     if (!(id in obj2)) {
       diff.push(id)
     }
@@ -495,13 +495,12 @@ function missingKeys<A extends ScheduledJobMap, B extends ScheduledJobMap>(
 function isCronPattern(pattern: string | Date) {
   if (pattern instanceof Date) {
     return false
-  } else {
-    const { errors } = cronParser.parseString(pattern)
-    return !Object.keys(errors).length
   }
+  const { errors } = cronParser.parseString(pattern)
+  return !Object.keys(errors).length
 }
 
-var isBlank = (s: string | undefined | null) => !(s ? s.trim() : undefined)
+const isBlank = (s: string | undefined | null) => !(s ? s.trim() : undefined)
 
 function isRestrictedRoom(
   targetRoom: string,
@@ -530,8 +529,8 @@ function getScheduledJobList(
   const dateJobs = []
   const cronJobs = []
 
-  for (let id in jobsInMemory) {
-    let job = jobsInMemory[id]
+  for (const id in jobsInMemory) {
+    const job = jobsInMemory[id]
 
     if (rooms.includes(job.user.room as string)) {
       // Exclude DM from list unless job's user matches specified user.
@@ -578,19 +577,19 @@ function formatJobForMessage(
   roomDisplayText = `(to ${jobRoomDisplayName})`
 
   if (metadata && jobRoom && remindInThread) {
-    let jobFlow = getRoomInfoFromIdOrName(robotAdapter, jobRoom)
+    const jobFlow = getRoomInfoFromIdOrName(robotAdapter, jobRoom)
     if (jobFlow) {
       robotAdapter
-      let encodedId = encodeThreadId(metadata.threadId ?? metadata.messageId)
-      let reminderURL = urlFor(jobRoom, "thesis.co", encodedId)
+      const encodedId = encodeThreadId(metadata.threadId ?? metadata.messageId)
+      const reminderURL = urlFor(jobRoom, "thesis.co", encodedId)
 
       roomDisplayText = `(to [thread in ${jobRoomDisplayName}](${reminderURL}))`
     }
   }
 
-  if (!!jobMessage.length) {
+  if (jobMessage.length) {
     messageParsed = jobMessage
-    for (let orgText in CONFIG.list.replaceText) {
+    for (const orgText in CONFIG.list.replaceText) {
       const replacedText = CONFIG.list.replaceText[orgText]
       messageParsed = messageParsed.replace(
         new RegExp(`${orgText}`, "g"),
@@ -605,9 +604,9 @@ function formatJobForMessage(
 }
 
 function sortJobsByDate(jobs: Job[]) {
-  jobs.sort((a, b) => {
-    return new Date(a.pattern).getTime() - new Date(b.pattern).getTime()
-  })
+  jobs.sort(
+    (a, b) => new Date(a.pattern).getTime() - new Date(b.pattern).getTime(),
+  )
 
   return jobs
 }
@@ -622,7 +621,7 @@ function formatJobsForListMessage(
   if (!isCron) {
     jobs = sortJobsByDate(jobs)
   }
-  for (let job of jobs) {
+  for (const job of jobs) {
     output += formatJobForMessage(
       robotAdapter,
       job.pattern,
@@ -643,7 +642,7 @@ function logSerializedJobDetails(
   messagePrefix: string,
   jobId: string,
 ) {
-  let [pattern, user, , metadata, remindInThread] = serializedJob
+  const [pattern, user, , metadata, remindInThread] = serializedJob
   logger.debug(
     `${messagePrefix} (${jobId}): pattern: ${pattern}, user: %o, message: (message redacted for privacy), metadata: %o, remindInThread: ${remindInThread}`,
     user,
@@ -653,6 +652,7 @@ function logSerializedJobDetails(
 
 class Job {
   public user: JobUser
+
   public job: any
 
   constructor(
@@ -714,7 +714,7 @@ class Job {
         if (CONFIG.dontReceive !== "1") {
           // Send message to the adapter, to allow hubot to process the message.
           // We handle this case in the postMessageCallback for all API-posted jobs.
-          let messageObj = new MatrixMessage(
+          const messageObj = new MatrixMessage(
             new hubot.User(this.user.id, this.user),
             processedMessage,
             "",
@@ -786,7 +786,7 @@ async function postMessageAndSaveThreadId(
 
   if (CONFIG.dontReceive !== "1") {
     // Send message to the adapter, to allow hubot to process the message.
-    let messageObj = new MatrixMessage(envelope.user, messageText, "", {
+    const messageObj = new MatrixMessage(envelope.user, messageText, "", {
       threadId,
     })
     robot.adapter.receive(messageObj)

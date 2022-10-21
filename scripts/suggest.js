@@ -28,7 +28,7 @@ if (false) {
   } = require("../lib/adapter-util")
 
   const FLOWDOCK_SESSION = new flowdock.BasicAuthSession(
-    process.env["HUBOT_FLOWDOCK_API_TOKEN"],
+    process.env.HUBOT_FLOWDOCK_API_TOKEN,
   )
 
   module.exports = function (robot) {
@@ -50,7 +50,7 @@ if (false) {
     } else {
       alertRoomPath = robot.adapter.flowPath(alertRoom)
 
-      let alertRoomLink = `${flowdock.URLs.flow}`.replace(
+      const alertRoomLink = `${flowdock.URLs.flow}`.replace(
         /{flowPath}/,
         alertRoomPath,
       )
@@ -60,10 +60,10 @@ if (false) {
 
     robot.respond(/suggest ?((?:.|\s)*)$/i, async (res) => {
       try {
-        let user = res.message.user
-        let userSuggestion = res.match[1]
+        const { user } = res.message
+        const userSuggestion = res.match[1]
 
-        let redirectToSuggestionAlertRoomMessage = `You can try again from a public flow, or join us in ${alertRoomReference} and chat with us about your idea there.`
+        const redirectToSuggestionAlertRoomMessage = `You can try again from a public flow, or join us in ${alertRoomReference} and chat with us about your idea there.`
 
         if (typeof res.message.room === "undefined") {
           res.send(
@@ -91,7 +91,7 @@ if (false) {
         let sourceFlowName = ""
         let originalThreadReference = ""
 
-        let sourceFlow = getRoomInfoFromIdOrName(
+        const sourceFlow = getRoomInfoFromIdOrName(
           robot.adapter,
           res.message.room,
         )
@@ -106,16 +106,16 @@ if (false) {
           originalThreadReference = `Refer to original thread in: ${sourceFlowName}.`
         } else {
           sourceFlowName = sourceFlow.name
-          let sourceThreadId = res.message.metadata.thread_id
-          let sourceThreadPath = robot.adapter.flowPath(sourceFlow)
-          let sourceThreadLink = `${flowdock.URLs.thread}`
+          const sourceThreadId = res.message.metadata.thread_id
+          const sourceThreadPath = robot.adapter.flowPath(sourceFlow)
+          const sourceThreadLink = `${flowdock.URLs.thread}`
             .replace(/{flowPath}/, sourceThreadPath)
             .replace(/{threadId}/, sourceThreadId)
           originalThreadReference = `See [original thread](${sourceThreadLink}).`
         }
 
         // post suggestion message & related info
-        let formattedSuggestion = `@${res.message.user.name} just made a #suggestion in ${sourceFlowName}:\n>${userSuggestion}\n\n${originalThreadReference}`
+        const formattedSuggestion = `@${res.message.user.name} just made a #suggestion in ${sourceFlowName}:\n>${userSuggestion}\n\n${originalThreadReference}`
 
         if (!alertRoom) {
           // this is probably local dev in the shell adapter
@@ -128,11 +128,11 @@ if (false) {
           return
         }
 
-        let postResponse = await FLOWDOCK_SESSION.postMessage(
+        const postResponse = await FLOWDOCK_SESSION.postMessage(
           formattedSuggestion,
           alertRoom.id,
         )
-        var alertThreadId = postResponse.data.thread_id
+        const alertThreadId = postResponse.data.thread_id
         if (!alertThreadId) {
           throw new Error(
             `Did not get thread id from post message response: ${util.inspect(
@@ -143,9 +143,10 @@ if (false) {
         }
 
         // construct formatted thread link
-        let alertThreadReference = `[${alertRoomName}](${flowdock.URLs.thread})`
-          .replace(/{flowPath}/, alertRoomPath)
-          .replace(/{threadId}/, alertThreadId)
+        const alertThreadReference =
+          `[${alertRoomName}](${flowdock.URLs.thread})`
+            .replace(/{flowPath}/, alertRoomPath)
+            .replace(/{threadId}/, alertThreadId)
         // then respond in source suggestion thread with formatted thread link
         res.send(
           `Thanks for the suggestion! We'll be discussing it further in ${alertThreadReference}, feel free to join us there.`,
@@ -157,7 +158,7 @@ if (false) {
           })}`,
         )
         res.send(
-          `Something went wrong trying to post your suggestion. Please ask your friendly human robot-tender to look into it.`,
+          "Something went wrong trying to post your suggestion. Please ask your friendly human robot-tender to look into it.",
         )
       }
     })

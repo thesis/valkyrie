@@ -4,8 +4,8 @@ import * as moment from "moment"
 import * as util from "util"
 import * as crypto from "crypto"
 
-const API_BASE_URL = "https://api.zoom.us/v2",
-  APP_BASE_URL = "zoommtg://zoom.us"
+const API_BASE_URL = "https://api.zoom.us/v2"
+const APP_BASE_URL = "zoommtg://zoom.us"
 const URLs = {
   meetings: `${API_BASE_URL}/users/{userId}/meetings`,
   meetingDetail: `${API_BASE_URL}/meetings/{meetingId}`,
@@ -23,9 +23,9 @@ function tokenFrom(apiKey: string, apiSecret: string) {
 }
 
 function shuffleArray(inputArray: array) {
-  for (var i = inputArray.length - 1; i > 0; i--) {
-    var j = Math.floor(Math.random() * (i + 1))
-    var temp = inputArray[i]
+  for (let i = inputArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const temp = inputArray[i]
     inputArray[i] = inputArray[j]
     inputArray[j] = temp
   }
@@ -36,8 +36,8 @@ function shuffleArray(inputArray: array) {
 // meeting password. May only contain the following characters:
 // [a-z A-Z 0-9 @ - _ * !]. Max of 10.
 function generateZoomPassword() {
-  let symbols = "@-_*!"
-  let substrings = [
+  const symbols = "@-_*!"
+  const substrings = [
     crypto.randomBytes(2).toString("hex"),
     crypto.randomBytes(2).toString("hex").toUpperCase(),
     symbols[Math.floor(Math.random() * symbols.length)],
@@ -51,10 +51,10 @@ async function getSession(
   apiSecret: string,
   meetingLengthBuffer: number, // in milliseconds
 ) {
-  const token = tokenFrom(apiKey, apiSecret),
-    userResponse = await axios.get(URLs.users, {
-      params: { access_token: token },
-    })
+  const token = tokenFrom(apiKey, apiSecret)
+  const userResponse = await axios.get(URLs.users, {
+    params: { access_token: token },
+  })
 
   if (userResponse.status != 200) {
     throw `Error looking up users: ${util.inspect(userResponse.data)}.`
@@ -111,8 +111,8 @@ class Session {
   // account that has no other meeting currently running, or scheduled to start
   // within the time specified by meetingLengthBuffer.
   async nextAvailableMeeting() {
-    let now = moment()
-    let bufferExpiryTime = moment(now).add(
+    const now = moment()
+    const bufferExpiryTime = moment(now).add(
       this.meetingLengthBuffer,
       "milliseconds",
     )
@@ -124,19 +124,18 @@ class Session {
         ([pro, basic], account) => {
           if (account.isBasic()) {
             return [pro, basic.concat([account])]
-          } else {
-            return [pro.concat([account]), basic]
           }
+          return [pro.concat([account]), basic]
         },
         [[] as Account[], [] as Account[]],
       )
       // Shuffle both arrays.
-      .map((accountGroups) => {
-        return accountGroups
+      .map((accountGroups) =>
+        accountGroups
           .map((_) => ({ sort: Math.random(), value: _ }))
           .sort((a, b) => a.sort - b.sort)
-          .map((_) => _.value)
-      })
+          .map((_) => _.value),
+      )
       // Join them back into one sorted, randomized array.
       .flat()
 
@@ -162,7 +161,7 @@ class Session {
         scheduledMeetingsInBuffer.length == 0
 
       if (availableForMeeting) {
-        return await account.createMeeting()
+        return account.createMeeting()
       }
     }
   }
@@ -213,15 +212,15 @@ class Account {
   // optional param "page_size" default: 30,/ max 300, "page_number" default: 1
   private async getMeetings(meetingCategory: MeetingScheduleCategory) {
     const response = await axios.get(
-        URLs.meetings.replace(/{userId}/, this.email),
-        {
-          params: {
-            access_token: this.token,
-            type: meetingCategory,
-          },
+      URLs.meetings.replace(/{userId}/, this.email),
+      {
+        params: {
+          access_token: this.token,
+          type: meetingCategory,
         },
-      ),
-      meetings: Meeting[] = response.data.meetings
+      },
+    )
+    const { meetings } = response.data
     return meetings
   }
 
@@ -242,23 +241,23 @@ class Account {
   }
 
   async createMeeting() {
-    let newMeetingPassword = generateZoomPassword()
+    const newMeetingPassword = generateZoomPassword()
     const response = await axios.post(
-        URLs.meetings.replace(/{userId}/, this.email),
-        {
-          topic: "Heimdall-initiated Zoom meeting",
-          password: newMeetingPassword,
-          settings: {
-            join_before_host: true,
-            host_video: true,
-            participant_video: true,
-            waiting_room: false,
-            use_pmi: false,
-          },
+      URLs.meetings.replace(/{userId}/, this.email),
+      {
+        topic: "Heimdall-initiated Zoom meeting",
+        password: newMeetingPassword,
+        settings: {
+          join_before_host: true,
+          host_video: true,
+          participant_video: true,
+          waiting_room: false,
+          use_pmi: false,
         },
-        { params: { access_token: this.token } },
-      ),
-      meeting: Meeting = response.data
+      },
+      { params: { access_token: this.token } },
+    )
+    const meeting: Meeting = response.data
 
     meeting.app_url = URLs.appJoin
       .replace(/{meetingId}/, meeting.id)

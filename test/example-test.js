@@ -1,15 +1,12 @@
-"use strict"
-const HubotChatTesting = require("hubot-chat-testing")
-const Helper = require("hubot-test-helper")
+import HubotChatTesting from "hubot-chat-testing"
+import Helper from "hubot-test-helper"
 
 const chat = new HubotChatTesting(
   "hubot",
   new Helper("../scripts/example.coffee"),
 )
 
-const expect = require("chai").expect
-
-describe("Testing example scripts", function() {
+describe("Testing example scripts", () => {
   // chat
   //   .when("user mentions a badger")
   //   .user("alice")

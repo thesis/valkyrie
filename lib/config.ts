@@ -1,6 +1,6 @@
 // Provides a collection of configuration validation helpers
 
-import { getRoomInfoFromIdOrName, isRoomNameValid } from "../lib/adapter-util"
+import { getRoomInfoFromIdOrName, isRoomNameValid } from "./adapter-util"
 
 /**
  * Given a robot and a set of config keys, reads all of the config values as
@@ -104,10 +104,9 @@ function logOrThrow(robot: Hubot.Robot<any>, errorMessage: string) {
       `${errorMessage} This will break the build when connected to flowdock.`,
     )
     return ""
-  } else {
-    // fail build if not using shell adapter: command will not work
-    throw new Error(errorMessage)
   }
+  // fail build if not using shell adapter: command will not work
+  throw new Error(errorMessage)
 }
 
 module.exports = {

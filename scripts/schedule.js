@@ -49,9 +49,7 @@ const STORE_KEY = RECURRING_JOB_STORAGE_KEY
  * @param {Robot} robot
  */
 module.exports = function (robot) {
-  robot.brain.on("loaded", () => {
-    return syncSchedules(robot, STORE_KEY, JOBS)
-  })
+  robot.brain.on("loaded", () => syncSchedules(robot, STORE_KEY, JOBS))
 
   if (!robot.brain.get(STORE_KEY)) {
     robot.brain.set(STORE_KEY, {})
@@ -59,16 +57,16 @@ module.exports = function (robot) {
 
   robot.respond(
     /schedule (?:new|add)(?: )([^"]*(?="))"(.*?)" ((?:.|\s)*)$/i,
-    function (msg) {
+    (msg) => {
       // optional name of room specified in msg
       const targetRoom = msg.match[1]?.trim() ?? ""
       const targetRoomId = isBlank(targetRoom)
         ? msg.room
         : getRoomIdFromName(robot.adapter, targetRoom)
-      let pattern = _.trim(msg.match[2])
+      const pattern = _.trim(msg.match[2])
 
       // store the metadata, but do not use it to post the job
-      let metadata = msg.message.metadata
+      const { metadata } = msg.message
 
       // If the room id wasn't found at all, flag an error.
       if (!isBlank(targetRoom) && targetRoomId === undefined) {
@@ -100,7 +98,7 @@ module.exports = function (robot) {
       }
 
       try {
-        let resp = createScheduledJob(
+        const resp = createScheduledJob(
           robot,
           JOBS,
           STORE_KEY,
@@ -119,8 +117,10 @@ module.exports = function (robot) {
     },
   )
 
-  robot.respond(/schedule list(?: (all|.*))?/i, function (msg) {
-    let rooms, outputPrefix, calledFromPrivateRoom
+  robot.respond(/schedule list(?: (all|.*))?/i, (msg) => {
+    let rooms
+    let outputPrefix
+    let calledFromPrivateRoom
 
     const messageRoomId = msg.message.user.room // room command is called from
 
@@ -137,7 +137,7 @@ module.exports = function (robot) {
 
     let output = ""
     // FIXME May not be true in Matrix.
-    let calledFromDm = messageRoomId === undefined
+    const calledFromDm = messageRoomId === undefined
 
     // If the room id wasn't found at all, flag an error.
     if (specificRoomTargeted && targetRoomId === undefined) {
@@ -160,13 +160,13 @@ module.exports = function (robot) {
         messageRoomId !== targetRoomId
       ) {
         return msg.reply(
-          `Sorry, that's not a public room. I can only show jobs scheduled from that room from within the room.`,
+          "Sorry, that's not a public room. I can only show jobs scheduled from that room from within the room.",
         )
       }
     }
 
     // only get DMs from user who called list, if user calls list from a DM
-    let userIdForDMs = calledFromDm ? msg.message.user.id : null
+    const userIdForDMs = calledFromDm ? msg.message.user.id : null
 
     // Construct params for getting and formatting job list
     if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
@@ -216,12 +216,11 @@ module.exports = function (robot) {
         .join("")
 
       if (output.length > 0) {
-        output = outputPrefix + "===\n" + output
+        output = `${outputPrefix}===\n${output}`
         return msg.reply(`${outputPrefix}===
           ${jobsList}`)
-      } else {
-        return msg.reply("No messages have been scheduled")
       }
+      return msg.reply("No messages have been scheduled")
     } catch (error) {
       robot.logger.error(
         `Error getting or formatting job list: ${error.message}\nFull error: %o`,
@@ -233,7 +232,7 @@ module.exports = function (robot) {
 
   robot.respond(/schedule (?:upd|update) (\d+)\s((?:.|\s)*)/i, (msg) => {
     try {
-      let resp = updateScheduledJob(
+      const resp = updateScheduledJob(
         robot,
         JOBS,
         STORE_KEY,
@@ -250,7 +249,7 @@ module.exports = function (robot) {
 
   robot.respond(/schedule (?:del|delete|remove|cancel) (\d+)/i, (msg) => {
     try {
-      let resp = cancelScheduledJob(robot, JOBS, STORE_KEY, msg, msg.match[1])
+      const resp = cancelScheduledJob(robot, JOBS, STORE_KEY, msg, msg.match[1])
       msg.reply(resp)
     } catch (error) {
       robot.logger.error(`updateScheduledJob Error: ${error.message}`)

@@ -48,8 +48,6 @@ function getRoomIdFromName(
 
     return roomIDByLowercaseName[lowercaseRoomName]
   }
-
-  return
 }
 
 /**
@@ -66,8 +64,6 @@ function getRoomNameFromId(
   if (isMatrixAdapter(robotAdapter)) {
     return robotAdapter.client?.getRoom(roomId)?.name
   }
-
-  return
 }
 
 export type RoomInfo = {
@@ -111,8 +107,6 @@ function getRoomInfoFromIdOrName(
           : "non-public",
     }
   }
-
-  return
 }
 
 /**
@@ -215,4 +209,5 @@ export {
   encodeThreadId,
   isRoomNameValid,
   robotIsInRoom,
+  isMatrixAdapter,
 }

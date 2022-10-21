@@ -10,23 +10,22 @@
 // Author:
 //   shadowfiend
 
+const fs = require("fs")
 const { isRoomNameValid } = require("../lib/adapter-util")
-
-let fs = require("fs")
 
 let buildNumberBuffer = Buffer.from("")
 try {
   buildNumberBuffer = fs.readFileSync(`${__dirname}/../BUILD`)
 } catch (e) {
-  console.error("Error reading buildNumber file: " + e)
+  console.error(`Error reading buildNumber file: ${e}`)
 }
-let buildNumber = buildNumberBuffer.toString().trim()
-let buildString = buildNumber
+const buildNumber = buildNumberBuffer.toString().trim()
+const buildString = buildNumber
   ? `build [${buildNumber}](https://circleci.com/gh/thesis/heimdall/${buildNumber})`
-  : `unknown build`
+  : "unknown build"
 
 function sendReleaseNotification(robot) {
-  let alertRoom = process.env["RELEASE_NOTIFICATION_ROOM"]
+  const alertRoom = process.env.RELEASE_NOTIFICATION_ROOM
   if (isRoomNameValid(robot.adapter, alertRoom)) {
     robot.send(
       {

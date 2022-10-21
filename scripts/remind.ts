@@ -22,6 +22,8 @@
 import * as _ from "lodash"
 import * as chrono from "chrono-node"
 
+import { Robot } from "hubot"
+import { MatrixMessage } from "hubot-matrix"
 import {
   getRoomIdFromName,
   robotIsInRoom,
@@ -40,22 +42,20 @@ import {
   formatJobsForListMessage,
   MessageMetadata,
 } from "../lib/schedule-util"
-import { Robot } from "hubot"
-import { MatrixMessage } from "hubot-matrix"
 
 const REMINDER_JOBS = {}
 const REMINDER_KEY = "hubot_reminders"
 
 module.exports = function (robot: Robot) {
-  robot.brain.on("loaded", () => {
-    return syncSchedules(robot, REMINDER_KEY, REMINDER_JOBS)
-  })
+  robot.brain.on("loaded", () =>
+    syncSchedules(robot, REMINDER_KEY, REMINDER_JOBS),
+  )
 
   if (!robot.brain.get(REMINDER_KEY)) {
     robot.brain.set(REMINDER_KEY, {})
   }
 
-  robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, function (msg) {
+  robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, (msg) => {
     const whoToTag: { [name: string]: string } = {
       me: `@${msg.message.user.name}, `,
       here: "@here, ",
@@ -89,11 +89,15 @@ module.exports = function (robot: Robot) {
           `)
       }
 
-      let { index: dateTextIndex, text: dateText, start: date } = parsedText[0]
+      const {
+        index: dateTextIndex,
+        text: dateText,
+        start: date,
+      } = parsedText[0]
       let messageText = inputString.substring(dateTextIndex + dateText.length)
       messageText += messageText.replace(/^\s*to\s*/i, "")
 
-      let resp = createScheduledJob(
+      const resp = createScheduledJob(
         robot,
         REMINDER_JOBS,
         REMINDER_KEY,
@@ -114,13 +118,14 @@ module.exports = function (robot: Robot) {
     }
   })
 
-  robot.respond(/reminder list(?: (all|.*))?/i, async function (msg) {
-    let rooms, outputPrefix
+  robot.respond(/reminder list(?: (all|.*))?/i, async (msg) => {
+    let rooms
+    let outputPrefix
     const targetRoom = msg.match[1]
     const roomId = msg.message.user.room // room command is called from
     let targetRoomId = null
     let output = ""
-    let calledFromDm = typeof roomId === "undefined"
+    const calledFromDm = typeof roomId === "undefined"
 
     // If targetRoom is specified, check whether list for is permitted.
     if (!isBlank(targetRoom) && targetRoom != "all") {
@@ -136,14 +141,14 @@ module.exports = function (robot: Robot) {
       if (targetRoomId && isRoomNonPublic(robot.adapter, targetRoomId)) {
         if (msg.message.user.room != targetRoomId) {
           return msg.reply(
-            `Sorry, that's a private flow. I can only show jobs scheduled from that flow from within the flow.`,
+            "Sorry, that's a private flow. I can only show jobs scheduled from that flow from within the flow.",
           )
         }
       }
     }
 
     // only get DMs from user who called list, if user calls list from a DM
-    let userIdForDMs = calledFromDm ? msg.message.user.id : null
+    const userIdForDMs = calledFromDm ? msg.message.user.id : null
 
     // Construct params for getting and formatting job list
     if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
@@ -181,15 +186,14 @@ module.exports = function (robot: Robot) {
     }
 
     try {
-      let [dateJobs] = getScheduledJobList(REMINDER_JOBS, rooms, userIdForDMs)
+      const [dateJobs] = getScheduledJobList(REMINDER_JOBS, rooms, userIdForDMs)
       output = formatJobsForListMessage(robot.adapter, dateJobs, false)
 
-      if (!!output.length) {
-        output = outputPrefix + "===\n" + output
+      if (output.length) {
+        output = `${outputPrefix}===\n${output}`
         return msg.reply(output)
-      } else {
-        return msg.reply("No reminders have been scheduled")
       }
+      return msg.reply("No reminders have been scheduled")
     } catch (error) {
       robot.logger.error(
         `Error getting or formatting reminder job list: ${error.message}\nFull error: %o`,
@@ -201,7 +205,7 @@ module.exports = function (robot: Robot) {
 
   robot.respond(/reminder (?:upd|update) (\d+)\s((?:.|\s)*)/i, (msg) => {
     try {
-      let resp = updateScheduledJob(
+      const resp = updateScheduledJob(
         robot,
         REMINDER_JOBS,
         REMINDER_KEY,
@@ -220,7 +224,7 @@ module.exports = function (robot: Robot) {
     /reminder (?:del|delete|remove|cancel) (\d+)/i,
     (msg) => {
       try {
-        let resp = cancelScheduledJob(
+        const resp = cancelScheduledJob(
           robot,
           REMINDER_JOBS,
           REMINDER_KEY,

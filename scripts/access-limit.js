@@ -19,10 +19,10 @@
 
 const { getRoomNameFromId } = require("../lib/adapter-util")
 
-var ALLOWED_ROOMS,
-  ALLOWED_BOTS,
-  BOT_RESTICTED_COMMANDS,
-  ROOM_RESTRICTED_COMMANDS
+let ALLOWED_ROOMS
+let ALLOWED_BOTS
+let BOT_RESTICTED_COMMANDS
+let ROOM_RESTRICTED_COMMANDS
 
 BOT_RESTICTED_COMMANDS = ["reload-scripts.reload"] // string that matches the listener ID
 ALLOWED_BOTS = ["valkyrie"]
@@ -36,49 +36,43 @@ ALLOWED_ROOMS = [
 ] // string that matches the room name
 
 module.exports = function (robot) {
-  robot.listenerMiddleware(function (context, next, done) {
+  robot.listenerMiddleware((context, next, done) => {
     if (BOT_RESTICTED_COMMANDS.indexOf(context.listener.options.id) >= 0) {
       if (ALLOWED_BOTS.indexOf(robot.name) >= 0) {
         // Bot is allowed access to this command
         next()
       } else {
         // Restricted command, and bot isn't in allowlist
-        context.response.reply(`Sorry, only *some* bots are allowed to do that`)
+        context.response.reply("Sorry, only *some* bots are allowed to do that")
+        done()
+      }
+    } else if (
+      ROOM_RESTRICTED_COMMANDS.indexOf(context.listener.options.id) >= 0
+    ) {
+      if (typeof context.response.message.room === "undefined") {
+        // Restricted command, and this is a DM
+        context.response.reply(
+          "I'm sorry, but that command doesn't work in DMs.",
+        )
+        done()
+      } else if (
+        ALLOWED_ROOMS.indexOf(
+          getRoomNameFromId(robot.adapter, context.response.message.room),
+        ) >= 0
+      ) {
+        // User is allowed access to this command
+        next()
+      } else if (robot.adapterName == "shell") {
+        // we're in the shell adapter: allow the command for local testing
+        next()
+      } else {
+        // Restricted command, and flow isn't in allowlist
+        context.response.reply("I'm sorry, but that command doesn't work here.")
         done()
       }
     } else {
-      if (ROOM_RESTRICTED_COMMANDS.indexOf(context.listener.options.id) >= 0) {
-        if (typeof context.response.message.room === "undefined") {
-          // Restricted command, and this is a DM
-          context.response.reply(
-            `I'm sorry, but that command doesn't work in DMs.`,
-          )
-          done()
-        } else {
-          if (
-            ALLOWED_ROOMS.indexOf(
-              getRoomNameFromId(robot.adapter, context.response.message.room),
-            ) >= 0
-          ) {
-            // User is allowed access to this command
-            next()
-          } else {
-            if (robot.adapterName == "shell") {
-              // we're in the shell adapter: allow the command for local testing
-              next()
-            } else {
-              // Restricted command, and flow isn't in allowlist
-              context.response.reply(
-                `I'm sorry, but that command doesn't work here.`,
-              )
-              done()
-            }
-          }
-        }
-      } else {
-        // Not a restricted command
-        next()
-      }
+      // Not a restricted command
+      next()
     }
   })
 }

@@ -12,16 +12,16 @@
 // Commands:
 //   hubot github auth - returns a URL where you can identify your GitHub self to the hubot. Upon identification, if a pending addition request exists from a call to `github add user`, it will be executed.
 
-let passport = require("passport"),
-  UUIDV4 = require("uuid/v4"),
-  cookieParser = require("cookie-parser"),
-  GitHubStrategy = require("passport-github2").Strategy,
-  withConfigOrReportIssues = require("../lib/config").withConfigOrReportIssues,
-  issueReporterForRobot = require("../lib/config").issueReporterForRobot
+const passport = require("passport")
+const UUIDV4 = require("uuid/v4")
+const cookieParser = require("cookie-parser")
+const GitHubStrategy = require("passport-github2").Strategy
+const { withConfigOrReportIssues } = require("../lib/config")
+const { issueReporterForRobot } = require("../lib/config")
 
-let HOST = process.env["HUBOT_HOST"],
-  SECOND = 1000,
-  MINUTE = 60 * SECOND
+const HOST = process.env.HUBOT_HOST
+const SECOND = 1000
+const MINUTE = 60 * SECOND
 
 module.exports = function (robot) {
   withConfigOrReportIssues(
@@ -38,17 +38,17 @@ module.exports = function (robot) {
           callbackURL: `${HOST}/github/auth`,
           userAgent: "https://thesis.co",
         },
-        function (accessToken, refreshToken, profile, done) {
-          done(null, { token: accessToken, profile: profile })
+        (accessToken, refreshToken, profile, done) => {
+          done(null, { token: accessToken, profile })
         },
       ),
     )
 
     function cleanPending() {
-      let now = new Date().getTime(),
-        pendingGitHubTokens = robot.brain.get("pendingGitHubTokens") || {}
+      const now = new Date().getTime()
+      const pendingGitHubTokens = robot.brain.get("pendingGitHubTokens") || {}
 
-      for (let [userID, pendingInfo] of Object.entries(pendingGitHubTokens)) {
+      for (const [userID, pendingInfo] of Object.entries(pendingGitHubTokens)) {
         if (now - pendingInfo.date > 5 * MINUTE) {
           delete pendingGitHubTokens[userID]
         }
@@ -61,12 +61,12 @@ module.exports = function (robot) {
     cleanPending()
 
     robot.respond(/github auth/, (res) => {
-      let user = res.message.user,
-        token = UUIDV4()
+      const { user } = res.message
+      const token = UUIDV4()
 
-      let pendingGitHubTokens = robot.brain.get("pendingGitHubTokens") || {}
+      const pendingGitHubTokens = robot.brain.get("pendingGitHubTokens") || {}
       pendingGitHubTokens[user.id] = {
-        token: token,
+        token,
         date: new Date().getTime(),
       }
       robot.brain.set("pendingGitHubTokens", pendingGitHubTokens)
@@ -77,16 +77,16 @@ module.exports = function (robot) {
     })
 
     robot.router.get("/github/auth/:token", (req, res, next) => {
-      let token = req.params.token,
-        pendingGitHubTokens = robot.brain.get("pendingGitHubTokens") || {},
-        found = false
+      const { token } = req.params
+      const pendingGitHubTokens = robot.brain.get("pendingGitHubTokens") || {}
+      let found = false
 
-      for (let [userId, pendingInfo] of Object.entries(pendingGitHubTokens)) {
+      for (const [userId, pendingInfo] of Object.entries(pendingGitHubTokens)) {
         if (token == pendingInfo.token) {
           found = true
           res.cookie("gh-auth-token", token, {
             httpOnly: true,
-            //secure: true, TODO turn this on...
+            // secure: true, TODO turn this on...
             sameSite: "Strict",
           })
           break
@@ -108,13 +108,15 @@ module.exports = function (robot) {
         assignProperty: "gitHubUser",
       }),
       (req, res) => {
-        let token = req.cookies["gh-auth-token"],
-          gitHubToken = req.gitHubUser.token,
-          pendingGitHubTokens = robot.brain.get("pendingGitHubTokens") || {},
-          gitHubTokens = robot.brain.get("gitHubTokens") || {},
-          found = false
+        const token = req.cookies["gh-auth-token"]
+        const gitHubToken = req.gitHubUser.token
+        const pendingGitHubTokens = robot.brain.get("pendingGitHubTokens") || {}
+        const gitHubTokens = robot.brain.get("gitHubTokens") || {}
+        let found = false
 
-        for (let [userId, pendingInfo] of Object.entries(pendingGitHubTokens)) {
+        for (const [userId, pendingInfo] of Object.entries(
+          pendingGitHubTokens,
+        )) {
           if (token == pendingInfo.token) {
             delete pendingGitHubTokens[userId]
             gitHubTokens[userId] = gitHubToken

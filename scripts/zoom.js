@@ -9,12 +9,12 @@
 // Commands:
 //   hubot zoom - Responds with an available meeting from the registered accounts, follows up with a prompt to post meeting notes
 
+const util = require("util")
 const {
   withConfigOrReportIssues,
   issueReporterForRobot,
 } = require("../lib/config")
-const zoom = require("../lib/zoom"),
-  util = require("util")
+const zoom = require("../lib/zoom")
 
 /** @type zoom.Session */
 let ZOOM_SESSION = null
@@ -22,7 +22,7 @@ let ZOOM_SESSION = null
 const INTERVAL_DELAY = 15 * 1000
 const MEETING_START_TIMEOUT_DELAY = 10 * 60 * 1000 // we'll only watch this long if meeting doesn't start
 const MEETING_DURATION_TIMEOUT_DELAY =
-  (parseInt(process.env["ZOOM_EXPECTED_MEETING_DURATION"]) || 60) * 60 * 1000 // max mtg watch duration in milliseconds
+  (parseInt(process.env.ZOOM_EXPECTED_MEETING_DURATION) || 60) * 60 * 1000 // max mtg watch duration in milliseconds
 
 function isMeetingStarted(meeting) {
   return zoom
@@ -30,9 +30,8 @@ function isMeetingStarted(meeting) {
     .then((meetingDetail) => {
       if ("status" in meetingDetail && meetingDetail.status === "started") {
         return true
-      } else {
-        return false
       }
+      return false
     })
 }
 
@@ -46,15 +45,14 @@ function isMeetingFinished(meeting, meetingDidStart) {
         meetingDidStart === true
       ) {
         return true
-      } else {
-        return false
       }
+      return false
     })
 }
 
 function watchMeeting(meeting) {
-  let meetingStartedPromise = new Promise((resolve, reject) => {
-    let startIntervalId = setInterval(function () {
+  const meetingStartedPromise = new Promise((resolve, reject) => {
+    const startIntervalId = setInterval(() => {
       isMeetingStarted(meeting)
         .then((isStarted) => {
           if (isStarted === true) {
@@ -70,7 +68,6 @@ function watchMeeting(meeting) {
               { depth: 0 },
             )}`,
           )
-          return
         })
     }, INTERVAL_DELAY)
     let startTimeoutId = setTimeout(() => {
@@ -79,12 +76,12 @@ function watchMeeting(meeting) {
     }, MEETING_START_TIMEOUT_DELAY)
   })
   return meetingStartedPromise.then((meetingStartStatus) => {
-    let meetingFinishedPromise = new Promise((resolve, reject) => {
+    const meetingFinishedPromise = new Promise((resolve, reject) => {
       if (meetingStartStatus === false) {
         resolve("never started")
         return
       }
-      let endIntervalId = setInterval(function () {
+      const endIntervalId = setInterval(() => {
         isMeetingFinished(meeting, meetingStartStatus)
           .then((isFinished) => {
             if (isFinished === true) {
@@ -100,7 +97,6 @@ function watchMeeting(meeting) {
                 { depth: 0 },
               )}`,
             )
-            return
           })
       }, INTERVAL_DELAY)
       let endTimeoutId = setTimeout(() => {
@@ -161,7 +157,7 @@ module.exports = function (robot) {
                   `This meeting looks like it never started: ${meeting.id}`,
                 )
                 res.send(
-                  `Looks like you didn't need this meeting, after all. If do you still need a zoom, please start a new one :)`,
+                  "Looks like you didn't need this meeting, after all. If do you still need a zoom, please start a new one :)",
                 )
               } else {
                 // otherwise, send flowdock prompt
@@ -179,7 +175,7 @@ module.exports = function (robot) {
               )
               // We assume the meeting still happened, so reply (but without `@`)
               res.send(
-                `Something went wrong watching the meeting; don't forget to post meeting notes when your call ends!`,
+                "Something went wrong watching the meeting; don't forget to post meeting notes when your call ends!",
               )
             })
         })

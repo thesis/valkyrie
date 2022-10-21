@@ -3,8 +3,8 @@ import { default as axios, AxiosResponse, AxiosRequestConfig } from "axios"
 // @ts-ignore No types available.
 import { Base64 } from "js-base64"
 
-const API_BASE_URL = "https://api.flowdock.com",
-  APP_BASE_URL = "https://www.flowdock.com/app"
+const API_BASE_URL = "https://api.flowdock.com"
+const APP_BASE_URL = "https://www.flowdock.com/app"
 
 const URLs = {
   messages: `${API_BASE_URL}/messages`,
@@ -64,8 +64,8 @@ abstract class Session {
     if (doPost) {
       this.postFn = axios.post.bind(axios)
     } else {
-      this.postFn = (url: string, data?: any, config?: AxiosRequestConfig) => {
-        return new Promise<AxiosResponse>((resolve) => {
+      this.postFn = (url: string, data?: any, config?: AxiosRequestConfig) =>
+        new Promise<AxiosResponse>((resolve) => {
           setTimeout(() => {
             console.log(
               `Flowdock POST to URL ${url} with data:\n`,
@@ -81,7 +81,6 @@ abstract class Session {
             })
           }, 1000)
         })
-      }
     }
   }
 }
@@ -93,7 +92,7 @@ abstract class Session {
  * integration for a third-party app.
  */
 class AppSession extends Session {
-  constructor(private apiToken: string, doPost: boolean = true) {
+  constructor(private apiToken: string, doPost = true) {
     super(doPost)
     this.apiToken = apiToken
   }
@@ -123,14 +122,14 @@ class AppSession extends Session {
  * Flowdock account.
  */
 class BasicAuthSession extends Session {
-  constructor(private apiToken: string, doPost: boolean = true) {
+  constructor(private apiToken: string, doPost = true) {
     super(doPost)
     this.apiToken = apiToken
   }
 
   async postMessage(message: string, targetFlowId: string) {
-    let apiToken = Base64.encode(this.apiToken)
-    let header = {
+    const apiToken = Base64.encode(this.apiToken)
+    const header = {
       "Content-type": "application/json",
       Accept: "application/json",
       Authorization: `Basic ${apiToken}`,
