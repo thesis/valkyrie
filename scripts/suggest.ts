@@ -11,6 +11,9 @@
 // Commands:
 //   hubot suggest <your idea here> - Posts a message to the main hubot flow, with content of the suggestion & name of the user, and replies to the command with a link to that flow
 
+// suggest is currently disabled, don't lint it
+/* eslint-disable */
+
 if (false) {
   const util = require("util")
 
@@ -60,7 +63,7 @@ if (false) {
 
     robot.respond(/suggest ?((?:.|\s)*)$/i, async (res) => {
       try {
-        const { user } = res.message
+        const {user} = res.message
         const userSuggestion = res.match[1]
 
         const redirectToSuggestionAlertRoomMessage = `You can try again from a public flow, or join us in ${alertRoomReference} and chat with us about your idea there.`
@@ -124,7 +127,7 @@ if (false) {
             `Could not get room name for: ${alertRoom}. Falling back to posting message without link to thread in alert room.`,
           )
           // and post without the API (will that work w/o flow id?)
-          robot.send({ room: alertRoomName }, formattedSuggestion)
+          robot.send({room: alertRoomName}, formattedSuggestion)
           return
         }
 
@@ -137,7 +140,7 @@ if (false) {
           throw new Error(
             `Did not get thread id from post message response: ${util.inspect(
               postResponse,
-              { depth: 0 },
+              {depth: 0},
             )}`,
           )
         }

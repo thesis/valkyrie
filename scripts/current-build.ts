@@ -10,8 +10,9 @@
 // Author:
 //   shadowfiend
 
-const fs = require("fs")
-const { isRoomNameValid } = require("../lib/adapter-util")
+import fs from "fs"
+import { Robot } from "hubot"
+import { isRoomNameValid } from "../lib/adapter-util"
 
 let buildNumberBuffer = Buffer.from("")
 try {
@@ -24,27 +25,14 @@ const buildString = buildNumber
   ? `build [${buildNumber}](https://circleci.com/gh/thesis/heimdall/${buildNumber})`
   : "unknown build"
 
-function sendReleaseNotification(robot) {
+function sendReleaseNotification(robot: Robot) {
   const alertRoom = process.env.RELEASE_NOTIFICATION_ROOM
-  if (isRoomNameValid(robot.adapter, alertRoom)) {
-    robot.send(
-      {
-        room: alertRoom,
-      },
-      `Released ${buildString}!`,
-    )
+  if (alertRoom !== undefined && isRoomNameValid(robot.adapter, alertRoom)) {
+    robot.messageRoom(alertRoom, `Released ${buildString}!`)
   }
 }
 
-function attachToStream(fn) {
-  setTimeout(() => {
-    if (!fn()) {
-      attachToStream(fn)
-    }
-  })
-}
-
-module.exports = function (robot) {
+module.exports = function setUpCurrentBuild(robot: Robot) {
   sendReleaseNotification(robot)
 
   robot.respond(/current build/, (response) =>

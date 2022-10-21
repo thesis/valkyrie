@@ -1,6 +1,27 @@
 // Provides a collection of configuration validation helpers
 
+import { Adapter } from "hubot"
 import { getRoomInfoFromIdOrName, isRoomNameValid } from "./adapter-util"
+
+/**
+ * Given a config key and an issueReporter:
+ *
+ * checks whether the config value is set, and returns it if so.
+ *
+ * If the config value is not set:
+ * - if the robot is using the shell adapter, logs and returns an empty string.
+ * - if the robot is using any other adapter, throws an error.
+ */
+export function fetchConfigOrReportIssue(
+  configKey: string,
+  issueReporter: (errorMessage: string) => void,
+): string {
+  if (!process.env[configKey]) {
+    issueReporter(`Could not get necessary value for configKey: ${configKey}.`)
+  }
+
+  return process.env[configKey] || ""
+}
 
 /**
  * Given a robot and a set of config keys, reads all of the config values as
@@ -34,7 +55,7 @@ export function withConfigOrReportIssues(
     .filter((_) => _.length > 0)
 
   return (valueHandler: (...configValues: string[]) => void) => {
-    if (values.length == keys.length) {
+    if (values.length === keys.length) {
       valueHandler(...values)
     }
   }
@@ -50,7 +71,7 @@ export function withConfigOrReportIssues(
  * - if the robot is using any other adapter, throws an error.
  */
 export function fetchRoomInfoOrReportIssue(
-  robot: Hubot.Robot<any>,
+  robot: Hubot.Robot<Adapter>,
   roomName: string,
 ): string {
   if (!isRoomNameValid(robot.adapter, roomName)) {
@@ -58,37 +79,13 @@ export function fetchRoomInfoOrReportIssue(
       `Could not get flow object for: ${roomName}. This will break the build when connected to flowdock.`,
     )
   }
-  return getRoomInfoFromIdOrName(robot.adapter, roomName)?.id
-}
-
-/**
- * Given a config key and an issueReporter:
- *
- * checks whether the config value is set, and returns it if so.
- *
- * If the config value is not set:
- * - if the robot is using the shell adapter, logs and returns an empty string.
- * - if the robot is using any other adapter, throws an error.
- */
-export function fetchConfigOrReportIssue(
-  configKey: string,
-  issueReporter: (errorMessage: string) => void,
-): string {
-  if (!process.env[configKey]) {
-    issueReporter(`Could not get necessary value for configKey: ${configKey}.`)
+  const roomId = getRoomInfoFromIdOrName(robot.adapter, roomName)?.roomId
+  if (roomId === undefined) {
+    robot.logger.warning(
+      `Could not get flow object for: ${roomName}. This will break the build when connected to flowdock.`,
+    )
   }
-
-  return process.env[configKey] || ""
-}
-
-export function issueReporterForRobot(
-  robot: Hubot.Robot<any>,
-): (errorMessage: string) => void {
-  console.log("Building an issue reporter!")
-  return (errorMessage: string) => {
-    console.log("Inside an issue reporter!")
-    logOrThrow(robot, errorMessage)
-  }
+  return roomId ?? ""
 }
 
 /**
@@ -97,7 +94,7 @@ export function issueReporterForRobot(
  * - if the robot is using the shell adapter, logs and returns an empty string.
  * - if the robot is using any other adapter, throws an error.
  */
-function logOrThrow(robot: Hubot.Robot<any>, errorMessage: string) {
+function logOrThrow(robot: Hubot.Robot<Adapter>, errorMessage: string) {
   if (robot.adapterName.toLowerCase() !== "flowdock") {
     // this is local dev, just log it
     robot.logger.warning(
@@ -107,6 +104,14 @@ function logOrThrow(robot: Hubot.Robot<any>, errorMessage: string) {
   }
   // fail build if not using shell adapter: command will not work
   throw new Error(errorMessage)
+}
+
+export function issueReporterForRobot(
+  robot: Hubot.Robot<Adapter>,
+): (errorMessage: string) => void {
+  return (errorMessage: string) => {
+    logOrThrow(robot, errorMessage)
+  }
 }
 
 module.exports = {

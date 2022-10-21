@@ -1,7 +1,8 @@
 // Description:
 //   Sets up passport for use in OAuth integrations like GitHub and G Suite.
-const passport = require("passport")
+import { Robot } from "hubot"
+import passport from "passport"
 
-module.exports = function (robot) {
+module.exports = function setUpPassport(robot: Robot) {
   robot.router.use(passport.initialize())
 }

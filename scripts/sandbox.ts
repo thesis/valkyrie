@@ -15,17 +15,9 @@
 // Author:
 //   kb0rg
 
-const dadJokeUrl = "https://icanhazdadjoke.com"
-const decode = require("decode-html")
+import { Adapter, Robot, TextMessage } from "hubot"
 
-const requestHeaders = {
-  "User-Agent": "Heimdall Hubot https://github.com/thesis-heimdall",
-  Accept: "application/json",
-}
-
-const { TextMessage } = require("hubot")
-
-module.exports = (robot) => {
+module.exports = (robot: Robot<Adapter>) => {
   // robot.hear(
   //   /\bdad\b/i,
   //   {
@@ -45,7 +37,8 @@ module.exports = (robot) => {
   //   },
   // )
   robot.respond(/shrug(?!\W)/, (res) => {
-    const messageToRobot = new TextMessage(res.message.user, "shrug.gif")
+    const messageToRobot = new TextMessage(res.message.user, "shrug.gif", "")
+    // @ts-expect-error something is awry in the typing here...
     messageToRobot.metadata = res.message.metadata
     robot.adapter.receive(messageToRobot)
   })

@@ -1,5 +1,7 @@
+// eslint-disable-next-line max-classes-per-file, import/no-named-default
 import { default as axios, AxiosResponse, AxiosRequestConfig } from "axios"
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore No types available.
 import { Base64 } from "js-base64"
 

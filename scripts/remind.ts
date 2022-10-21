@@ -19,7 +19,6 @@
 //   kb0rg
 //
 
-import * as _ from "lodash"
 import * as chrono from "chrono-node"
 
 import { Robot } from "hubot"
@@ -46,7 +45,7 @@ import {
 const REMINDER_JOBS = {}
 const REMINDER_KEY = "hubot_reminders"
 
-module.exports = function (robot: Robot) {
+module.exports = function setupRemind(robot: Robot) {
   robot.brain.on("loaded", () =>
     syncSchedules(robot, REMINDER_KEY, REMINDER_JOBS),
   )
@@ -82,7 +81,7 @@ module.exports = function (robot: Robot) {
         robot.logger.error(
           `Could not parse datetime from text: ${inputString}.`,
         )
-        return msg.reply(`Sorry, I can't extract a date from your request.
+        msg.reply(`Sorry, I can't extract a date from your request.
           See https://www.npmjs.com/package/chrono-node for examples of accepted date formats.
           If you're trying to schedule a recurring reminder, try using the \`schedule\` command:
           See \`help schedule\` for more information.
@@ -101,10 +100,10 @@ module.exports = function (robot: Robot) {
         robot,
         REMINDER_JOBS,
         REMINDER_KEY,
-        msg.message.user,
-        msg.message.user.room,
-        date.date(),
-        message,
+        { ...msg.message.user, room: msg.envelope.room },
+        msg.envelope.room,
+        date.date().toString(),
+        message + messageText,
         metadata,
         true, // remindInThread: default to true for remind jobs
       )
@@ -113,7 +112,11 @@ module.exports = function (robot: Robot) {
         msg.reply(resp)
       }
     } catch (error) {
-      robot.logger.error(`createScheduledJob Error: ${error.message}`)
+      robot.logger.error(
+        `createScheduledJob Error: ${
+          error instanceof Error ? error.message : "(unknown error)"
+        }`,
+      )
       msg.reply("Something went wrong adding this reminder.")
     }
   })
@@ -122,33 +125,37 @@ module.exports = function (robot: Robot) {
     let rooms
     let outputPrefix
     const targetRoom = msg.match[1]
-    const roomId = msg.message.user.room // room command is called from
+    const roomId = msg.envelope.room // room command is called from
     let targetRoomId = null
     let output = ""
     const calledFromDm = typeof roomId === "undefined"
 
     // If targetRoom is specified, check whether list for is permitted.
-    if (!isBlank(targetRoom) && targetRoom != "all") {
+    if (!isBlank(targetRoom) && targetRoom !== "all") {
       targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
       if (
         targetRoomId === undefined ||
         !(await robotIsInRoom(robot.adapter, targetRoomId))
       ) {
-        return msg.reply(
+        msg.reply(
           `Sorry, I'm not in the ${targetRoom} flow - or maybe you mistyped?`,
         )
+        return
       }
       if (targetRoomId && isRoomNonPublic(robot.adapter, targetRoomId)) {
-        if (msg.message.user.room != targetRoomId) {
-          return msg.reply(
+        if (msg.message.user.room !== targetRoomId) {
+          msg.reply(
             "Sorry, that's a private flow. I can only show jobs scheduled from that flow from within the flow.",
           )
+          return
         }
       }
     }
 
     // only get DMs from user who called list, if user calls list from a DM
     const userIdForDMs = calledFromDm ? msg.message.user.id : null
+
+    let calledFromPrivateRoom = false
 
     // Construct params for getting and formatting job list
     if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
@@ -157,17 +164,15 @@ module.exports = function (robot: Robot) {
       rooms = [roomId]
     } else if (targetRoom === "all") {
       // Get list of public rooms.
-      rooms = getPublicJoinedRoomIds(robot.adapter)
+      rooms = await getPublicJoinedRoomIds(robot.adapter)
       // If called from a private room, add to list.
-      calledFromPrivateRoom = !calledFromDm
-        ? isRoomInviteOnly(robot.adapter, robot.adapterName, roomId)
-        : false
+      calledFromPrivateRoom = !calledFromDm // TODO check for invite status of room
       if (calledFromPrivateRoom) {
         rooms.push(roomId)
       }
     } else {
       // If targetRoom is specified, show jobs for that room.
-      rooms = [targetRoomId]
+      rooms = targetRoomId === null ? [] : [targetRoomId]
     }
 
     // Construct message string prefix
@@ -191,12 +196,16 @@ module.exports = function (robot: Robot) {
 
       if (output.length) {
         output = `${outputPrefix}===\n${output}`
-        return msg.reply(output)
+        msg.reply(output)
+        return
       }
-      return msg.reply("No reminders have been scheduled")
+      msg.reply("No reminders have been scheduled")
+      return
     } catch (error) {
       robot.logger.error(
-        `Error getting or formatting reminder job list: ${error.message}\nFull error: %o`,
+        `Error getting or formatting reminder job list: ${
+          error instanceof Error ? error.message : "(unknown error)"
+        }\nFull error: %o`,
         error,
       )
       msg.reply("Something went wrong getting the reminder list.")
@@ -209,13 +218,17 @@ module.exports = function (robot: Robot) {
         robot,
         REMINDER_JOBS,
         REMINDER_KEY,
-        msg,
+        msg.message.text ?? "",
         msg.match[1],
         msg.match[2],
       )
       msg.reply(resp)
     } catch (error) {
-      robot.logger.error(`updateScheduledJob Error: ${error.message}`)
+      robot.logger.error(
+        `updateScheduledJob Error: ${
+          error instanceof Error ? error.message : "(unknown error)"
+        }`,
+      )
       msg.reply("Something went wrong updating this reminder.")
     }
   })
@@ -228,12 +241,16 @@ module.exports = function (robot: Robot) {
           robot,
           REMINDER_JOBS,
           REMINDER_KEY,
-          msg,
+          msg.message.text ?? "",
           msg.match[1],
         )
         msg.reply(resp)
       } catch (error) {
-        robot.logger.error(`updateScheduledJob Error: ${error.message}`)
+        robot.logger.error(
+          `updateScheduledJob Error: ${
+            error instanceof Error ? error.message : "(unknown error)"
+          }`,
+        )
         msg.reply("Something went wrong deleting this reminder.")
       }
     },

@@ -38,16 +38,17 @@ function getRoomIdFromName(
     const rooms = robotAdapter.client?.getRooms()
     roomIDByLowercaseName =
       rooms?.reduce(
-        (roomIDByLowercaseName, room) => (
-          (roomIDByLowercaseName[room.normalizedName.toLowerCase()] =
-            room.roomId),
-          roomIDByLowercaseName
+        // eslint-disable-next-line no-return-assign
+        (acc, room) => (
+          // eslint-disable-next-line no-sequences
+          (acc[room.normalizedName.toLowerCase()] = room.roomId), acc
         ),
         {} as typeof roomIDByLowercaseName,
       ) ?? roomIDByLowercaseName
 
     return roomIDByLowercaseName[lowercaseRoomName]
   }
+  return undefined
 }
 
 /**
@@ -64,6 +65,7 @@ function getRoomNameFromId(
   if (isMatrixAdapter(robotAdapter)) {
     return robotAdapter.client?.getRoom(roomId)?.name
   }
+  return undefined
 }
 
 export type RoomInfo = {
@@ -99,7 +101,7 @@ function getRoomInfoFromIdOrName(
 
   if (matchingRoom) {
     return {
-      roomId: matchingRoom.id,
+      roomId: matchingRoom.roomId,
       roomName: matchingRoom.name,
       accessType:
         matchingRoom.getJoinRule() === JoinRule.Public
@@ -107,6 +109,7 @@ function getRoomInfoFromIdOrName(
           : "non-public",
     }
   }
+  return undefined
 }
 
 /**
