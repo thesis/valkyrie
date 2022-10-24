@@ -111,9 +111,22 @@ export = function setupGitHubAuth(robot: Robot) {
       )
 
       if (found) {
+        res
+          .status(200)
+          .send(
+            `All set, please <a href="/github/auth/${token}/redirect">click here to authenticate.</a>`,
+          )
+      } else {
+        res.status(404).send("Unknown token.")
+      }
+    })
+
+    robot.router.get("/github/auth/:token/redirect", (req, res, next) => {
+      const token = req.cookies["gh-auth-token"]
+      if (token === req.params.token) {
         passport.authorize("github", { scope: ["admin:org"] })(req, res, next)
       } else {
-        res.status(404).send("File Not Found.")
+        res.status(404).send("Unknown token.")
       }
     })
 
@@ -135,13 +148,6 @@ export = function setupGitHubAuth(robot: Robot) {
 
         const found = Object.entries(pendingGitHubTokens).some(
           ([userId, pendingInfo]) => {
-            console.warn(
-              "Checking",
-              req as unknown as { gitHubUser: { token: string } },
-              token,
-              "against",
-              pendingInfo,
-            )
             if (token === pendingInfo.token) {
               delete pendingGitHubTokens[userId]
               gitHubTokens[userId] = gitHubToken
