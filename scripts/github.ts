@@ -38,12 +38,9 @@ module.exports = function setupGitHub(robot: Robot) {
         .getUser()
         .getProfile()
         .then((response) => {
-          let string = ""
-          // Ignore for expediency.
-          // eslint-disable-next-line no-restricted-syntax
-          for (const [key, value] of Object.entries(response.data)) {
-            string += `${key}: ${value}\n`
-          }
+          const string = Object.entries(response.data)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")
 
           res.send(`You are:\n${string}`)
         })
