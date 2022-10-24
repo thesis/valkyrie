@@ -146,6 +146,8 @@ export = function setupGitHubAuth(robot: Robot) {
           robot.brain.get(PENDING_GITHUB_TOKENS_KEY) || {}
         const gitHubTokens = robot.brain.get(GITHUB_TOKENS_KEY) || {}
 
+        console.warn("Token", token, "GitHub token", gitHubToken)
+
         const found = Object.entries(pendingGitHubTokens).some(
           ([userId, pendingInfo]) => {
             if (token === pendingInfo.token) {
@@ -168,7 +170,7 @@ export = function setupGitHubAuth(robot: Robot) {
             .status(200)
             .send("<!doctype html><html><body>Got it!</body></html>")
         } else {
-          res.status(404).send("File Not Found.")
+          res.status(404).send("Unrecognized token from GitHub.")
         }
       },
     )
