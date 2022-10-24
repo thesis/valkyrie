@@ -24,6 +24,9 @@ const HOST = process.env.HUBOT_HOST
 const SECOND = 1000
 const MINUTE = 60 * SECOND
 
+const PENDING_GITHUB_TOKENS_KEY = "pendingGitHubTokens"
+const GITHUB_TOKENS_KEY = "gitHubTokens"
+
 export = function setupGitHubAuth(robot: Robot) {
   withConfigOrReportIssues(
     issueReporterForRobot(robot),
@@ -54,7 +57,7 @@ export = function setupGitHubAuth(robot: Robot) {
     function cleanPending() {
       const now = new Date().getTime()
       const pendingGitHubTokens: { [userID: string]: { date: number } } =
-        robot.brain.get("pendingGitHubTokens") || {}
+        robot.brain.get(PENDING_GITHUB_TOKENS_KEY) || {}
 
       // Skip for expediency.
       // eslint-disable-next-line no-restricted-syntax
@@ -64,7 +67,7 @@ export = function setupGitHubAuth(robot: Robot) {
         }
       }
 
-      robot.brain.set("pendingGitHubTokens", pendingGitHubTokens)
+      robot.brain.set(PENDING_GITHUB_TOKENS_KEY, pendingGitHubTokens)
     }
 
     setInterval(cleanPending, 30 * SECOND)
@@ -83,17 +86,18 @@ export = function setupGitHubAuth(robot: Robot) {
         token,
       )
 
-      const pendingGitHubTokens = robot.brain.get("pendingGitHubTokens") || {}
+      const pendingGitHubTokens =
+        robot.brain.get(PENDING_GITHUB_TOKENS_KEY) || {}
       pendingGitHubTokens[user.id] = {
         token,
         date: new Date().getTime(),
       }
-      robot.brain.set("pendingGitHubTokens", pendingGitHubTokens)
+      robot.brain.set(PENDING_GITHUB_TOKENS_KEY, pendingGitHubTokens)
 
       console.warn(
         "Updated brain",
         pendingGitHubTokens,
-        robot.brain.get("pendingGitHubTokens"),
+        robot.brain.get(PENDING_GITHUB_TOKENS_KEY),
       )
 
       res.send(
@@ -104,22 +108,21 @@ export = function setupGitHubAuth(robot: Robot) {
     robot.router.get("/github/auth/:token", (req, res, next) => {
       const { token } = req.params
       const pendingGitHubTokens: { [userID: string]: { token: string } } =
-        robot.brain.get("pendingGitHubTokens") || {}
-      let found = false
+        robot.brain.get(PENDING_GITHUB_TOKENS_KEY) || {}
+      const found = false
 
-      // Skip for expediency.
-      // eslint-disable-next-line no-restricted-syntax
-      for (const [, pendingInfo] of Object.entries(pendingGitHubTokens)) {
+      Object.entries(pendingGitHubTokens).find(([, pendingInfo]) => {
+        console.warn("Saw", pendingInfo)
         if (token === pendingInfo.token) {
-          found = true
           res.cookie("gh-auth-token", token, {
             httpOnly: true,
             // secure: true, TODO turn this on...
             sameSite: "strict",
           })
-          break
+          return true
         }
-      }
+        return false
+      })
 
       if (found) {
         passport.authorize("github", { scope: ["admin:org"] })(req, res, next)
@@ -139,8 +142,8 @@ export = function setupGitHubAuth(robot: Robot) {
         const token = req.cookies["gh-auth-token"]
         const gitHubToken = req.body.gitHubUser.token
         const pendingGitHubTokens: { [userID: string]: { token: string } } =
-          robot.brain.get("pendingGitHubTokens") || {}
-        const gitHubTokens = robot.brain.get("gitHubTokens") || {}
+          robot.brain.get(PENDING_GITHUB_TOKENS_KEY) || {}
+        const gitHubTokens = robot.brain.get(GITHUB_TOKENS_KEY) || {}
         let found = false
 
         // Skip for expediency.
@@ -152,8 +155,8 @@ export = function setupGitHubAuth(robot: Robot) {
             delete pendingGitHubTokens[userId]
             gitHubTokens[userId] = gitHubToken
 
-            robot.brain.set("pendingGitHubTokens", pendingGitHubTokens)
-            robot.brain.set("gitHubTokens", gitHubTokens)
+            robot.brain.set(PENDING_GITHUB_TOKENS_KEY, pendingGitHubTokens)
+            robot.brain.set(GITHUB_TOKENS_KEY, gitHubTokens)
 
             found = true
             break
