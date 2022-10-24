@@ -405,7 +405,7 @@ function scheduleFromBrain(
       robot.logger.error(
         `${id}: Failed to schedule from brain. [${
           error instanceof Error ? error.message : "(unknown error)"
-        }]`,
+        }] [${pattern}] [${message}]`,
       )
     }
     // eslint-disable-next-line no-param-reassign
