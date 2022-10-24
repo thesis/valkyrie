@@ -77,15 +77,6 @@ export = function setupGitHubAuth(robot: Robot) {
       const { user } = res.message
       const token = UUIDV4()
 
-      console.warn(
-        "Github authing",
-        user,
-        "with id",
-        user.id,
-        "and token",
-        token,
-      )
-
       const pendingGitHubTokens =
         robot.brain.get(PENDING_GITHUB_TOKENS_KEY) || {}
       pendingGitHubTokens[user.id] = {
@@ -93,12 +84,6 @@ export = function setupGitHubAuth(robot: Robot) {
         date: new Date().getTime(),
       }
       robot.brain.set(PENDING_GITHUB_TOKENS_KEY, pendingGitHubTokens)
-
-      console.warn(
-        "Updated brain",
-        pendingGitHubTokens,
-        robot.brain.get(PENDING_GITHUB_TOKENS_KEY),
-      )
 
       res.send(
         `You can authorize access at ${HOST}/github/auth/${token} in the next 5 minutes.`,
@@ -141,6 +126,7 @@ export = function setupGitHubAuth(robot: Robot) {
       }),
       (req, res) => {
         const token = req.cookies["gh-auth-token"]
+        console.warn(token, req.body)
         const gitHubToken = req.body.gitHubUser.token
         const pendingGitHubTokens: { [userID: string]: { token: string } } =
           robot.brain.get(PENDING_GITHUB_TOKENS_KEY) || {}
