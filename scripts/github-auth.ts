@@ -12,9 +12,9 @@
 // Commands:
 //   hubot github auth - returns a URL where you can identify your GitHub self to the hubot. Upon identification, if a pending addition request exists from a call to `github add user`, it will be executed.
 
-import { use, authorize, authenticate } from "passport"
+import * as passport from "passport"
 import UUIDV4 from "uuid/v4"
-import cookieParser from "cookie-parser"
+import * as cookieParser from "cookie-parser"
 import { Strategy as GitHubStrategy } from "passport-github2"
 import { Robot } from "hubot"
 import { VerifyCallback } from "jsonwebtoken"
@@ -31,7 +31,7 @@ export = function setupGitHubAuth(robot: Robot) {
     "GITHUB_CLIENT_SECRET",
   )((githubClientId, githubClientSecret) => {
     robot.router.use(cookieParser())
-    use(
+    passport.use(
       new GitHubStrategy(
         {
           clientID: githubClientId,
@@ -122,7 +122,7 @@ export = function setupGitHubAuth(robot: Robot) {
       }
 
       if (found) {
-        authorize("github", { scope: ["admin:org"] })(req, res, next)
+        passport.authorize("github", { scope: ["admin:org"] })(req, res, next)
       } else {
         res.status(404).send("File Not Found.")
       }
@@ -130,7 +130,7 @@ export = function setupGitHubAuth(robot: Robot) {
 
     robot.router.get(
       "/github/auth",
-      authenticate("github", {
+      passport.authenticate("github", {
         failureRedirect: "/github/auth/fail",
         session: false,
         assignProperty: "gitHubUser",
