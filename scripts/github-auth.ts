@@ -112,8 +112,8 @@ export = function setupGitHubAuth(robot: Robot) {
 
       const found = Object.entries(pendingGitHubTokens).some(
         ([, pendingInfo]) => {
-          console.warn("Saw", pendingInfo)
           if (token === pendingInfo.token) {
+            // Set GitHub auth token.
             res.cookie("gh-auth-token", token, {
               httpOnly: true,
               // secure: true, TODO turn this on...
@@ -145,24 +145,21 @@ export = function setupGitHubAuth(robot: Robot) {
         const pendingGitHubTokens: { [userID: string]: { token: string } } =
           robot.brain.get(PENDING_GITHUB_TOKENS_KEY) || {}
         const gitHubTokens = robot.brain.get(GITHUB_TOKENS_KEY) || {}
-        let found = false
 
-        // Skip for expediency.
-        // eslint-disable-next-line no-restricted-syntax
-        for (const [userId, pendingInfo] of Object.entries(
-          pendingGitHubTokens,
-        )) {
-          if (token === pendingInfo.token) {
-            delete pendingGitHubTokens[userId]
-            gitHubTokens[userId] = gitHubToken
+        const found = Object.entries(pendingGitHubTokens).some(
+          ([userId, pendingInfo]) => {
+            if (token === pendingInfo.token) {
+              delete pendingGitHubTokens[userId]
+              gitHubTokens[userId] = gitHubToken
 
-            robot.brain.set(PENDING_GITHUB_TOKENS_KEY, pendingGitHubTokens)
-            robot.brain.set(GITHUB_TOKENS_KEY, gitHubTokens)
+              robot.brain.set(PENDING_GITHUB_TOKENS_KEY, pendingGitHubTokens)
+              robot.brain.set(GITHUB_TOKENS_KEY, gitHubTokens)
 
-            found = true
-            break
-          }
-        }
+              return true
+            }
+            return false
+          },
+        )
 
         res.cookie("gh-auth-token", "")
         if (found) {
