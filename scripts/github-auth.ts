@@ -146,7 +146,14 @@ export = function setupGitHubAuth(robot: Robot) {
           robot.brain.get(PENDING_GITHUB_TOKENS_KEY) || {}
         const gitHubTokens = robot.brain.get(GITHUB_TOKENS_KEY) || {}
 
-        console.warn("Token", token, "GitHub token", gitHubToken)
+        console.warn(
+          "Cookies",
+          req.cookies,
+          "Token",
+          token,
+          "GitHub token",
+          gitHubToken,
+        )
 
         const found = Object.entries(pendingGitHubTokens).some(
           ([userId, pendingInfo]) => {
