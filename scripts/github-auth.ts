@@ -135,7 +135,13 @@ export = function setupGitHubAuth(robot: Robot) {
 
         const found = Object.entries(pendingGitHubTokens).some(
           ([userId, pendingInfo]) => {
-            console.warn("Checking", token, "against", pendingInfo)
+            console.warn(
+              "Checking",
+              req as unknown as { gitHubUser: { token: string } },
+              token,
+              "against",
+              pendingInfo,
+            )
             if (token === pendingInfo.token) {
               delete pendingGitHubTokens[userId]
               gitHubTokens[userId] = gitHubToken
