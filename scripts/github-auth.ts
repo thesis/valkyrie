@@ -102,7 +102,7 @@ export = function setupGitHubAuth(robot: Robot) {
             res.cookie("gh-auth-token", token, {
               httpOnly: true,
               // secure: true, TODO turn this on...
-              sameSite: "strict",
+              sameSite: "lax",
             })
             return true
           }
