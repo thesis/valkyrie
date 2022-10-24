@@ -74,12 +74,27 @@ export default function setupGitHubAuth(robot: Robot) {
       const { user } = res.message
       const token = UUIDV4()
 
+      console.warn(
+        "Github authing",
+        user,
+        "with id",
+        user.id,
+        "and token",
+        token,
+      )
+
       const pendingGitHubTokens = robot.brain.get("pendingGitHubTokens") || {}
       pendingGitHubTokens[user.id] = {
         token,
         date: new Date().getTime(),
       }
       robot.brain.set("pendingGitHubTokens", pendingGitHubTokens)
+
+      console.warn(
+        "Updated brain",
+        pendingGitHubTokens,
+        robot.brain.get("pendingGitHubTokens"),
+      )
 
       res.send(
         `You can authorize access at ${HOST}/github/auth/${token} in the next 5 minutes.`,
