@@ -126,8 +126,9 @@ export = function setupGitHubAuth(robot: Robot) {
       }),
       (req, res) => {
         const token = req.cookies["gh-auth-token"]
-        console.warn(token, req.body)
-        const gitHubToken = req.body.gitHubUser.token
+        const gitHubToken = (
+          req as unknown as { gitHubUser: { token: string } }
+        ).gitHubUser.token
         const pendingGitHubTokens: { [userID: string]: { token: string } } =
           robot.brain.get(PENDING_GITHUB_TOKENS_KEY) || {}
         const gitHubTokens = robot.brain.get(GITHUB_TOKENS_KEY) || {}
