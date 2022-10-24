@@ -24,7 +24,7 @@ const HOST = process.env.HUBOT_HOST
 const SECOND = 1000
 const MINUTE = 60 * SECOND
 
-export default function setupGitHubAuth(robot: Robot) {
+export = function setupGitHubAuth(robot: Robot) {
   withConfigOrReportIssues(
     issueReporterForRobot(robot),
     "GITHUB_CLIENT_ID",
