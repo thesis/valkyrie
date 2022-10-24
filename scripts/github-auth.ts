@@ -109,20 +109,21 @@ export = function setupGitHubAuth(robot: Robot) {
       const { token } = req.params
       const pendingGitHubTokens: { [userID: string]: { token: string } } =
         robot.brain.get(PENDING_GITHUB_TOKENS_KEY) || {}
-      const found = false
 
-      Object.entries(pendingGitHubTokens).find(([, pendingInfo]) => {
-        console.warn("Saw", pendingInfo)
-        if (token === pendingInfo.token) {
-          res.cookie("gh-auth-token", token, {
-            httpOnly: true,
-            // secure: true, TODO turn this on...
-            sameSite: "strict",
-          })
-          return true
-        }
-        return false
-      })
+      const found = Object.entries(pendingGitHubTokens).some(
+        ([, pendingInfo]) => {
+          console.warn("Saw", pendingInfo)
+          if (token === pendingInfo.token) {
+            res.cookie("gh-auth-token", token, {
+              httpOnly: true,
+              // secure: true, TODO turn this on...
+              sameSite: "strict",
+            })
+            return true
+          }
+          return false
+        },
+      )
 
       if (found) {
         passport.authorize("github", { scope: ["admin:org"] })(req, res, next)
