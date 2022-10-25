@@ -77,6 +77,9 @@ workflows:
     jobs:
       - build-and-test:
           context: thesis-ops
+          filters:
+            branches:
+              only: main
       - publish-docker-image:
           context: thesis-ops
           filters:

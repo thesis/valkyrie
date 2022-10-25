@@ -54,6 +54,7 @@
   "scripts": {
     "test": "mocha -r ts-node/register -r coffeescript/register test/**.ts",
     "lint:js": "eslint .",
-    "lint:js:fix": "eslint . --fix"
+    "lint:js:fix": "eslint . --fix",
+    "lint": "lint:js"
   }
 }
