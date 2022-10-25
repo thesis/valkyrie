@@ -10,7 +10,7 @@
 // Author:
 //   shadowfiend
 
-import fs from "fs"
+import * as fs from "fs"
 import { Robot } from "hubot"
 import { isRoomNameValid } from "../lib/adapter-util"
 
@@ -22,7 +22,7 @@ try {
 }
 const buildNumber = buildNumberBuffer.toString().trim()
 const buildString = buildNumber
-  ? `build [${buildNumber}](https://circleci.com/gh/thesis/heimdall/${buildNumber})`
+  ? `build [${buildNumber}](https://github.com/thesis/valkyrie/commit/${buildNumber})`
   : "unknown build"
 
 function sendReleaseNotification(robot: Robot) {
