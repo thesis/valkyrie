@@ -39,17 +39,17 @@ module.exports = function setupGitHub(robot: Robot) {
         .getProfile()
         .then((response) => {
           const string = Object.entries(response.data)
-            .map(([key, value]) => `${key}: ${value}`)
+            .map(([key, value]) => `- ${key}: ${value}`)
             .join("\n")
 
-          res.send(`You are:\n${string}`)
+          res.reply(`You are:\n${string}`)
         })
         .catch((error) => {
           robot.logger.error("Error looking up user profile: ", error)
-          res.send("Something went wrong looking you up :(")
+          res.reply("Something went wrong looking you up :(")
         })
     } else {
-      res.send(
+      res.reply(
         "You don't seem to be authenticated with GitHub; try sending me `github auth`!",
       )
     }
@@ -138,39 +138,39 @@ module.exports = function setupGitHub(robot: Robot) {
             typeof failures[0] !== "string" &&
             failures[0].status === 404
           ) {
-            res.send(`Unknown username ${gitHubUsername}.`)
+            res.reply(`Unknown username ${gitHubUsername}.`)
           } else if (
             allFailed &&
             typeof failures[0] !== "string" &&
             failures[0].status === 422
           ) {
-            res.send(
+            res.reply(
               `User ${gitHubUsername} isn't in ${org} and there ` +
                 "are no available seats; please add one at " +
                 `https://github.com/organizations/${org}/settings/billing/seats .`,
             )
           } else if (allFailed) {
-            res.send(`Failed to add ${gitHubUsername} to any teams in ${org}.`)
+            res.reply(`Failed to add ${gitHubUsername} to any teams in ${org}.`)
           } else if (pending && failures.length > 0) {
-            res.send(
+            res.reply(
               `Invited ${gitHubUsername} to ${successTeams} in ${org}, but the others failed.`,
             )
           } else if (pending) {
-            res.send(`Invited ${gitHubUsername} to ${successTeams} in ${org}.`)
+            res.reply(`Invited ${gitHubUsername} to ${successTeams} in ${org}.`)
           } else if (failures.length > 0) {
-            res.send(
+            res.reply(
               `Added ${gitHubUsername} to ${successTeams} in ${org}, but the others failed.`,
             )
           } else {
-            res.send(`Added ${gitHubUsername} to ${successTeams} in ${org}.`)
+            res.reply(`Added ${gitHubUsername} to ${successTeams} in ${org}.`)
           }
         })
         .catch((error) => {
           robot.logger.error("Error looking up user profile: ", error)
-          res.send(`Error adding ${gitHubUsername} to ${org}: ${error}.`)
+          res.reply(`Error adding ${gitHubUsername} to ${org}: ${error}.`)
         })
     } else {
-      res.send(
+      res.reply(
         "You don't seem to be authenticated with GitHub; try sending me `github auth`!",
       )
     }
