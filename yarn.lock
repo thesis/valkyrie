@@ -1969,9 +1969,9 @@ hubot-gif-locker@^1.0.7:
   dependencies:
     coffee-script "~1.6"
 
-"hubot-matrix@git+https://github.com/thesis/hubot-matrix.git#v3.0.0-beta.0":
-  version "3.0.0-beta.0"
-  resolved "git+https://github.com/thesis/hubot-matrix.git#0f613c3f9658b0d833343fa75a476289568a6edd"
+"hubot-matrix@git+https://github.com/thesis/hubot-matrix.git#v3.0.0-beta.1":
+  version "3.0.0-beta.1"
+  resolved "git+https://github.com/thesis/hubot-matrix.git#f5c43ab8377d98557b48ac01e3b93402b19e2897"
   dependencies:
     commonmark "^0.30.0"
     image-size "^0.5.1"
