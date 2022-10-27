@@ -25,41 +25,35 @@ jobs:
         node-version: "${{ steps.nvm.outputs.NVMRC }}"
         cache: "yarn"
     - run: yarn install --frozen-lockfile
-    - name: Dev build
-      #if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
+    - name: Build docker image
       run: |
         echo $GITHUB_SHA > BUILD
         docker build . -f infrastructure/docker/Dockerfile -t gcr.io/thesis-ops-2748/valkyrie:$GITHUB_SHA
-    - name: Production build
-      if: false #github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-      run: yarn build
-      env:
-        COMMIT_SHA: ${{ github.sha }}
 
     - name: Authenticate push with GCP
-      if: true #github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
       id: 'auth-push'
       uses: 'google-github-actions/auth@v0'
       with:
         credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
     - name: Set up GCP tools
-      if: true #github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
       uses: google-github-actions/setup-gcloud@v0
     - name: Push docker image to GCP
-      if: true #github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
       run: |
-        # Set up docker to authenticate
-        # via gcloud command-line tool.
+        # Set up docker to authenticate via gcloud command-line tool.
         gcloud auth configure-docker
         docker push gcr.io/thesis-ops-2748/valkyrie:${{ github.sha }}
+
     - name: Authenticate deploy with GCP
-      if: true #github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
       id: 'auth-deploy'
       uses: 'google-github-actions/auth@v0'
       with:
         credentials_json: '${{ secrets.GCP_DEPLOY_CREDENTIALS }}'
     - name: Deploy docker image in kube
-      if: true #github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
       env:
         GOOGLE_PROJECT_NAME: thesis-ops
         GOOGLE_PROJECT_ID: thesis-ops-2748
