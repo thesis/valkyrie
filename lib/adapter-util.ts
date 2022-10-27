@@ -37,14 +37,15 @@ function getRoomIdFromName(
   if (isMatrixAdapter(robotAdapter)) {
     const rooms = robotAdapter.client?.getRooms()
     roomIDByLowercaseName =
-      rooms?.reduce(
-        // eslint-disable-next-line no-return-assign
-        (acc, room) => (
-          // eslint-disable-next-line no-sequences
-          (acc[room.normalizedName.toLowerCase()] = room.roomId), acc
-        ),
-        {} as typeof roomIDByLowercaseName,
-      ) ?? roomIDByLowercaseName
+      rooms?.reduce((acc, room) => {
+        acc[room.normalizedName.toLowerCase()] = room.roomId
+        const canonicalAlias = room.getCanonicalAlias()
+        if (canonicalAlias !== null) {
+          acc[canonicalAlias.toLowerCase()] = room.roomId
+        }
+
+        return acc
+      }, {} as typeof roomIDByLowercaseName) ?? roomIDByLowercaseName
 
     return roomIDByLowercaseName[lowercaseRoomName]
   }

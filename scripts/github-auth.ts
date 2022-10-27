@@ -90,7 +90,7 @@ export = function setupGitHubAuth(robot: Robot) {
       )
     })
 
-    robot.router.get("/github/auth/:token", (req, res, next) => {
+    robot.router.get("/github/auth/:token", (req, res) => {
       const { token } = req.params
       const pendingGitHubTokens: { [userID: string]: { token: string } } =
         robot.brain.get(PENDING_GITHUB_TOKENS_KEY) || {}

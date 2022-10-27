@@ -27,7 +27,7 @@ ssh utilitybox << EOF
   gcloud container clusters get-credentials $GOOGLE_PROJECT_NAME --region $GOOGLE_REGION --internal-ip --project=$GOOGLE_PROJECT_ID
   echo ">>>>>>FINISH Download Kube Creds FINISH>>>>>>"
   echo "<<<<<<START Run Heimdall Deployment START<<<<<<"
-  kubectl set image deployment/heimdall-hubot-deployment hubot=$GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/heimdall:$BUILD_TAG
+  kubectl set image deployment/heimdall-hubot-deployment hubot=$GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/valkyrie:$BUILD_TAG
   echo ">>>>>>FINISH Run Heimdall Deployment FINISH>>>>>>"
 
 EOF
