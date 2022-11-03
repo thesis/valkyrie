@@ -1,0 +1,45 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      docker-image-name:
+        required: true
+        type: string
+      docker-image-version:
+        required: true
+        type: string
+      gcp-project-name:
+        required: true
+        type: string
+      gcp-project-id:
+        required: true
+        type: string
+    # Though these are read from the environment defined below, they have to be
+    # declared as input secrets or they cannot be read from the environment.
+    secrets:
+      GCP_DEPLOY_CREDENTIALS:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: Valkyrie production
+    steps:
+    - uses: actions/checkout@v3
+    - name: Authenticate deploy with GCP
+      id: 'auth-deploy'
+      uses: 'google-github-actions/auth@v0'
+      with:
+        credentials_json: '${{ secrets.GCP_DEPLOY_CREDENTIALS }}'
+    - name: Deploy docker image in kube
+      env:
+        GOOGLE_PROJECT_NAME: ${{ inputs.gcp-project-name }}
+        GOOGLE_PROJECT_ID: ${{ inputs.gcp-project-id }}
+        GOOGLE_REGION: us-central1
+        GOOGLE_COMPUTE_ZONE_A: us-central1-a
+        GCR_REGISTRY_URL: gcr.io
+        BUILD_TAG: ${{ inputs.docker-image-version }}
+      run: |
+        bash infrastructure/kube/thesis-ops/update-image.sh
+
