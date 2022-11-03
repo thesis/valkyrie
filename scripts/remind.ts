@@ -29,18 +29,20 @@ import {
   isRoomNonPublic,
   getPublicJoinedRoomIds,
 } from "../lib/adapter-util"
+import {
+  cancelScheduledJob,
+  createScheduledJob,
+  syncSchedules,
+  updateScheduledJob,
+} from "../lib/schedule-management"
 
 import {
   CONFIG,
-  syncSchedules,
-  createScheduledJob,
   isBlank,
-  updateScheduledJob,
-  cancelScheduledJob,
   getScheduledJobList,
   formatJobsForListMessage,
-  MessageMetadata,
 } from "../lib/schedule-util"
+import { MessageMetadata } from "../lib/scheduled-jobs"
 
 const REMINDER_JOBS = {}
 const REMINDER_KEY = "hubot_reminders"

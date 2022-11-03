@@ -138,7 +138,7 @@ module.exports = function setupZoom(robot: Robot<Adapter>) {
 
     robot.respond(/zoom/, (res) => {
       if (!ZOOM_SESSION) {
-        res.send("Zoom session failed to set up properly!")
+        res.reply("Zoom session failed to set up properly!")
         return
       }
       ZOOM_SESSION.nextAvailableMeeting()
@@ -151,7 +151,7 @@ module.exports = function setupZoom(robot: Robot<Adapter>) {
           robot.logger.info(
             `Created meeting: ${meeting.id}: using account for ${zoomUserEmail}`,
           )
-          res.send(
+          res.reply(
             `All set; open in [your browser](${meeting.join_url}) or [the app](${meeting.app_url})!`,
           )
           return meeting
@@ -163,7 +163,7 @@ module.exports = function setupZoom(robot: Robot<Adapter>) {
             if (!finalMeetingStatus) {
               // if finalMeetingStatus is null, the meeting exceeded the timeout.
               // We assume the meeting still happened, so we still want to reply
-              res.send(
+              res.reply(
                 `@${res.message.user.name} Don't forget to post meeting notes when your call ends!`,
               )
               robot.logger.info(
@@ -174,12 +174,12 @@ module.exports = function setupZoom(robot: Robot<Adapter>) {
               robot.logger.info(
                 `This meeting looks like it never started: ${meeting.id}`,
               )
-              res.send(
+              res.reply(
                 "Looks like you didn't need this meeting, after all. If do you still need a zoom, please start a new one :)",
               )
             } else {
               // otherwise, send flowdock prompt
-              res.send(`@${res.message.user.name} Please post call notes!`)
+              res.reply(`@${res.message.user.name} Please post call notes!`)
               robot.logger.info(
                 `Stopped watching, meeting ended: ${meeting.id}`,
               )
@@ -191,7 +191,7 @@ module.exports = function setupZoom(robot: Robot<Adapter>) {
               }. ERR: ${util.inspect(err, { depth: 0 })}`,
             )
             // We assume the meeting still happened, so reply (but without `@`)
-            res.send(
+            res.reply(
               "Something went wrong watching the meeting; don't forget to post meeting notes when your call ends!",
             )
           }
@@ -202,7 +202,7 @@ module.exports = function setupZoom(robot: Robot<Adapter>) {
               depth: 0,
             })}`,
           )
-          res.send("Uh-oh, there was an issue finding an available meeting :(")
+          res.reply("Uh-oh, there was an issue finding an available meeting :(")
         })
     })
   })

@@ -1,4 +1,4 @@
-import axios from "axios"
+import * as axios from "axios"
 import URLs from "./urls"
 import { Meeting, MeetingScheduleCategory } from "./meeting"
 import { generateZoomPassword, tokenFrom } from "./password"

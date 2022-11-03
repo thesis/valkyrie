@@ -1,54 +1,28 @@
 import * as scheduler from "node-schedule"
 import * as hubot from "hubot"
-import { Matrix, MatrixMessage } from "hubot-matrix"
-import cronParser from "cron-parser"
+import { MatrixMessage } from "hubot-matrix"
 import util from "util"
-// eslint-disable-next-line import/no-cycle
 import processTemplateString from "./template-strings"
-import CONFIG from "./schedule-config"
-
-export function isCronPattern(pattern: string | Date) {
-  if (pattern instanceof Date) {
-    return false
-  }
-  const { errors } = cronParser.parseString(pattern)
-  return !Object.keys(errors).length
-}
-
-export type JobUser = Pick<hubot.User, "id" | "name"> & { room: string }
-
-export type MessageMetadata = {
-  threadId?: string
-  messageId: string
-  lastUrl?: string
-}
-
-export function urlFor(
-  roomId: string,
-  serverName: string,
-  eventId: string,
-): string {
-  return `https://matrix.to/#/${roomId}/${eventId}?via=${serverName}`
-}
-
-export function updateJobInBrain(
-  robotBrain: hubot.Brain<hubot.Adapter>,
-  storageKey: string,
-  job: Job,
-): ReturnType<Job["serialize"]> {
-  const serializedJob = job.serialize()
-  // eslint-disable-next-line no-return-assign, no-param-reassign
-  return (robotBrain.get(storageKey)[job.id] = serializedJob)
-}
+import CONFIG, { RECURRING_JOB_STORAGE_KEY } from "./schedule-config"
+import { isMatrixAdapter } from "./adapter-util"
+import { JobUser, MessageMetadata, ScheduledJob } from "./scheduled-jobs"
+import {
+  isCronPattern,
+  logSerializedJobDetails,
+  updateJobInBrain,
+  urlFor,
+} from "./schedule-util"
 
 export async function postMessageAndSaveThreadId(
-  robot: hubot.Robot<Matrix>,
+  robot: hubot.Robot,
   envelope: Omit<hubot.Envelope, "message">,
   job: Job,
   messageText: string,
 ) {
-  if (robot.adapter.constructor !== Matrix) {
-    return
+  if (!isMatrixAdapter(robot.adapter)) {
+    throw new Error(
+      "Adapter is not the Matrix adapter, scheduling unsupported.",
+    )
   }
 
   const postedEvent = await robot.adapter.sendThreaded(
@@ -93,10 +67,10 @@ export async function postMessageAndSaveThreadId(
   )
 }
 
-export default class Job {
+export default class Job implements ScheduledJob {
   public user: JobUser
 
-  public job: any
+  public job?: scheduler.Job
 
   constructor(
     public id: string,
@@ -119,7 +93,7 @@ export default class Job {
     return isCronPattern(this.pattern)
   }
 
-  start(robot: hubot.Robot<hubot.Adapter>) {
+  start(robot: hubot.Robot) {
     // eslint-disable-next-line no-return-assign
     return (this.job = scheduler.scheduleJob(this.pattern, () => {
       const { lastUrl: _, threadId, ...threadlessMetadata } = this.metadata
