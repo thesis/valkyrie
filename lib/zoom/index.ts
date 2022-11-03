@@ -1,4 +1,4 @@
-import axios from "axios"
+import * as axios from "axios"
 import * as util from "util"
 import { tokenFrom } from "./password"
 import Session from "./Session"
