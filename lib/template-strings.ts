@@ -1,10 +1,8 @@
-// This is a temporary function to test the template string behavior.
-
 import { Adapter, Brain } from "hubot"
 import { RECURRING_JOB_STORAGE_KEY } from "./schedule-config"
-// eslint-disable-next-line import/no-cycle
 import { ScheduledJob } from "./scheduled-jobs"
 
+// This is a temporary function to test the template string behavior.
 // It takes a string, coverts it to an int, and returns its square.
 function test(inputString: string): string {
   const inputValue = parseInt(inputString, 10)

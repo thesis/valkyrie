@@ -26,16 +26,18 @@ import {
   isRoomNonPublic,
   robotIsInRoom,
 } from "../lib/adapter-util"
+import {
+  cancelScheduledJob,
+  createScheduledJob,
+  syncSchedules,
+  updateScheduledJob,
+} from "../lib/schedule-management"
 
 import {
   CONFIG,
-  syncSchedules,
   isRestrictedRoom,
-  createScheduledJob,
   isBlank,
   isCronPattern,
-  updateScheduledJob,
-  cancelScheduledJob,
   getScheduledJobList,
   formatJobsForListMessage,
   RECURRING_JOB_STORAGE_KEY,
