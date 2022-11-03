@@ -13,14 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     environment: Valkyrie production
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: Read .nvmrc
-      run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+      run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
       id: nvm
     - name: Use Node + Yarn
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
         node-version: "${{ steps.nvm.outputs.NVMRC }}"
         cache: "yarn"
@@ -67,12 +67,12 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Read .nvmrc
-      run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+      run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
       id: nvm
     - name: Use Node + Yarn
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
         node-version: "${{ steps.nvm.outputs.NVMRC }}"
         cache: "yarn"
@@ -81,12 +81,12 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Read .nvmrc
-      run: echo "::set-output name=NVMRC::$(cat ./.nvmrc)"
+      run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
       id: nvm
     - name: Use Node + Yarn
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
         node-version: "${{ steps.nvm.outputs.NVMRC }}"
         cache: "yarn"
