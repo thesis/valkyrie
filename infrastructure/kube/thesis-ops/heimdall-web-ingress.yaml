@@ -2,7 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   annotations:
-    kubernetes.io/ingress.global-static-ip-name: heimdall-web-ip
+    kubernetes.io/ingress.global-static-ip-name: valkyrie-web-ip
   name: heimdall-web-ingress
 spec:
   backend:
