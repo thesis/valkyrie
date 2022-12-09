@@ -4,10 +4,10 @@ metadata:
   annotations:
     kubernetes.io/ingress.allow-http: "false"
     kubernetes.io/ingress.global-static-ip-name: valkyrie-web-ip
-  name: heimdall-web-ingress
+  name: valkyrie-web-ingress
 spec:
   tls:
   - secretName: thesis-co-cloudflare-origin-cert
   backend:
-    serviceName: heimdall-http-service
+    serviceName: valkyrie-http-service
     servicePort: 8080

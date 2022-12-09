@@ -26,8 +26,8 @@ ssh utilitybox << EOF
   echo "gcloud container clusters get-credentials $GOOGLE_PROJECT_NAME --region $GOOGLE_REGION --internal-ip --project=$GOOGLE_PROJECT_ID"
   gcloud container clusters get-credentials $GOOGLE_PROJECT_NAME --region $GOOGLE_REGION --internal-ip --project=$GOOGLE_PROJECT_ID
   echo ">>>>>>FINISH Download Kube Creds FINISH>>>>>>"
-  echo "<<<<<<START Run Heimdall Deployment START<<<<<<"
-  kubectl set image deployment/heimdall-hubot-deployment hubot=$GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/valkyrie:$BUILD_TAG
-  echo ">>>>>>FINISH Run Heimdall Deployment FINISH>>>>>>"
+  echo "<<<<<<START Run Valkyrie Deployment START<<<<<<"
+  kubectl set image deployment/valkyrie-hubot-deployment hubot=$GCR_REGISTRY_URL/$GOOGLE_PROJECT_ID/valkyrie:$BUILD_TAG
+  echo ">>>>>>FINISH Run Valkyrie Deployment FINISH>>>>>>"
 
 EOF
