@@ -2,9 +2,12 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   annotations:
-    kubernetes.io/ingress.global-static-ip-name: heimdall-web-ip
+    kubernetes.io/ingress.allow-http: "false"
+    kubernetes.io/ingress.global-static-ip-name: valkyrie-web-ip
   name: heimdall-web-ingress
 spec:
+  tls:
+  - secretName: thesis-co-cloudflare-origin-cert
   backend:
     serviceName: heimdall-http-service
     servicePort: 8080
