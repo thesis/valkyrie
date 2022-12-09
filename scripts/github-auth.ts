@@ -85,7 +85,7 @@ export = function setupGitHubAuth(robot: Robot) {
       }
       robot.brain.set(PENDING_GITHUB_TOKENS_KEY, pendingGitHubTokens)
 
-      res.send(
+      res.reply(
         `You can authorize access at ${HOST}/github/auth/${token} in the next 5 minutes.`,
       )
     })
