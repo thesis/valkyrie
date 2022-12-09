@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   annotations:
@@ -8,6 +8,8 @@ metadata:
 spec:
   tls:
   - secretName: thesis-co-cloudflare-origin-cert
-  backend:
-    serviceName: valkyrie-http-service
-    servicePort: 8080
+  defaultBackend:
+    service:
+      name: valkyrie-http-service
+      port:
+        number: 8080
