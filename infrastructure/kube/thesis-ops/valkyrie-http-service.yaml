@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: heimdall-http-service
+  name: valkyrie-http-service
   labels:
     app: hubot
 spec:
