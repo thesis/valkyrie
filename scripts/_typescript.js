@@ -11,8 +11,9 @@ const fs = require("fs")
 
 function compile(filename) {
   return ts.transpile(`${fs.readFileSync(filename)}`, {
-    target: ts.ScriptTarget.ES5,
+    target: ts.ScriptTarget.ESNext,
     module: ts.ModuleKind.CommonJS,
+    jsx: "react",
   })
 }
 
@@ -23,6 +24,8 @@ require.extensions[".ts"] = function (m, filename) {
     m._compile(compile(filename), filename)
   }
 }
+
+require.extensions[".tsx"] = require.extensions[".ts"]
 
 module.exports = function () {
   return "success"
