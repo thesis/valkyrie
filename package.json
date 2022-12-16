@@ -11,6 +11,7 @@
     "cookie-parser": "^1.4.3",
     "cron-parser": "^2.7.3",
     "cronstrue": "^1.68.0",
+    "dayjs": "^1.11.7",
     "decode-html": "^2.0.0",
     "github-api": "^3.4.0",
     "hubot": "^3.3.2",
