@@ -22,9 +22,9 @@
 
 // configuration settings
 
-import moment from "moment"
-import cronstrue from "cronstrue"
-import cronParser from "cron-parser"
+import * as moment from "moment"
+import * as cronstrue from "cronstrue"
+import * as cronParser from "cron-parser"
 import * as hubot from "hubot"
 
 import {
