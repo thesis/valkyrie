@@ -3,7 +3,7 @@
 // These functions return immediately if the adapter in use isn't properly
 // set up, or isn't a flowdock adapter, enabling better error handling.
 
-import { Adapter } from "hubot"
+import { Envelope, Adapter } from "hubot"
 import { Matrix } from "hubot-matrix"
 import { JoinRule } from "matrix-js-sdk"
 
@@ -202,6 +202,37 @@ export function isRoomNonPublic(
     )
   }
   return false
+}
+
+/**
+ * Generates a matrix URL for a particular event, room, and server.
+ */
+export function matrixUrlFor(
+  roomId: string,
+  serverName: string,
+  eventId: string,
+): string {
+  return `https://matrix.to/#/${roomId}/${eventId}?via=${serverName}`
+}
+
+/**
+ * Sends the given messages to the given thread id; if we don't know how to
+ * send to a thread with the given adapter, sends a regular message.
+ */
+export function sendThreaded(
+  adapter: Adapter,
+  envelope: Envelope,
+  threadId: string,
+  ...messages: string[]
+) {
+  if (threadId === undefined || !isMatrixAdapter(adapter)) {
+    // If it isn't the matrix adapter or there is no thread, fall back on a standard message.
+    adapter.send(envelope, ...messages)
+  } else {
+    messages.forEach((message) =>
+      adapter.sendThreaded(envelope, threadId, message),
+    )
+  }
 }
 
 export {
