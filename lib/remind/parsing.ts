@@ -1,7 +1,14 @@
 import * as dayjs from "dayjs"
 import { Envelope } from "hubot"
 import { MatrixMessage } from "hubot-matrix"
-import { JobMessageInfo, JobSpec, RecurringSpec, SingleShotSpec } from "./data"
+import {
+  JobMessageInfo,
+  JobDefinition,
+  RecurrenceSpec,
+  RecurringDefinition,
+  SingleShotDefinition,
+  JobSpec,
+} from "./data"
 
 // Match an interval specifier for "every <interval> <day>"-style text.
 const intervalMatcher =
@@ -89,7 +96,7 @@ function normalizeInterval(interval: string): number {
 function parseSingleSpec(
   jobDaySpecifier: string,
   jobTimeSpecifier: string,
-): SingleShotSpec {
+): SingleShotDefinition {
   // Start with today as the specified day.
   const specifiedDate = dayjs(jobDaySpecifier) // TODO Adapt to user timezone.
 
@@ -123,7 +130,7 @@ function parseSingleSpec(
 function parseRecurringSpec(
   jobDaySpecifier: string,
   jobTimeSpecifier: string,
-): RecurringSpec {
+): RecurringDefinition {
   const interval = jobDaySpecifier?.match(intervalMatcher)?.[1] ?? "1"
   const normalizedInterval = normalizeInterval(interval)
   const dayOfWeek = weekDayMatcher.exec(jobDaySpecifier)
@@ -171,20 +178,11 @@ function userTagForWhoMatch(who: string, userId: string): string {
   return whoToUserTag[who] ?? ""
 }
 
-export default function parseFromString(envelope: Envelope): JobSpec | null {
-  // eslint-disable-next-line import/prefer-default-export
-  const str = envelope.message.text ?? ""
-
-  const specString = specMatcher.exec(str)
-  if (specString === null) {
-    return null
-  }
-
-  const strWithoutSpec = `${str.substring(0, specString.index)} ${str.substring(
-    specString.index + specString[0].length,
-  )}`
-  const messageMatch = startMatcher.exec(strWithoutSpec)
-  if (messageMatch === null) {
+export function parseSpec(
+  specString: string,
+): { jobSpec: JobSpec; specMatch: { index: number; length: number } } | null {
+  const specMatch = specMatcher.exec(specString)
+  if (specMatch === null) {
     return null
   }
 
@@ -193,7 +191,48 @@ export default function parseFromString(envelope: Envelope): JobSpec | null {
     daySpec: jobDaySpecifier,
     timeSpec: jobTimeSpecifier1,
     timeSpec2: jobTimeSpecifier2,
-  } = specString.groups ?? {}
+  } = specMatch.groups ?? {}
+
+  // Match can be either for the day-included version or the no-day version.
+  const jobTimeSpecifier = jobTimeSpecifier1 ?? jobTimeSpecifier2
+
+  const jobSpec: JobSpec =
+    jobTypeSpecifier === "every"
+      ? {
+          type: "recurring",
+          spec: parseRecurringSpec(jobDaySpecifier, jobTimeSpecifier),
+        }
+      : {
+          type: "single",
+          spec: parseSingleSpec(jobDaySpecifier, jobTimeSpecifier),
+        }
+
+  return {
+    jobSpec,
+    specMatch: {
+      index: specMatch.index,
+      length: specMatch[0].length,
+    },
+  }
+}
+
+export function parseFromString(envelope: Envelope): JobDefinition | null {
+  const str = envelope.message.text ?? ""
+
+  const parsedSpec = parseSpec(str)
+  if (parsedSpec === null) {
+    return null
+  }
+
+  const { jobSpec: spec, specMatch } = parsedSpec
+
+  const strWithoutSpec = `${str.substring(0, specMatch.index)} ${str.substring(
+    specMatch.index + specMatch.length,
+  )}`
+  const messageMatch = startMatcher.exec(strWithoutSpec)
+  if (messageMatch === null) {
+    return null
+  }
 
   const { who, message } = messageMatch.groups ?? {}
 
@@ -211,22 +250,8 @@ export default function parseFromString(envelope: Envelope): JobSpec | null {
     messageInfo.threadId = (envelopeMessage as MatrixMessage).metadata.threadId
   }
 
-  // Match can be either for the day-included version or the no-day version.
-  const jobTimeSpecifier = jobTimeSpecifier1 ?? jobTimeSpecifier2
-
-  if (jobTypeSpecifier === "every") {
-    const spec = parseRecurringSpec(jobDaySpecifier, jobTimeSpecifier)
-    return {
-      type: "recurring",
-      messageInfo,
-      spec,
-    }
-  }
-
-  const spec = parseSingleSpec(jobDaySpecifier, jobTimeSpecifier)
   return {
-    type: "single",
+    ...spec,
     messageInfo,
-    spec,
   }
 }

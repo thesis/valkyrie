@@ -7,11 +7,17 @@ export type JobMessageInfo = {
 
 export type BaseJobSpec<Type extends string, SpecType> = {
   type: Type
-  messageInfo: JobMessageInfo
   spec: SpecType
 }
 
-export type BaseJob<Type extends string, SpecType> = BaseJobSpec<
+export type BaseJobDefinition<Type extends string, SpecType> = BaseJobSpec<
+  Type,
+  SpecType
+> & {
+  messageInfo: JobMessageInfo
+}
+
+export type BaseJob<Type extends string, SpecType> = BaseJobDefinition<
   Type,
   SpecType
 > & {
@@ -19,18 +25,30 @@ export type BaseJob<Type extends string, SpecType> = BaseJobSpec<
 }
 
 export type JobSpec =
-  | BaseJobSpec<"single", SingleShotSpec>
-  | BaseJobSpec<"recurring", RecurringSpec>
+  | BaseJobSpec<"single", SingleShotDefinition>
+  | BaseJobSpec<"recurring", RecurringDefinition>
 
-export type SingleJob = BaseJob<"single", SingleShotSpec>
-export type RecurringJob = BaseJob<"recurring", RecurringSpec>
+export type JobDefinition =
+  | BaseJobDefinition<"single", SingleShotDefinition>
+  | BaseJobDefinition<"recurring", RecurringDefinition>
+
+export type SingleJob = BaseJob<"single", SingleShotDefinition>
+export type RecurringJob = BaseJob<"recurring", RecurringDefinition>
 
 export type Job = SingleJob | RecurringJob
 
-export type SingleShotSpec = { hour: number; minute: number; dayOfWeek: number }
+export type PersistedJob =
+  | (SingleJob & { id: number })
+  | (RecurringJob & { id: number })
 
-export type RecurringSpec =
-  | (SingleShotSpec & {
+export type SingleShotDefinition = {
+  hour: number
+  minute: number
+  dayOfWeek: number
+}
+
+export type RecurringDefinition =
+  | (SingleShotDefinition & {
       repeat: "week"
       interval: number
     })
@@ -40,3 +58,5 @@ export type RecurringSpec =
       repeat: "month"
       dayOfMonth: number
     }
+
+export type RecurrenceSpec = SingleShotDefinition | RecurringDefinition

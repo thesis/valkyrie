@@ -19,31 +19,20 @@
 //   kb0rg
 //
 
-import * as chrono from "chrono-node"
-
-import { Robot, TextMessage } from "hubot"
-import { MatrixMessage } from "hubot-matrix"
+import { Robot } from "hubot"
 import {
   getRoomIdFromName,
   robotIsInRoom,
   isRoomNonPublic,
-  getPublicJoinedRoomIds,
 } from "../lib/adapter-util"
 import JobScheduler from "../lib/remind"
 import {
-  cancelScheduledJob,
-  createScheduledJob,
-  syncSchedules,
-  updateScheduledJob,
-} from "../lib/schedule-management"
-
-import {
-  CONFIG,
-  isBlank,
-  getScheduledJobList,
+  formatJobForMessage,
   formatJobsForListMessage,
-} from "../lib/schedule-util"
-import { MessageMetadata } from "../lib/scheduled-jobs"
+} from "../lib/remind/formatting"
+import { updateScheduledJob } from "../lib/schedule-management"
+
+import { isBlank } from "../lib/schedule-util"
 
 const REMINDER_JOBS = {}
 const REMINDER_KEY = "hubot_reminders"
@@ -58,7 +47,7 @@ module.exports = function setupRemind(robot: Robot) {
     robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, (msg) => {
       try {
         msg.reply(
-          `Scheduled new job: ${JSON.stringify(
+          `Scheduled new reminder with ${formatJobForMessage(
             jobScheduler.addJobFromMessageEnvelope(msg.envelope),
           )}`,
         )
@@ -73,14 +62,11 @@ module.exports = function setupRemind(robot: Robot) {
       }
     })
 
-    robot.respond(/reminder list(?: (all|.*))?/i, async (msg) => {
-      let rooms
+    robot.respond(/remind(?:ers?)? list(?: (all|.*))?/i, async (msg) => {
       let outputPrefix
       const targetRoom = msg.match[1]
-      const roomId = msg.envelope.room // room command is called from
       let targetRoomId = null
       let output = ""
-      const calledFromDm = typeof roomId === "undefined"
 
       // If targetRoom is specified, check whether list for is permitted.
       if (!isBlank(targetRoom) && targetRoom !== "all") {
@@ -104,54 +90,12 @@ module.exports = function setupRemind(robot: Robot) {
         }
       }
 
-      // only get DMs from user who called list, if user calls list from a DM
-      const userIdForDMs = calledFromDm ? msg.message.user.id : null
-
-      let calledFromPrivateRoom = false
-
-      // Construct params for getting and formatting job list
-      if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
-        // If targetRoom is undefined or blank, show schedule for current room.
-        // Room is ignored when HUBOT_SCHEDULE_DENY_EXTERNAL_CONTROL is set to 1
-        rooms = [roomId]
-      } else if (targetRoom === "all") {
-        // Get list of public rooms.
-        rooms = await getPublicJoinedRoomIds(robot.adapter)
-        // If called from a private room, add to list.
-        calledFromPrivateRoom = !calledFromDm // TODO check for invite status of room
-        if (calledFromPrivateRoom) {
-          rooms.push(roomId)
-        }
-      } else {
-        // If targetRoom is specified, show jobs for that room.
-        rooms = targetRoomId === null ? [] : [targetRoomId]
-      }
-
-      // Construct message string prefix
-      outputPrefix = "Showing scheduled reminders for "
-      if (isBlank(targetRoom) || CONFIG.denyExternalControl === "1") {
-        outputPrefix += "THIS flow:\n"
-      } else if (targetRoom === "all") {
-        // If called from a private room, add to list.
-        if (calledFromPrivateRoom) {
-          outputPrefix += "THIS flow AND "
-        }
-        outputPrefix += "all public flows:\n"
-      } else {
-        // If targetRoom is specified, show jobs for that room if allowed.
-        outputPrefix += `the ${targetRoom} flow:\n`
-      }
-
       try {
-        const [dateJobs] = getScheduledJobList(
-          REMINDER_JOBS,
-          rooms,
-          userIdForDMs,
-        )
-        output = formatJobsForListMessage(robot.adapter, dateJobs, false)
+        const jobs = jobScheduler.jobsForRooms()
+        output = formatJobsForListMessage(jobs)
 
         if (output.length) {
-          output = `${outputPrefix}===\n${output}`
+          output = `${outputPrefix ?? ""}\n\n----\n\n${output}`
           msg.reply(output)
           return
         }
@@ -168,45 +112,69 @@ module.exports = function setupRemind(robot: Robot) {
       }
     })
 
-    robot.respond(/reminder (?:upd|update) (\d+)\s((?:.|\s)*)/i, (msg) => {
-      try {
-        const resp = updateScheduledJob(
-          robot,
-          REMINDER_JOBS,
-          REMINDER_KEY,
-          msg.message.text ?? "",
-          msg.match[1],
-          msg.match[2],
-        )
-        msg.reply(resp)
-      } catch (error) {
-        robot.logger.error(
-          `updateScheduledJob Error: ${
-            error instanceof Error ? error.message : "(unknown error)"
-          }`,
-        )
-        msg.reply("Something went wrong updating this reminder.")
-      }
-    })
+    robot.respond(
+      /remind(?:ers?)? (?:upd|update|edit) (?<id>\d+)\sto\s(?<specOrMessage>(?:.|\s)*)/i,
+      (msg) => {
+        try {
+          const { id: unparsedId, specOrMessage } = msg.match.groups ?? {
+            id: "",
+            specOrMessage: "",
+          }
 
-    robot.respond(/reminder (?:del|delete|remove|cancel) (\d+)/i, (msg) => {
-      try {
-        const resp = cancelScheduledJob(
-          robot,
-          REMINDER_JOBS,
-          REMINDER_KEY,
-          msg.message.text ?? "",
-          msg.match[1],
-        )
-        msg.reply(resp)
-      } catch (error) {
-        robot.logger.error(
-          `updateScheduledJob Error: ${
-            error instanceof Error ? error.message : "(unknown error)"
-          }`,
-        )
-        msg.reply("Something went wrong deleting this reminder.")
-      }
-    })
+          const id = parseInt(unparsedId, 10)
+
+          const updatedJob = specOrMessage
+            .trim()
+            .toLowerCase()
+            .startsWith("say")
+            ? jobScheduler.updateJobMessage(
+                id,
+                specOrMessage.replace(/^say\s+/, ""),
+              )
+            : jobScheduler.updateJobSpec(id, specOrMessage)
+
+          if (updatedJob === undefined) {
+            msg.reply(`Could not find a reminder with id ${msg.match[1]}`)
+            return
+          }
+
+          msg.reply(`Updated reminder to ${formatJobForMessage(updatedJob)}`)
+        } catch (error) {
+          robot.logger.error(
+            `Error updating reminder (${JSON.stringify(msg.match)}): ${
+              error instanceof Error
+                ? `${error.message}\n${error.stack ?? ""}`
+                : "(unknown error)"
+            }`,
+          )
+          msg.reply("Something went wrong updating this reminder.")
+        }
+      },
+    )
+
+    robot.respond(
+      /remind(?:ers?)? (?:del|delete|remove|cancel) (\d+)/i,
+      (msg) => {
+        try {
+          const removedJob = jobScheduler.removeJob(parseInt(msg.match[1], 10))
+
+          if (removedJob === undefined) {
+            msg.reply(`Could not find a reminder with id ${msg.match[1]}`)
+            return
+          }
+
+          msg.reply(
+            `Cancelled reminder with ${formatJobForMessage(removedJob)}`,
+          )
+        } catch (error) {
+          robot.logger.error(
+            `Job deletion error: ${
+              error instanceof Error ? error.message : "(unknown error)"
+            }`,
+          )
+          msg.reply("Something went wrong deleting this reminder.")
+        }
+      },
+    )
   })
 }
