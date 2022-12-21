@@ -87,9 +87,8 @@ function normalizeInterval(interval: string): number {
   if (interval === "fifth") {
     return 5
   }
-
   // Fall back to an interval of 1, i.e. "every".
-  return parseInt(interval.match(/[0-9]{1,2}/)?.[1] ?? "1", 10)
+  return parseInt(interval.match(/[0-9]{1,2}/)?.[0] ?? "1", 10)
 }
 
 function parseSingleSpec(
