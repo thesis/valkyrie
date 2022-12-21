@@ -4,7 +4,6 @@ import { MatrixMessage } from "hubot-matrix"
 import {
   JobMessageInfo,
   JobDefinition,
-  RecurrenceSpec,
   RecurringDefinition,
   SingleShotDefinition,
   JobSpec,
@@ -25,7 +24,7 @@ const specMatcher =
   /\s*(?<type>in|on|next|every)\s+(?<daySpec>(other|second|third|fourth|fifth|[0-9]{1,2}(?:th|rd|st|nd))\s+)(?:of the month\s+|days?\s+)?(?:at\s+(?<timeSpec>[^\s]+))?(?:\W|$)|\s+(?:at\s+(?<timeSpec2>[^\s]+))?(?:\W|$)/
 
 // Match text that contains a reminder command.
-const startMatcher = /remind (?<who>me|team|here|room) (?:to )?(?<message>.*)$/
+const startMatcher = /remind (?<who>me|team|here|room) (?:to )?(?<message>.*)$/s
 
 // Match weekdays, allowing for arbitrary abbreviation (e.g. M or Mo or Mon or
 // Monday).
