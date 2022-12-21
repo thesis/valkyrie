@@ -22,7 +22,7 @@ const intervalMatcher =
 // - "A every 3rd Wednesday"
 const specMatcher =
   // Day spec needs to include possible interval spec + one word.
-  /\s+(?<type>in|on|next|every)\s+(?<daySpec>(?:(other|second|third|fourth|fifth|[0-9]{1,2}(?:th|rd|st|nd)) )?[^\s]+)?\s*(?:at\s+(?<timeSpec>[^\s]+))?(?:\W|$)|\s+(?:at\s+(?<timeSpec2>[^\s]+))?(?:\W|$)/
+  /\s*(?<type>in|on|next|every)\s+(?<daySpec>(other|second|third|fourth|fifth|[0-9]{1,2}(?:th|rd|st|nd))\s+)(?:of the month\s+|days?\s+)?(?:at\s+(?<timeSpec>[^\s]+))?(?:\W|$)|\s+(?:at\s+(?<timeSpec2>[^\s]+))?(?:\W|$)/
 
 // Match text that contains a reminder command.
 const startMatcher = /remind (?<who>me|team|here|room) (?:to )?(?<message>.*)$/
