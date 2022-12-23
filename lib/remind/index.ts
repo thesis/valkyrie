@@ -1,6 +1,6 @@
 import * as dayjs from "dayjs"
 import { Envelope, Message, User } from "hubot"
-import { isMatrixAdapter, sendThreaded } from "../adapter-util"
+import { sendThreaded } from "../adapter-util"
 import {
   Job,
   PersistedJob,
@@ -283,17 +283,6 @@ export default class JobScheduler {
     // Index of the last job whose next execution was in the past.
     const pastJobsEndIndex = this.jobs.findIndex((job) => job.next <= now)
     const pastJobs = this.jobs.splice(0, pastJobsEndIndex + 1)
-
-    console.log(
-      JSON.stringify(pastJobs, undefined, 2),
-      "\n",
-      JSON.stringify(this.jobs, undefined, 2),
-      pastJobsEndIndex,
-      "\n",
-      this.jobs.map((j) => j.next).join(", "),
-      "\n",
-      now,
-    )
 
     const { recurring: recurringPastJobs, single: singleShotPastJobs } =
       pastJobs.reduce(

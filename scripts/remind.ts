@@ -30,11 +30,9 @@ import {
   formatJobForMessage,
   formatJobsForListMessage,
 } from "../lib/remind/formatting"
-import { updateScheduledJob } from "../lib/schedule-management"
 
 import { isBlank } from "../lib/schedule-util"
 
-const REMINDER_JOBS = {}
 const REMINDER_KEY = "hubot_reminders"
 
 module.exports = function setupRemind(robot: Robot) {
