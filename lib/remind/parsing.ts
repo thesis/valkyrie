@@ -11,7 +11,19 @@ import {
 
 // Match an interval specifier for "every <interval> <day>"-style text.
 const intervalMatcher =
-  /(?:(other|second|third|fourth|fifth|[0-9]{1,2}(?:th|rd|st|nd)) )?/
+  /(?:other|seco|thi|four|fif|[0-9]{1,2})(?:th|rd|st|nd)?(?:\W|$)+/
+
+// Match weekdays, allowing for arbitrary abbreviation (e.g. M or Mo or Mon or
+// Monday).
+const weekDayMatcher = new RegExp(
+  "M(?:o(?:n(?:d(?:a(?:y)?)?)?)?)?|" +
+    "Tu(?:e(?:s(?:d(?:a(?:y)?)?)?)?)?|" +
+    "W(?:e(?:d(?:n(?:e(?:s(?:d(?:a(?:y)?)?)?)?)?)?)?)?|" +
+    "Th(?:u(?:r(?:s(?:d(?:a(?:y)?)?)?)?)?)?|" +
+    "F(?:r(?:i(?:d(?:a(?:y)?)?)?)?)?|" +
+    "Sa(?:t(?:u(?:r(?:d(?:a(?:y)?)?)?)?)?)?|" +
+    "Su(?:n(?:d(?:a(?:y)?)?)?)?",
+)
 
 // Match text that looks like a job spec. Supported formats are:
 // - "W next Thursday"
@@ -19,24 +31,18 @@ const intervalMatcher =
 // - "Y on Monday"
 // - "Z every second Tuesday"
 // - "A every 3rd Wednesday"
-const specMatcher =
+const specMatcher = new RegExp(
   // Day spec needs to include possible interval spec + one word.
-  /\s*(?<type>in|on|next|every)\s+(?<daySpec>(other|second|third|fourth|fifth|[0-9]{1,2}(?:th|rd|st|nd))\s+)(?:of the month\s+|days?\s+)?(?:at\s+(?<timeSpec>[^\s]+))?(?:\W|$)|\s+(?:at\s+(?<timeSpec2>[^\s]+))?(?:\W|$)/
+  "\\s*(?<type>in|on|next|every)\\s+" +
+    "(?<daySpec>" +
+    `(?:${intervalMatcher.source})?` +
+    `(?:(?:of the month|(?:${weekDayMatcher.source})s?)(?:\\W|$)+)?)?` +
+    "(?:at\\s+(?<timeSpec>[^\\s]+)(?:\\W|$))?|" +
+    "\\s+(?:at\\s+(?<timeSpec2>[^\\s]+))?(?:\\W|$)/",
+)
 
 // Match text that contains a reminder command.
 const startMatcher = /remind (?<who>me|team|here|room) (?:to )?(?<message>.*)$/s
-
-// Match weekdays, allowing for arbitrary abbreviation (e.g. M or Mo or Mon or
-// Monday).
-const weekDayMatcher = new RegExp(
-  "M(o(n(d(a(y)?)?)?)?)?|" +
-    "Tu(e(s(d(a(y)?)?)?)?)?|" +
-    "W(e(d(n(e(s(d(a(y)?)?)?)?)?)?)?)?|" +
-    "Th(u(r(s(d(a(y)?)?)?)?)?)?|" +
-    "F(r(i(d(a(y)?)?)?)?)?|" +
-    "Sa(t(u(r(d(a(y)?)?)?)?)?)?|" +
-    "Su(n(d(a(y)?)?)?)?",
-)
 
 /**
  * Normalizes a day of the week that matches the weekDayMatcher to a numeric
@@ -129,7 +135,7 @@ function parseRecurringSpec(
   jobDaySpecifier: string,
   jobTimeSpecifier: string,
 ): RecurringDefinition {
-  const interval = jobDaySpecifier?.match(intervalMatcher)?.[1] ?? "1"
+  const interval = jobDaySpecifier?.match(intervalMatcher)?.[0].trim() ?? "1"
   const normalizedInterval = normalizeInterval(interval)
   const dayOfWeek = weekDayMatcher.exec(jobDaySpecifier)
 
