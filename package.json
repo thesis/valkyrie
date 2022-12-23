@@ -59,7 +59,9 @@
     "ts-node": "^10.9.1"
   },
   "scripts": {
-    "test": "mocha -r ts-node/register -r coffeescript/register test/**.ts",
+    "test:mocha": "mocha -r ts-node/register -r coffeescript/register test/**.ts",
+    "test:jest": "jest",
+    "test": "run-p test:mocha test:jest",
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
     "lint": "run-p lint:js"
