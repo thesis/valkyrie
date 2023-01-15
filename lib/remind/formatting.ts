@@ -1,4 +1,5 @@
 import * as dayjs from "dayjs"
+import * as utc from "dayjs/plugin/utc"
 import * as timezone from "dayjs/plugin/timezone"
 import * as localizedFormat from "dayjs/plugin/localizedFormat"
 import * as advancedFormat from "dayjs/plugin/advancedFormat"
@@ -6,6 +7,7 @@ import * as advancedFormat from "dayjs/plugin/advancedFormat"
 import { encodeThreadId, matrixUrlFor } from "../adapter-util"
 import { PersistedJob, RecurringDefinition } from "./data"
 
+dayjs.extend(utc)
 dayjs.extend(timezone)
 dayjs.extend(localizedFormat)
 dayjs.extend(advancedFormat)
