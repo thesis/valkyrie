@@ -19,11 +19,21 @@ describe("reminder scheduling", () => {
     {
       name: "with previous recurrence one minute before",
       previousRecurrenceISO: "2022-12-02T15:12:00Z",
+      expectedNextRecurrenceISO: "2022-12-02T15:13:00.000Z",
+    },
+    {
+      name: "with previous recurrence one minute after",
+      previousRecurrenceISO: "2022-12-02T15:14:00Z",
       expectedNextRecurrenceISO: "2023-01-02T15:13:00.000Z",
     },
     {
       name: "with previous recurrence one hour before",
       previousRecurrenceISO: "2022-12-02T14:13:00Z",
+      expectedNextRecurrenceISO: "2022-12-02T15:13:00.000Z",
+    },
+    {
+      name: "with previous recurrence one hour after",
+      previousRecurrenceISO: "2022-12-02T16:13:00Z",
       expectedNextRecurrenceISO: "2023-01-02T15:13:00.000Z",
     },
     {

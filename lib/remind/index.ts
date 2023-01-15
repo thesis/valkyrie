@@ -35,7 +35,15 @@ export function computeNextRecurrence(
 
   if (repeat === "month") {
     const { dayOfMonth } = normalizedSpec
-    if (repeatDate.date() < dayOfMonth) {
+    // If the previous recurrence was the same day of the month that we're
+    // supposed to recur, advance by a month. Otherwise, do it the next time we
+    // hit that day of the month.
+    if (
+      repeatDate.date() < dayOfMonth ||
+      (repeatDate.date() === dayOfMonth &&
+        (repeatDate.hour() < hour ||
+          (repeatDate.hour() === hour && repeatDate.minute() < minute)))
+    ) {
       repeatDate = repeatDate.date(dayOfMonth)
     } else {
       repeatDate = repeatDate.add(1, "month").date(dayOfMonth)
@@ -43,10 +51,12 @@ export function computeNextRecurrence(
   } else if (repeat === "week") {
     const { interval, dayOfWeek } = normalizedSpec
 
-    // FIXME Off by one here, saying "every Monday" on Monday will advance by
-    // FIXME the interval instead of by 1. Probably need to resolve in
-    // FIXME previousRecurrenceISO instead of special-casing in here.
-    if (repeatDate.day() < dayOfWeek) {
+    if (
+      repeatDate.day() < dayOfWeek ||
+      (repeatDate.day() === dayOfWeek &&
+        (repeatDate.hour() < hour ||
+          (repeatDate.hour() === hour && repeatDate.minute() < minute)))
+    ) {
       repeatDate = repeatDate.day(dayOfWeek)
     } else {
       repeatDate = repeatDate.add(interval, "week").day(dayOfWeek)
