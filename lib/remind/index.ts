@@ -20,7 +20,7 @@ dayjs.tz.setDefault("UTC")
  * single-shot spec, determines the next recurrence and returns it as an
  * ISO-8601 date.
  */
-function computeNextRecurrence(
+export function computeNextRecurrence(
   previousRecurrenceISO: string,
   spec: RecurringDefinition | SingleShotDefinition,
 ): string {

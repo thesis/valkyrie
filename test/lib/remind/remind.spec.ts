@@ -1,5 +1,164 @@
 import { describe, expect, test } from "@jest/globals"
+import { computeNextRecurrence } from "../../../lib/remind"
 import { parseSpec } from "../../../lib/remind/parsing"
+
+describe("reminder scheduling", () => {
+  const monthlyDefinition = {
+    repeat: "month",
+    hour: 15,
+    minute: 13,
+    dayOfMonth: 2,
+  } as const
+
+  test.each([
+    {
+      name: "with previous recurrence exactly one month before",
+      previousRecurrenceISO: "2022-12-02T15:13:00Z",
+      expectedNextRecurrenceISO: "2023-01-02T15:13:00.000Z",
+    },
+    {
+      name: "with previous recurrence one minute before",
+      previousRecurrenceISO: "2022-12-02T15:12:00Z",
+      expectedNextRecurrenceISO: "2023-01-02T15:13:00.000Z",
+    },
+    {
+      name: "with previous recurrence one hour before",
+      previousRecurrenceISO: "2022-12-02T14:13:00Z",
+      expectedNextRecurrenceISO: "2023-01-02T15:13:00.000Z",
+    },
+    {
+      name: "with previous recurrence one day before",
+      previousRecurrenceISO: "2022-12-01T15:13:00Z",
+      expectedNextRecurrenceISO: "2022-12-02T15:13:00.000Z",
+    },
+  ] as const)(
+    "supports monthly specs $name",
+    ({ previousRecurrenceISO, expectedNextRecurrenceISO }) => {
+      expect(
+        computeNextRecurrence(previousRecurrenceISO, monthlyDefinition),
+      ).toEqual(expectedNextRecurrenceISO)
+    },
+  )
+
+  const weeklyDefinition = {
+    repeat: "week",
+    dayOfWeek: 2,
+    interval: 1,
+    hour: 16,
+    minute: 33,
+  } as const
+
+  const weeklyBaseDate = "2022-12-06" // A Tuesday, dayOfWeek: 2.
+
+  test.each([
+    {
+      name: "with previous recurrence exactly one week before",
+      previousRecurrenceISO: "2022-11-29T16:33:00Z",
+      expectedNextRecurrenceISO: `${weeklyBaseDate}T16:33:00.000Z`,
+    },
+    {
+      name: "with previous recurrence one minute before",
+      previousRecurrenceISO: `${weeklyBaseDate}T16:32:00Z`,
+      expectedNextRecurrenceISO: `${weeklyBaseDate}T16:33:00.000Z`,
+    },
+    {
+      name: "with previous recurrence one minute after",
+      previousRecurrenceISO: `${weeklyBaseDate}T16:34:00Z`,
+      expectedNextRecurrenceISO: "2022-12-13T16:33:00.000Z",
+    },
+    {
+      name: "with previous recurrence one day before",
+      previousRecurrenceISO: "2022-12-05T15:13:00Z",
+      expectedNextRecurrenceISO: `${weeklyBaseDate}T16:33:00.000Z`,
+    },
+  ] as const)(
+    "supports weekly specs $name",
+    ({ previousRecurrenceISO, expectedNextRecurrenceISO }) => {
+      expect(
+        computeNextRecurrence(previousRecurrenceISO, weeklyDefinition),
+      ).toEqual(expectedNextRecurrenceISO)
+    },
+  )
+
+  const weeklyIntervalDefinition = {
+    repeat: "week",
+    dayOfWeek: 2,
+    interval: 2,
+    hour: 16,
+    minute: 33,
+  } as const
+
+  test.each([
+    {
+      name: "with previous recurrence one minute before on recurrence day",
+      previousRecurrenceISO: `${weeklyBaseDate}T16:32:00Z`,
+      expectedNextRecurrenceISO: `${weeklyBaseDate}T16:33:00.000Z`,
+    },
+    {
+      name: "with previous recurrence one minute after on recurrence day",
+      previousRecurrenceISO: `${weeklyBaseDate}T16:34:00Z`,
+      expectedNextRecurrenceISO: "2022-12-20T16:33:00.000Z",
+    },
+    {
+      name: "with previous recurrence one day before recurrence day",
+      previousRecurrenceISO: "2022-12-05T15:13:00Z",
+      expectedNextRecurrenceISO: `${weeklyBaseDate}T16:33:00.000Z`,
+    },
+    {
+      name: "with previous recurrence on the recurrence day",
+      previousRecurrenceISO: `${weeklyBaseDate}T15:13:00Z`,
+      expectedNextRecurrenceISO: `${weeklyBaseDate}T16:33:00.000Z`,
+    },
+  ] as const)(
+    "supports every-other-weekly specs $name",
+    ({ previousRecurrenceISO, expectedNextRecurrenceISO }) => {
+      expect(
+        computeNextRecurrence(previousRecurrenceISO, weeklyIntervalDefinition),
+      ).toEqual(expectedNextRecurrenceISO)
+    },
+  )
+
+  const weeklyThreetervalDefinition = {
+    repeat: "week",
+    dayOfWeek: 2,
+    interval: 3,
+    hour: 16,
+    minute: 33,
+  } as const
+
+  test.each([
+    {
+      name: "with previous recurrence one minute before on recurrence day",
+      previousRecurrenceISO: `${weeklyBaseDate}T16:32:00Z`,
+      expectedNextRecurrenceISO: `${weeklyBaseDate}T16:33:00.000Z`,
+    },
+    {
+      name: "with previous recurrence one minute after on recurrence day",
+      previousRecurrenceISO: `${weeklyBaseDate}T16:34:00Z`,
+      expectedNextRecurrenceISO: "2022-12-27T16:33:00.000Z",
+    },
+    {
+      name: "with previous recurrence one day before recurrence day",
+      previousRecurrenceISO: "2022-12-05T15:13:00Z",
+      expectedNextRecurrenceISO: `${weeklyBaseDate}T16:33:00.000Z`,
+    },
+    {
+      name: "with previous recurrence on the recurrence day",
+      previousRecurrenceISO: `${weeklyBaseDate}T15:13:00Z`,
+      expectedNextRecurrenceISO: `${weeklyBaseDate}T16:33:00.000Z`,
+    },
+  ] as const)(
+    "supports every-third-weekly specs $name",
+    ({ previousRecurrenceISO, expectedNextRecurrenceISO }) => {
+      expect(
+        computeNextRecurrence(
+          previousRecurrenceISO,
+          weeklyThreetervalDefinition,
+        ),
+      ).toEqual(expectedNextRecurrenceISO)
+    },
+  )
+})
 
 describe("reminder spec parsing", () => {
   const monthlySpec = {
