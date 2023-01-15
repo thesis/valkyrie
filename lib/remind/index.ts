@@ -1,4 +1,6 @@
 import * as dayjs from "dayjs"
+import * as utc from "dayjs/plugin/utc"
+import * as timezone from "dayjs/plugin/timezone"
 import { Envelope, Message, User } from "hubot"
 import { sendThreaded } from "../adapter-util"
 import {
@@ -8,6 +10,10 @@ import {
   SingleShotDefinition,
 } from "./data"
 import { parseFromString, parseSpec as parseJobSpec } from "./parsing"
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
+dayjs.tz.setDefault("UTC")
 
 /**
  * Given the previous recurrence as an ISO-8601 date and a recurring or
@@ -25,7 +31,7 @@ function computeNextRecurrence(
 
   const { repeat, hour, minute } = normalizedSpec
 
-  let repeatDate = dayjs(previousRecurrenceISO)
+  let repeatDate = dayjs.tz(previousRecurrenceISO)
 
   if (repeat === "month") {
     const { dayOfMonth } = normalizedSpec
