@@ -31,6 +31,7 @@ import {
   getRoomInfoFromIdOrName,
   getRoomNameFromId,
   encodeThreadId,
+  matrixUrlFor,
 } from "./adapter-util"
 import CONFIG, { RECURRING_JOB_STORAGE_KEY } from "./schedule-config"
 import {
@@ -40,7 +41,7 @@ import {
 } from "./scheduled-jobs"
 
 function urlFor(roomId: string, serverName: string, eventId: string): string {
-  return `https://matrix.to/#/${roomId}/${eventId}?via=${serverName}`
+  return matrixUrlFor(roomId, serverName, eventId)
 }
 
 function isCronPattern(pattern: string | Date) {
