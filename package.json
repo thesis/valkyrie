@@ -24,7 +24,7 @@
     "hubot-scripts": "^2.17.2",
     "hubot-shipit": "git+https://github.com/kb0rg/hubot-shipit.git#cb51773ede8c3bf8fff409cb110936f158801d83",
     "js-base64": "^3.7.2",
-    "jsonwebtoken": "~8.3.0",
+    "jsonwebtoken": "~9.0.0",
     "lodash": "^4.17.21",
     "matrix-js-sdk": "^20.1.0",
     "moment": "^2.29.4",
