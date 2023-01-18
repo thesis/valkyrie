@@ -9,6 +9,10 @@ import {
   JobSpec,
 } from "./data"
 
+// Match a number specifier for "in <number> <unit>"-style text.
+const numericTextMatcher =
+  /(?:an?|one|two|three|four|five|six|seven|eight|nine|ten|[0-9]+)(?:\W|$)+/
+
 // Match an interval specifier for "every <interval> <day>"-style text.
 const intervalMatcher =
   /(?:other|seco|thi|four|fif|[0-9]{1,2})(?:th|rd|st|nd)?(?:\W|$)+/
@@ -34,11 +38,14 @@ const weekDayMatcher = new RegExp(
 const specMatcher = new RegExp(
   // Day spec needs to include possible interval spec + one word.
   "\\s*(?<type>in|on|next|every)\\s+" +
+    "(?:" +
+    `(?<relativeIntervalCount>${numericTextMatcher.source})` +
+    "(?<relativeIntervalUnit>(?:minutes?|hours?|days?|weeks?)(?:\\W|$)+))?" +
     "(?<daySpec>" +
     `(?:${intervalMatcher.source})?` +
     `(?:(?:of the month|(?:${weekDayMatcher.source})s?)(?:\\W|$)+)?)?` +
     "(?:at\\s+(?<timeSpec>[^\\s]+)(?:\\W|$))?|" +
-    "\\s+(?:at\\s+(?<timeSpec2>[^\\s]+))?(?:\\W|$)/",
+    "\\s+(?:at\\s+(?<timeSpec2>[^\\s]+))?(?:\\W|$)",
 )
 
 // Match text that contains a reminder command.
@@ -97,34 +104,123 @@ function normalizeInterval(interval: string): number {
   return parseInt(interval.match(/[0-9]{1,2}/)?.[0] ?? "1", 10)
 }
 
+/**
+ * Normalizes a relative time count that matches the numericTextMatcher, like
+ * "one", "two", etc meant to specify the relative time to an occurrence,
+ * into a number of units that the count represents.
+ *
+ * If the count couldn't be interpreted, it is interpreted being a 1.
+ */
+function normalizeRelativeIntervalCount(relativeIntervalCount: string): number {
+  switch (relativeIntervalCount) {
+    case "a":
+    case "an":
+    case "one":
+      return 1
+    case "two":
+      return 2
+    case "three":
+      return 3
+    case "four":
+      return 4
+    case "five":
+      return 5
+    case "six":
+      return 6
+    case "seven":
+      return 7
+    case "eight":
+      return 8
+    case "nine":
+      return 9
+    case "ten":
+      return 10
+    default:
+      // Fall back to count of 1.
+      return parseInt(relativeIntervalCount.match(/[0-9]+/)?.[0] ?? "1", 10)
+  }
+}
+
 function parseSingleSpec(
   jobDaySpecifier: string,
   jobTimeSpecifier: string,
+  jobRelativeIntervalCount: string,
+  jobRelativeIntervalUnit: string,
 ): SingleShotDefinition {
-  // Start with today as the specified day.
-  const specifiedDate = dayjs(jobDaySpecifier) // TODO Adapt to user timezone.
+  if (
+    (jobRelativeIntervalUnit ?? null) === null ||
+    (jobRelativeIntervalCount ?? null) === null
+  ) {
+    // Start with today as the specified day.
+    const specifiedDate = dayjs(jobDaySpecifier) // TODO Adapt to user timezone.
 
-  const dayOfWeek = weekDayMatcher.exec(jobDaySpecifier)
-  const daySpec =
-    dayOfWeek !== null ? normalizeDayOfWeek(dayOfWeek[0]) : specifiedDate.day()
+    const dayOfWeek = weekDayMatcher.exec(jobDaySpecifier)
+    const daySpec =
+      dayOfWeek !== null
+        ? normalizeDayOfWeek(dayOfWeek[0])
+        : specifiedDate.day()
 
-  const [hour, minute] = jobTimeSpecifier
-    ?.trim()
-    ?.split(/[:h]/)
-    ?.slice(0, 2)
-    ?.map((time) => parseInt(time.substring(0, 2), 10)) ?? [0, 0]
+    const [hour, minute] = jobTimeSpecifier
+      ?.trim()
+      ?.split(/[:h]/)
+      ?.slice(0, 2)
+      ?.map((time) => parseInt(time.substring(0, 2), 10)) ?? [0, 0]
+    const amPm = jobTimeSpecifier?.match(/(am|pm)/i)?.[1]
+
+    const fullDayHour =
+      amPm?.toLowerCase() === "pm" && hour <= 12 ? hour + 12 : hour
+
+    const timeSpec = {
+      hour: fullDayHour,
+      minute,
+    }
+
+    const fullSpec = {
+      dayOfWeek: daySpec,
+      ...timeSpec,
+    }
+
+    return fullSpec
+  }
+
+  const today = dayjs.utc()
+
+  const relativeIntervalCount = normalizeRelativeIntervalCount(
+    jobRelativeIntervalCount.trim(),
+  )
+  // trim and singularize so we only deal with minute|hour|day|week.
+  const relativeIntervalUnit = jobRelativeIntervalUnit.trim().replace(/s$/, "")
+
+  // If available, extract hour and minute.
+  const [hour, minute] =
+    jobTimeSpecifier
+      ?.trim()
+      ?.split(/[:h]/)
+      ?.slice(0, 2)
+      ?.map((time) => parseInt(time.substring(0, 2), 10)) ?? []
   const amPm = jobTimeSpecifier?.match(/(am|pm)/i)?.[1]
 
+  // When available, use the hour and minute from jobTimeSpecifier; otherwise,
+  // use the current hour/minute, adjusting the relativeIntervalCount when
+  // relevant.
   const fullDayHour =
-    amPm?.toLowerCase() === "pm" && hour <= 12 ? hour + 12 : hour
+    (amPm?.toLowerCase() === "pm" && hour <= 12 ? hour + 12 : hour) ??
+    today.hour() + (relativeIntervalUnit === "hour" ? relativeIntervalCount : 0)
+  const fullDayMinute =
+    minute ??
+    today.minute() +
+      (relativeIntervalUnit === "minute" ? relativeIntervalCount : 0)
 
   const timeSpec = {
     hour: fullDayHour,
-    minute,
+    minute: fullDayMinute,
   }
 
   const fullSpec = {
-    dayOfWeek: daySpec,
+    dayOfWeek:
+      today.day() +
+      (relativeIntervalUnit === "day" ? relativeIntervalCount : 0) +
+      (relativeIntervalUnit === "week" ? relativeIntervalCount * 7 : 0),
     ...timeSpec,
   }
 
@@ -193,6 +289,8 @@ export function parseSpec(
   const {
     type: jobTypeSpecifier,
     daySpec: jobDaySpecifier,
+    relativeIntervalCount: jobRelativeIntervalCount,
+    relativeIntervalUnit: jobRelativeIntervalUnit,
     timeSpec: jobTimeSpecifier1,
     timeSpec2: jobTimeSpecifier2,
   } = specMatch.groups ?? {}
@@ -208,7 +306,12 @@ export function parseSpec(
         }
       : {
           type: "single",
-          spec: parseSingleSpec(jobDaySpecifier, jobTimeSpecifier),
+          spec: parseSingleSpec(
+            jobDaySpecifier,
+            jobTimeSpecifier,
+            jobRelativeIntervalCount,
+            jobRelativeIntervalUnit,
+          ),
         }
 
   return {

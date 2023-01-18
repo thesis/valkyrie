@@ -1,6 +1,10 @@
-import { describe, expect, test } from "@jest/globals"
+import { afterEach, describe, expect, test, jest } from "@jest/globals"
 import { computeNextRecurrence } from "../../../lib/remind"
 import { parseSpec } from "../../../lib/remind/parsing"
+
+afterEach(() => {
+  jest.useRealTimers()
+})
 
 describe("reminder scheduling", () => {
   const monthlyDefinition = {
@@ -285,5 +289,164 @@ describe("reminder spec parsing", () => {
     },
   ])("supports weekly specs $name", ({ str, expectedSpec }) => {
     expect(expectedSpec).toEqual(parseSpec(str)?.jobSpec)
+  })
+
+  const baseDate = "2022-12-02" // A Friday
+  const baseTime = "16:33:00Z"
+
+  const baseSingleSpec = {
+    type: "single",
+    spec: {
+      dayOfWeek: 5,
+      hour: 16,
+      minute: 33, // base + 5
+    },
+  }
+
+  test.each([
+    {
+      name: "in the middle in hours",
+      str: "remind me in an hour to do things",
+      expectedSpec: {
+        ...baseSingleSpec,
+        spec: { ...baseSingleSpec.spec, hour: 17 },
+      },
+    },
+    {
+      name: "at the end in hours",
+      str: "remind me to do things in 1 hour",
+      expectedSpec: {
+        ...baseSingleSpec,
+        spec: { ...baseSingleSpec.spec, hour: 17 },
+      },
+    },
+    {
+      name: "in the middle in minutes",
+      str: "remind me in 5 minutes to do things",
+      expectedSpec: {
+        ...baseSingleSpec,
+        spec: { ...baseSingleSpec.spec, minute: 38 },
+      },
+    },
+    {
+      name: "at the end in minutes",
+      str: "remind me to do things in five minutes",
+      expectedSpec: {
+        ...baseSingleSpec,
+        spec: { ...baseSingleSpec.spec, minute: 38 },
+      },
+    },
+    {
+      name: "in the middle in days",
+      str: "remind me in 6 days to do things",
+      expectedSpec: {
+        ...baseSingleSpec,
+        spec: { ...baseSingleSpec.spec, dayOfWeek: 11 },
+      },
+    },
+    {
+      name: "at the end in days",
+      str: "remind me to do things in 6 days",
+      expectedSpec: {
+        ...baseSingleSpec,
+        spec: { ...baseSingleSpec.spec, dayOfWeek: 11 },
+      },
+    },
+    {
+      name: "in the middle as 'next <day>'",
+      str: "remind me next Tuesday to do things",
+      expectedSpec: {
+        ...baseSingleSpec,
+        spec: { ...baseSingleSpec.spec, dayOfWeek: 2, hour: 0, minute: 0 },
+      },
+    },
+    {
+      name: "at the end as 'next <day>'",
+      str: "remind me to do things next Thursday",
+      expectedSpec: {
+        ...baseSingleSpec,
+        spec: { ...baseSingleSpec.spec, dayOfWeek: 4, hour: 0, minute: 0 },
+      },
+    },
+    {
+      name: "in the middle as 'on <day>'",
+      str: "remind me on Tuesday to do things",
+      expectedSpec: {
+        ...baseSingleSpec,
+        spec: { ...baseSingleSpec.spec, dayOfWeek: 2, hour: 0, minute: 0 },
+      },
+    },
+    {
+      name: "at the end as 'on <day>'",
+      str: "remind me to do things next Thursday",
+      expectedSpec: {
+        ...baseSingleSpec,
+        spec: { ...baseSingleSpec.spec, dayOfWeek: 4, hour: 0, minute: 0 },
+      },
+    },
+  ])("supports relative specs $name", ({ str, expectedSpec }) => {
+    jest.useFakeTimers({ now: new Date(`${baseDate}T${baseTime}`) })
+
+    expect(expectedSpec).toEqual(parseSpec(str)?.jobSpec)
+  })
+
+  const baseSingleTimeSpec = {
+    ...baseSingleSpec,
+    spec: { ...baseSingleSpec.spec, hour: 13, minute: 12 },
+  }
+
+  test.each([
+    {
+      name: "in the middle in days",
+      str: "remind me in 6 days at 13:12 to do things",
+      expectedSpec: {
+        ...baseSingleTimeSpec,
+        spec: { ...baseSingleTimeSpec.spec, dayOfWeek: 11 },
+      },
+    },
+    {
+      name: "at the end in days",
+      str: "remind me to do things in 6 days at 13:12",
+      expectedSpec: {
+        ...baseSingleTimeSpec,
+        spec: { ...baseSingleTimeSpec.spec, dayOfWeek: 11 },
+      },
+    },
+    {
+      name: "in the middle as 'next <day>'",
+      str: "remind me next Tuesday at 13:12 to do things",
+      expectedSpec: {
+        ...baseSingleTimeSpec,
+        spec: { ...baseSingleTimeSpec.spec, dayOfWeek: 2 },
+      },
+    },
+    {
+      name: "at the end as 'next <day>'",
+      str: "remind me to do things next Thursday at 13:12",
+      expectedSpec: {
+        ...baseSingleTimeSpec,
+        spec: { ...baseSingleTimeSpec.spec, dayOfWeek: 4 },
+      },
+    },
+    {
+      name: "in the middle as 'on <day>'",
+      str: "remind me on Tuesday at 13:12 to do things",
+      expectedSpec: {
+        ...baseSingleTimeSpec,
+        spec: { ...baseSingleTimeSpec.spec, dayOfWeek: 2 },
+      },
+    },
+    {
+      name: "at the end as 'on <day>'",
+      str: "remind me to do things next Thursday at 13:12",
+      expectedSpec: {
+        ...baseSingleTimeSpec,
+        spec: { ...baseSingleTimeSpec.spec, dayOfWeek: 4 },
+      },
+    },
+  ])("supports relative specs with time $name", ({ str, expectedSpec }) => {
+    jest.useFakeTimers({ now: new Date(`${baseDate}T${baseTime}`) })
+
+    expect(parseSpec(str)?.jobSpec).toEqual(expectedSpec)
   })
 })
