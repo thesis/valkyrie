@@ -9,6 +9,10 @@ import {
   JobSpec,
 } from "./data"
 
+// Note: the regexes below were debugged with https://regex101.com/'s debugger
+// to great effect. That said, the "right" solution is probably to use a parser
+// generator/an EBNF grammar or similar.
+
 // Match a number specifier for "in <number> <unit>"-style text.
 const numericTextMatcher =
   /(?:an?|one|two|three|four|five|six|seven|eight|nine|ten|[0-9]+)(?:\W|$)+/
