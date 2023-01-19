@@ -94,6 +94,41 @@ describe("reminder scheduling", () => {
     },
   )
 
+  const weeklyMultiDayDefiniton = {
+    ...weeklyDefinition,
+    dayOfWeek: [1, 2, 3, 4, 5],
+  }
+
+  test.each([
+    {
+      name: "with previous recurrence before the first day",
+      previousRecurrenceISO: "2022-12-03T16:33:00Z",
+      expectedNextRecurrenceISO: "2022-12-05T16:33:00.000Z",
+    },
+    {
+      name: "with previous recurrence on a recurrence day one minute before",
+      previousRecurrenceISO: `${weeklyBaseDate}T16:32:00Z`,
+      expectedNextRecurrenceISO: `${weeklyBaseDate}T16:33:00.000Z`,
+    },
+    {
+      name: "with previous recurrence on a recurrence day one minute after",
+      previousRecurrenceISO: `${weeklyBaseDate}T16:34:00Z`,
+      expectedNextRecurrenceISO: "2022-12-07T16:33:00.000Z",
+    },
+    {
+      name: "with previous recurrence after the last day",
+      previousRecurrenceISO: "2022-12-10T16:33:00Z",
+      expectedNextRecurrenceISO: "2022-12-12T16:33:00.000Z",
+    },
+  ] as const)(
+    "supports weekly specs on multiple days $name",
+    ({ previousRecurrenceISO, expectedNextRecurrenceISO }) => {
+      expect(
+        computeNextRecurrence(previousRecurrenceISO, weeklyMultiDayDefiniton),
+      ).toEqual(expectedNextRecurrenceISO)
+    },
+  )
+
   const weeklyIntervalDefinition = {
     repeat: "week",
     dayOfWeek: 2,
@@ -288,6 +323,27 @@ describe("reminder spec parsing", () => {
       },
     },
   ])("supports weekly specs $name", ({ str, expectedSpec }) => {
+    expect(expectedSpec).toEqual(parseSpec(str)?.jobSpec)
+  })
+
+  test.each([
+    {
+      name: "in the middle",
+      str: "remind me every weekday at 16:33 to do things",
+      expectedSpec: {
+        ...weeklySpec,
+        spec: { ...weeklySpec.spec, dayOfWeek: [1, 2, 3, 4, 5] },
+      },
+    },
+    {
+      name: "at the end",
+      str: "remind me to do things every weekday at 16:33",
+      expectedSpec: {
+        ...weeklySpec,
+        spec: { ...weeklySpec.spec, dayOfWeek: [1, 2, 3, 4, 5] },
+      },
+    },
+  ])("supports weekly specs for weekdays $name", ({ str, expectedSpec }) => {
     expect(expectedSpec).toEqual(parseSpec(str)?.jobSpec)
   })
 

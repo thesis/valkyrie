@@ -33,14 +33,17 @@ function formatRecurringSpec(
   const formattedNextOccurrence = formatNextOccurrence(nextOccurrence)
 
   if (spec.repeat === "week") {
-    const baseDate = dayjs()
-      .day(spec.dayOfWeek)
-      .hour(spec.hour)
-      .minute(spec.minute)
+    const baseDate = dayjs().hour(spec.hour).minute(spec.minute)
+    const daysOfWeek =
+      typeof spec.dayOfWeek === "number" ? [spec.dayOfWeek] : spec.dayOfWeek
+
+    const formattedDays = daysOfWeek
+      .map((day) => baseDate.day(day).format("dddd"))
+      .join(", ")
 
     return (
       formattedNextOccurrence +
-      baseDate.format("[ (recurs weekly on] dddd [at] HH:mm[)]")
+      baseDate.format(`[ (recurs weekly at] HH:mm [on ${formattedDays}])]`)
     )
   }
 

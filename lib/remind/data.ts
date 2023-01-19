@@ -44,7 +44,7 @@ export type PersistedJob =
 export type SingleShotDefinition = {
   hour: number
   minute: number
-  dayOfWeek: number
+  dayOfWeek: number | number[]
 }
 
 export type RecurringDefinition =

@@ -15,11 +15,11 @@ import {
 
 // Match a number specifier for "in <number> <unit>"-style text.
 const numericTextMatcher =
-  /(?:an?|one|two|three|four|five|six|seven|eight|nine|ten|[0-9]+)(?:\W|$)+/
+  /(?:an?|one|two|three|four|five|six|seven|eight|nine|ten|[0-9]+)(?:\s|$)+/
 
 // Match an interval specifier for "every <interval> <day>"-style text.
 const intervalMatcher =
-  /(?:other|seco|thi|four|fif|[0-9]{1,2})(?:th|rd|st|nd)?(?:\W|$)+/
+  /(?:other|seco|thi|four|fif|[0-9]{1,2})(?:th|rd|st|nd)?(?:\s|$)+/
 
 // Match weekdays, allowing for arbitrary abbreviation (e.g. M or Mo or Mon or
 // Monday).
@@ -44,12 +44,12 @@ const specMatcher = new RegExp(
   "\\s*(?<type>in|on|next|every)\\s+" +
     "(?:" +
     `(?<relativeIntervalCount>${numericTextMatcher.source})` +
-    "(?<relativeIntervalUnit>(?:minutes?|hours?|days?|weeks?)(?:\\W|$)+))?" +
+    "(?<relativeIntervalUnit>(?:minutes?|hours?|days?|weeks?)(?:\\s|$)+))?" +
     "(?<daySpec>" +
     `(?:${intervalMatcher.source})?` +
-    `(?:(?:of the month|(?:${weekDayMatcher.source})s?)(?:\\W|$)+)?)?` +
-    "(?:at\\s+(?<timeSpec>[^\\s]+)(?:\\W|$))?|" +
-    "\\s+(?:at\\s+(?<timeSpec2>[^\\s]+))?(?:\\W|$)",
+    `(?:(?:of the month|weekday|(?:${weekDayMatcher.source})s?)(?:\\s|$)+)?)?` +
+    "(?:at\\s+(?<timeSpec>[^\\s]+)(?:\\s|$))?|" +
+    "\\s+(?:at\\s+(?<timeSpec2>[^\\s]+))?(?:\\s|$)",
 )
 
 // Match text that contains a reminder command.
@@ -61,7 +61,10 @@ const startMatcher = /remind (?<who>me|team|here|room) (?:to )?(?<message>.*)$/s
  *
  * If the weekday couldn't be interpreted, it is interpreted as Sunday.
  */
-function normalizeDayOfWeek(dayOfWeek: string): 0 | 1 | 2 | 3 | 4 | 5 | 6 {
+function normalizeDayOfWeek(dayOfWeek: string): number | number[] {
+  if (dayOfWeek === "weekday") {
+    return [1, 2, 3, 4, 5]
+  }
   if (dayOfWeek.startsWith("M")) {
     return 1
   }
@@ -237,7 +240,11 @@ function parseRecurringSpec(
 ): RecurringDefinition {
   const interval = jobDaySpecifier?.match(intervalMatcher)?.[0].trim() ?? "1"
   const normalizedInterval = normalizeInterval(interval)
-  const dayOfWeek = weekDayMatcher.exec(jobDaySpecifier)
+  const trimmedDaySpecifier = jobDaySpecifier.trim().replace(/s$/, "")
+  const dayOfWeek =
+    trimmedDaySpecifier === "weekday"
+      ? [trimmedDaySpecifier]
+      : weekDayMatcher.exec(trimmedDaySpecifier)
 
   const daySpec =
     dayOfWeek === null
@@ -352,11 +359,14 @@ export function parseFromString(envelope: Envelope): JobDefinition | null {
     userId: envelope.user.id,
     room: envelope.room,
   }
-  // Extract thread id if available.
+  // Extract thread id if available for non-recurring messages. Note that
+  // recurring messages are expected to start fresh threads on every
+  // recurrence.
   const envelopeMessage = envelope.message
   if (
     "metadata" in envelopeMessage &&
-    (envelopeMessage as MatrixMessage).metadata.threadId !== undefined
+    (envelopeMessage as MatrixMessage).metadata.threadId !== undefined &&
+    spec.type === "single"
   ) {
     messageInfo.threadId = (envelopeMessage as MatrixMessage).metadata.threadId
   }
