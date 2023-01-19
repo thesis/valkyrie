@@ -359,11 +359,14 @@ export function parseFromString(envelope: Envelope): JobDefinition | null {
     userId: envelope.user.id,
     room: envelope.room,
   }
-  // Extract thread id if available.
+  // Extract thread id if available for non-recurring messages. Note that
+  // recurring messages are expected to start fresh threads on every
+  // recurrence.
   const envelopeMessage = envelope.message
   if (
     "metadata" in envelopeMessage &&
-    (envelopeMessage as MatrixMessage).metadata.threadId !== undefined
+    (envelopeMessage as MatrixMessage).metadata.threadId !== undefined &&
+    spec.type === "single"
   ) {
     messageInfo.threadId = (envelopeMessage as MatrixMessage).metadata.threadId
   }
