@@ -51,15 +51,27 @@ export function computeNextRecurrence(
   } else if (repeat === "week") {
     const { interval, dayOfWeek } = normalizedSpec
 
+    const possibleDays = (
+      typeof dayOfWeek === "number" ? [dayOfWeek] : [...dayOfWeek]
+    ).sort()
+    const earliestMatchingDay =
+      possibleDays.find(
+        (day) =>
+          repeatDate.day() < day ||
+          (repeatDate.day() === day &&
+            (repeatDate.hour() < hour ||
+              (repeatDate.hour() === hour && repeatDate.minute() < minute))),
+      ) ?? possibleDays[0]
+
     if (
-      repeatDate.day() < dayOfWeek ||
-      (repeatDate.day() === dayOfWeek &&
+      repeatDate.day() < earliestMatchingDay ||
+      (repeatDate.day() === earliestMatchingDay &&
         (repeatDate.hour() < hour ||
           (repeatDate.hour() === hour && repeatDate.minute() < minute)))
     ) {
-      repeatDate = repeatDate.day(dayOfWeek)
+      repeatDate = repeatDate.day(earliestMatchingDay)
     } else {
-      repeatDate = repeatDate.add(interval, "week").day(dayOfWeek)
+      repeatDate = repeatDate.add(interval, "week").day(earliestMatchingDay)
     }
   }
 

@@ -94,6 +94,41 @@ describe("reminder scheduling", () => {
     },
   )
 
+  const weeklyMultiDayDefiniton = {
+    ...weeklyDefinition,
+    dayOfWeek: [1, 2, 3, 4, 5],
+  }
+
+  test.each([
+    {
+      name: "with previous recurrence before the first day",
+      previousRecurrenceISO: "2022-12-03T16:33:00Z",
+      expectedNextRecurrenceISO: "2022-12-05T16:33:00.000Z",
+    },
+    {
+      name: "with previous recurrence on a recurrence day one minute before",
+      previousRecurrenceISO: `${weeklyBaseDate}T16:32:00Z`,
+      expectedNextRecurrenceISO: `${weeklyBaseDate}T16:33:00.000Z`,
+    },
+    {
+      name: "with previous recurrence on a recurrence day one minute after",
+      previousRecurrenceISO: `${weeklyBaseDate}T16:34:00Z`,
+      expectedNextRecurrenceISO: "2022-12-07T16:33:00.000Z",
+    },
+    {
+      name: "with previous recurrence after the last day",
+      previousRecurrenceISO: "2022-12-10T16:33:00Z",
+      expectedNextRecurrenceISO: "2022-12-12T16:33:00.000Z",
+    },
+  ] as const)(
+    "supports weekly specs on multiple days $name",
+    ({ previousRecurrenceISO, expectedNextRecurrenceISO }) => {
+      expect(
+        computeNextRecurrence(previousRecurrenceISO, weeklyMultiDayDefiniton),
+      ).toEqual(expectedNextRecurrenceISO)
+    },
+  )
+
   const weeklyIntervalDefinition = {
     repeat: "week",
     dayOfWeek: 2,
