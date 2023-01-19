@@ -326,6 +326,27 @@ describe("reminder spec parsing", () => {
     expect(expectedSpec).toEqual(parseSpec(str)?.jobSpec)
   })
 
+  test.each([
+    {
+      name: "in the middle",
+      str: "remind me every weekday at 16:33 to do things",
+      expectedSpec: {
+        ...weeklySpec,
+        spec: { ...weeklySpec.spec, dayOfWeek: [1, 2, 3, 4, 5] },
+      },
+    },
+    {
+      name: "at the end",
+      str: "remind me to do things every weekday at 16:33",
+      expectedSpec: {
+        ...weeklySpec,
+        spec: { ...weeklySpec.spec, dayOfWeek: [1, 2, 3, 4, 5] },
+      },
+    },
+  ])("supports weekly specs for weekdays $name", ({ str, expectedSpec }) => {
+    expect(expectedSpec).toEqual(parseSpec(str)?.jobSpec)
+  })
+
   const baseDate = "2022-12-02" // A Friday
   const baseTime = "16:33:00Z"
 

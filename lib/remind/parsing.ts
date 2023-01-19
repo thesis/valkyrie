@@ -47,7 +47,7 @@ const specMatcher = new RegExp(
     "(?<relativeIntervalUnit>(?:minutes?|hours?|days?|weeks?)(?:\\W|$)+))?" +
     "(?<daySpec>" +
     `(?:${intervalMatcher.source})?` +
-    `(?:(?:of the month|(?:${weekDayMatcher.source})s?)(?:\\W|$)+)?)?` +
+    `(?:(?:of the month|weekday|(?:${weekDayMatcher.source})s?)(?:\\W|$)+)?)?` +
     "(?:at\\s+(?<timeSpec>[^\\s]+)(?:\\W|$))?|" +
     "\\s+(?:at\\s+(?<timeSpec2>[^\\s]+))?(?:\\W|$)",
 )
@@ -61,7 +61,10 @@ const startMatcher = /remind (?<who>me|team|here|room) (?:to )?(?<message>.*)$/s
  *
  * If the weekday couldn't be interpreted, it is interpreted as Sunday.
  */
-function normalizeDayOfWeek(dayOfWeek: string): 0 | 1 | 2 | 3 | 4 | 5 | 6 {
+function normalizeDayOfWeek(dayOfWeek: string): number | number[] {
+  if (dayOfWeek === "weekday") {
+    return [1, 2, 3, 4, 5]
+  }
   if (dayOfWeek.startsWith("M")) {
     return 1
   }
@@ -237,7 +240,11 @@ function parseRecurringSpec(
 ): RecurringDefinition {
   const interval = jobDaySpecifier?.match(intervalMatcher)?.[0].trim() ?? "1"
   const normalizedInterval = normalizeInterval(interval)
-  const dayOfWeek = weekDayMatcher.exec(jobDaySpecifier)
+  const trimmedDaySpecifier = jobDaySpecifier.trim().replace(/s$/, "")
+  const dayOfWeek =
+    trimmedDaySpecifier === "weekday"
+      ? [trimmedDaySpecifier]
+      : weekDayMatcher.exec(trimmedDaySpecifier)
 
   const daySpec =
     dayOfWeek === null
