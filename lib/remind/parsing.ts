@@ -15,11 +15,11 @@ import {
 
 // Match a number specifier for "in <number> <unit>"-style text.
 const numericTextMatcher =
-  /(?:an?|one|two|three|four|five|six|seven|eight|nine|ten|[0-9]+)(?:\W|$)+/
+  /(?:an?|one|two|three|four|five|six|seven|eight|nine|ten|[0-9]+)(?:\s|$)+/
 
 // Match an interval specifier for "every <interval> <day>"-style text.
 const intervalMatcher =
-  /(?:other|seco|thi|four|fif|[0-9]{1,2})(?:th|rd|st|nd)?(?:\W|$)+/
+  /(?:other|seco|thi|four|fif|[0-9]{1,2})(?:th|rd|st|nd)?(?:\s|$)+/
 
 // Match weekdays, allowing for arbitrary abbreviation (e.g. M or Mo or Mon or
 // Monday).
@@ -44,12 +44,12 @@ const specMatcher = new RegExp(
   "\\s*(?<type>in|on|next|every)\\s+" +
     "(?:" +
     `(?<relativeIntervalCount>${numericTextMatcher.source})` +
-    "(?<relativeIntervalUnit>(?:minutes?|hours?|days?|weeks?)(?:\\W|$)+))?" +
+    "(?<relativeIntervalUnit>(?:minutes?|hours?|days?|weeks?)(?:\\s|$)+))?" +
     "(?<daySpec>" +
     `(?:${intervalMatcher.source})?` +
-    `(?:(?:of the month|weekday|(?:${weekDayMatcher.source})s?)(?:\\W|$)+)?)?` +
-    "(?:at\\s+(?<timeSpec>[^\\s]+)(?:\\W|$))?|" +
-    "\\s+(?:at\\s+(?<timeSpec2>[^\\s]+))?(?:\\W|$)",
+    `(?:(?:of the month|weekday|(?:${weekDayMatcher.source})s?)(?:\\s|$)+)?)?` +
+    "(?:at\\s+(?<timeSpec>[^\\s]+)(?:\\s|$))?|" +
+    "\\s+(?:at\\s+(?<timeSpec2>[^\\s]+))?(?:\\s|$)",
 )
 
 // Match text that contains a reminder command.
