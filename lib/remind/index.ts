@@ -167,10 +167,7 @@ export default class JobScheduler {
 
     const job: Job = {
       ...partialJob,
-      next: computeNextRecurrence(
-        dayjs().subtract(1, "day").toISOString(),
-        partialJob.spec,
-      ),
+      next: computeNextRecurrence(dayjs().toISOString(), partialJob.spec),
     }
 
     return this.addJob(job)
