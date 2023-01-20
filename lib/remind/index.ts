@@ -1,6 +1,6 @@
 import * as dayjs from "dayjs"
 import * as utc from "dayjs/plugin/utc"
-import * as timezone from "dayjs/plugin/timezone"
+import * as dayjsTimezone from "dayjs/plugin/timezone"
 import { Envelope, Message, User } from "hubot"
 import { sendThreaded } from "../adapter-util"
 import {
@@ -12,7 +12,7 @@ import {
 import { parseFromString, parseSpec as parseJobSpec } from "./parsing"
 
 dayjs.extend(utc)
-dayjs.extend(timezone)
+dayjs.extend(dayjsTimezone)
 dayjs.tz.setDefault("UTC")
 
 /**
@@ -155,9 +155,15 @@ export default class JobScheduler {
   /**
    * Convenience method to add a job from a message envelope. Attempts to parse
    * the message as a job request and throws if the message could not be parsed.
+   *
+   * The timezone, if passed, is used for handling date/time information if
+   * that date/time information doesn't itself include timezone info.
    */
-  addJobFromMessageEnvelope(envelope: Envelope): PersistedJob {
-    const partialJob = parseFromString(envelope)
+  addJobFromMessageEnvelope(
+    envelope: Envelope,
+    timezone?: string,
+  ): PersistedJob {
+    const partialJob = parseFromString(envelope, timezone)
 
     if (partialJob === null) {
       throw new Error(
@@ -194,14 +200,18 @@ export default class JobScheduler {
     return job
   }
 
-  updateJobSpec(jobId: number, specString: string): PersistedJob | undefined {
+  updateJobSpec(
+    jobId: number,
+    specString: string,
+    timezone?: string,
+  ): PersistedJob | undefined {
     const job = this.removeJobWithoutRescheduling(jobId)
 
     if (job === undefined) {
       return undefined
     }
 
-    const parsedJobSpec = parseJobSpec(specString)
+    const parsedJobSpec = parseJobSpec(specString, timezone)
     if (parsedJobSpec === null) {
       // Re-add the job if we failed here, otherwise failing to parse means the
       // job is deleted!

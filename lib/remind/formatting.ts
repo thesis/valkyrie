@@ -1,6 +1,6 @@
 import * as dayjs from "dayjs"
 import * as utc from "dayjs/plugin/utc"
-import * as timezone from "dayjs/plugin/timezone"
+import * as dayjsTimezone from "dayjs/plugin/timezone"
 import * as localizedFormat from "dayjs/plugin/localizedFormat"
 import * as advancedFormat from "dayjs/plugin/advancedFormat"
 
@@ -8,7 +8,7 @@ import { encodeThreadId, matrixUrlFor } from "../adapter-util"
 import { PersistedJob, RecurringDefinition } from "./data"
 
 dayjs.extend(utc)
-dayjs.extend(timezone)
+dayjs.extend(dayjsTimezone)
 dayjs.extend(localizedFormat)
 dayjs.extend(advancedFormat)
 
@@ -22,18 +22,26 @@ const formattingEscapes = {
   "\n": "\n>",
 }
 
-function formatNextOccurrence(nextIsoRecurrenceDate: string): string {
-  return dayjs(nextIsoRecurrenceDate).format("llll z")
+function formatNextOccurrence(
+  nextIsoRecurrenceDate: string,
+  timezone?: string,
+): string {
+  return dayjs(nextIsoRecurrenceDate).tz(timezone).format("llll z")
 }
 
 function formatRecurringSpec(
   spec: RecurringDefinition,
   nextOccurrence: string,
+  timezone?: string,
 ): string {
   const formattedNextOccurrence = formatNextOccurrence(nextOccurrence)
 
   if (spec.repeat === "week") {
-    const baseDate = dayjs().hour(spec.hour).minute(spec.minute)
+    const baseDate = dayjs
+      .tz(Date.now())
+      .hour(spec.hour)
+      .minute(spec.minute)
+      .tz(timezone)
     const daysOfWeek =
       typeof spec.dayOfWeek === "number" ? [spec.dayOfWeek] : spec.dayOfWeek
 
@@ -58,15 +66,17 @@ function formatRecurringSpec(
   )
 }
 
-export function formatJobForMessage(job: PersistedJob): string {
+export function formatJobForMessage(
+  job: PersistedJob,
+  timezone?: string,
+): string {
   const { message: jobMessage, room, threadId } = job.messageInfo
 
   const formattedSpec =
     job.type === "single"
-      ? formatNextOccurrence(job.next)
-      : formatRecurringSpec(job.spec, job.next)
+      ? formatNextOccurrence(job.next, timezone)
+      : formatRecurringSpec(job.spec, job.next, timezone)
 
-  // FIXME Resolve an actual display name here? Or let the adpater feed it to us?
   const jobRoomDisplayName = room
 
   const targetDisplayText =

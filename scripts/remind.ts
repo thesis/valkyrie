@@ -25,6 +25,8 @@ import {
   robotIsInRoom,
   isRoomNonPublic,
 } from "../lib/adapter-util"
+// @ts-expect-error module.exports vs TypeScript battle
+import { userTimezoneFor } from "./user-preferences"
 import JobScheduler from "../lib/remind"
 import {
   formatJobForMessage,
@@ -43,10 +45,13 @@ module.exports = function setupRemind(robot: Robot) {
     )
 
     robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, (msg) => {
+      const timezone = userTimezoneFor(robot, msg.envelope.user.id)
+
       try {
         msg.reply(
           `Scheduled new reminder with ${formatJobForMessage(
-            jobScheduler.addJobFromMessageEnvelope(msg.envelope),
+            jobScheduler.addJobFromMessageEnvelope(msg.envelope, timezone),
+            timezone,
           )}`,
         )
       } catch (error) {
@@ -61,6 +66,8 @@ module.exports = function setupRemind(robot: Robot) {
     })
 
     robot.respond(/remind(?:ers?)? list(?: (all|.*))?/i, async (msg) => {
+      const timezone = userTimezoneFor(robot, msg.envelope.user.id)
+
       let outputPrefix
       const targetRoom = msg.match[1]
       let targetRoomId = null
@@ -90,7 +97,7 @@ module.exports = function setupRemind(robot: Robot) {
 
       try {
         const jobs = jobScheduler.jobsForRooms()
-        output = formatJobsForListMessage(jobs)
+        output = formatJobsForListMessage(jobs, timezone)
 
         if (output.length) {
           output = `${outputPrefix ?? ""}\n\n----\n\n${output}`
@@ -113,6 +120,8 @@ module.exports = function setupRemind(robot: Robot) {
     robot.respond(
       /remind(?:ers?)? (?:upd|update|edit) (?<id>\d+)\sto\s(?<specOrMessage>(?:.|\s)*)/i,
       (msg) => {
+        const timezone = userTimezoneFor(robot, msg.envelope.user.id)
+
         try {
           const { id: unparsedId, specOrMessage } = msg.match.groups ?? {
             id: "",
@@ -129,14 +138,16 @@ module.exports = function setupRemind(robot: Robot) {
                 id,
                 specOrMessage.replace(/^say\s+/, ""),
               )
-            : jobScheduler.updateJobSpec(id, specOrMessage)
+            : jobScheduler.updateJobSpec(id, specOrMessage, timezone)
 
           if (updatedJob === undefined) {
             msg.reply(`Could not find a reminder with id ${msg.match[1]}`)
             return
           }
 
-          msg.reply(`Updated reminder to ${formatJobForMessage(updatedJob)}`)
+          msg.reply(
+            `Updated reminder to ${formatJobForMessage(updatedJob, timezone)}`,
+          )
         } catch (error) {
           robot.logger.error(
             `Error updating reminder (${JSON.stringify(msg.match)}): ${
@@ -153,6 +164,8 @@ module.exports = function setupRemind(robot: Robot) {
     robot.respond(
       /remind(?:ers?)? (?:del|delete|remove|cancel) (\d+)/i,
       (msg) => {
+        const timezone = userTimezoneFor(robot, msg.envelope.user.id)
+
         try {
           const removedJob = jobScheduler.removeJob(parseInt(msg.match[1], 10))
 
@@ -162,7 +175,10 @@ module.exports = function setupRemind(robot: Robot) {
           }
 
           msg.reply(
-            `Cancelled reminder with ${formatJobForMessage(removedJob)}`,
+            `Cancelled reminder with ${formatJobForMessage(
+              removedJob,
+              timezone,
+            )}`,
           )
         } catch (error) {
           robot.logger.error(

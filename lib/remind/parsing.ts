@@ -1,4 +1,8 @@
 import * as dayjs from "dayjs"
+import * as utc from "dayjs/plugin/utc"
+import * as dayJsTimezone from "dayjs/plugin/timezone"
+import * as advancedFormat from "dayjs/plugin/advancedFormat"
+
 import { Envelope } from "hubot"
 import { MatrixMessage } from "hubot-matrix"
 import {
@@ -8,6 +12,11 @@ import {
   SingleShotDefinition,
   JobSpec,
 } from "./data"
+
+dayjs.extend(utc)
+dayjs.extend(dayJsTimezone)
+dayjs.extend(advancedFormat)
+dayjs.tz.setDefault("UTC")
 
 // Note: the regexes below were debugged with https://regex101.com/'s debugger
 // to great effect. That said, the "right" solution is probably to use a parser
@@ -153,13 +162,14 @@ function parseSingleSpec(
   jobTimeSpecifier: string,
   jobRelativeIntervalCount: string,
   jobRelativeIntervalUnit: string,
+  timezone?: string,
 ): SingleShotDefinition {
   if (
     (jobRelativeIntervalUnit ?? null) === null ||
     (jobRelativeIntervalCount ?? null) === null
   ) {
     // Start with today as the specified day.
-    const specifiedDate = dayjs(jobDaySpecifier) // TODO Adapt to user timezone.
+    const specifiedDate = dayjs.tz(Date.now(), timezone)
 
     const dayOfWeek = weekDayMatcher.exec(jobDaySpecifier)
     const daySpec =
@@ -177,20 +187,31 @@ function parseSingleSpec(
     const fullDayHour =
       amPm?.toLowerCase() === "pm" && hour <= 12 ? hour + 12 : hour
 
+    const systemDate = dayjs.tz(
+      specifiedDate.hour(fullDayHour).minute(minute).valueOf(),
+    )
+    // When we adjust the timezone, the correct day of the week may also
+    // change! Use this adjustment to push the speced day of the week forward
+    // or backward accordingly.
+    const dayOfWeekAdjustment = specifiedDate.day() - systemDate.day()
+
     const timeSpec = {
-      hour: fullDayHour,
-      minute,
+      hour: systemDate.hour(),
+      minute: systemDate.minute(),
     }
 
     const fullSpec = {
-      dayOfWeek: daySpec,
+      dayOfWeek:
+        typeof daySpec === "number"
+          ? daySpec - dayOfWeekAdjustment
+          : daySpec.map((_) => _ - dayOfWeekAdjustment),
       ...timeSpec,
     }
 
     return fullSpec
   }
 
-  const today = dayjs.utc()
+  const specifiedDate = dayjs.tz(Date.now(), timezone)
 
   const relativeIntervalCount = normalizeRelativeIntervalCount(
     jobRelativeIntervalCount.trim(),
@@ -212,20 +233,28 @@ function parseSingleSpec(
   // relevant.
   const fullDayHour =
     (amPm?.toLowerCase() === "pm" && hour <= 12 ? hour + 12 : hour) ??
-    today.hour() + (relativeIntervalUnit === "hour" ? relativeIntervalCount : 0)
+    specifiedDate.hour() +
+      (relativeIntervalUnit === "hour" ? relativeIntervalCount : 0)
   const fullDayMinute =
     minute ??
-    today.minute() +
+    specifiedDate.minute() +
       (relativeIntervalUnit === "minute" ? relativeIntervalCount : 0)
 
+  const systemDate = specifiedDate.hour(fullDayHour).minute(fullDayMinute).tz()
+  // When we adjust the timezone, the correct day of the week may also
+  // change! Use this adjustment to push the speced day of the week forward
+  // or backward accordingly.
+  const dayOfWeekAdjustment = specifiedDate.day() - systemDate.day()
+
   const timeSpec = {
-    hour: fullDayHour,
-    minute: fullDayMinute,
+    hour: systemDate.hour(),
+    minute: systemDate.minute(),
   }
 
   const fullSpec = {
     dayOfWeek:
-      today.day() +
+      systemDate.day() -
+      dayOfWeekAdjustment +
       (relativeIntervalUnit === "day" ? relativeIntervalCount : 0) +
       (relativeIntervalUnit === "week" ? relativeIntervalCount * 7 : 0),
     ...timeSpec,
@@ -237,6 +266,7 @@ function parseSingleSpec(
 function parseRecurringSpec(
   jobDaySpecifier: string,
   jobTimeSpecifier: string,
+  timezone?: string,
 ): RecurringDefinition {
   const interval = jobDaySpecifier?.match(intervalMatcher)?.[0].trim() ?? "1"
   const normalizedInterval = normalizeInterval(interval)
@@ -267,10 +297,20 @@ function parseRecurringSpec(
   const fullDayHour =
     amPm?.toLowerCase() === "pm" && hour <= 12 ? hour + 12 : hour
 
+  const adjustedTime = dayjs
+    .tz(Date.now(), timezone)
+    .hour(fullDayHour)
+    .minute(minute)
+
+  // Now use the hour and minute in the default timezone.
+  const systemTime = dayjs.tz(adjustedTime.valueOf())
+  const specHour = systemTime.hour()
+  const specMinute = systemTime.minute()
+
   const fullSpec = {
     ...daySpec,
-    hour: fullDayHour,
-    minute,
+    hour: specHour,
+    minute: specMinute,
   }
 
   return fullSpec
@@ -291,6 +331,7 @@ function userTagForWhoMatch(who: string, userId: string): string {
 
 export function parseSpec(
   specString: string,
+  timezone?: string,
 ): { jobSpec: JobSpec; specMatch: { index: number; length: number } } | null {
   const specMatch = specMatcher.exec(specString)
   if (specMatch === null) {
@@ -313,7 +354,7 @@ export function parseSpec(
     jobTypeSpecifier === "every"
       ? {
           type: "recurring",
-          spec: parseRecurringSpec(jobDaySpecifier, jobTimeSpecifier),
+          spec: parseRecurringSpec(jobDaySpecifier, jobTimeSpecifier, timezone),
         }
       : {
           type: "single",
@@ -322,6 +363,7 @@ export function parseSpec(
             jobTimeSpecifier,
             jobRelativeIntervalCount,
             jobRelativeIntervalUnit,
+            timezone,
           ),
         }
 
@@ -334,10 +376,13 @@ export function parseSpec(
   }
 }
 
-export function parseFromString(envelope: Envelope): JobDefinition | null {
+export function parseFromString(
+  envelope: Envelope,
+  timezone?: string,
+): JobDefinition | null {
   const str = envelope.message.text ?? ""
 
-  const parsedSpec = parseSpec(str)
+  const parsedSpec = parseSpec(str, timezone)
   if (parsedSpec === null) {
     return null
   }
