@@ -1,22 +1,22 @@
 // Description:
 //   Create a reminder message
 //
-//   Lightly based on hubot-schedule by matsukaz <matsukaz@gmail.com>
-//
-// Dependencies:
-//   "lodash"        : "^4.17.14",
-//   "chrono-node"   : "^1.3.11",
-//
 // Commands:
-//   hubot remind [me|team|here] <day or date in English> <message> - Create a reminder, in the current flow, that runs at a specific date and time, using regular English syntax to describe the date/time. See https://www.npmjs.com/package/chrono-node for examples of accepted date formats. Note: you CAN include a timezone in your request, but all times will be Displayed in UTC.
-//   hubot reminder [cancel|del|delete|remove] <id> - Cancel the reminder for the specified id.
-//   hubot reminder [upd|update] <id> <message> - Update the message for the reminder with the specified id.
-//   hubot reminder list - List all reminders for the current flow or DM. NOTE all times are displayed in UTC.
-//   hubot reminder list <flow> - List all reminders for the specified flow. NOTE all times are displayed in UTC.
-//   hubot reminder list all - List all reminders for any public flows (reminders in DMs or invite-only flows are hidden from this list, except when called from a DM or private flow). NOTE all times are displayed in UTC.
+//   hubot remind [me|team|here|room] on `when` `message`, or `message` on `when` - Post a reminder message at a specific date and time (e.g. `March 13th at 1:45pm` or `Tuesday at 15:13`), in the current thread. NOTE all times are interpreted as being in your timezone per the timezone command.
+//   hubot remind [me|team|here|room] in `when` `message`, or `message` in `when` - Post a reminder message at a relative time in the future (e.g. `in 5 days` or `in three hours` or `in 5 minutes`), in the current thread. NOTE all times are interpreted as being in your timezone per the timezone command.
+//   hubot remind [me|team|here|room] every `when` `message`, or `message` every `when` - Post a message in the current room, as a new thread, every set amount of time (e.g. `every 5 days` or `every Monday at 1:45pm` or `every 3rd of the month at 15:13`). NOTE all times are interpreted as being in your timezone per the timezone command.
+//   hubot remind [me|team|here|room] every weekday at `time` `message`, or `message` every weekday at `time` - Post a message in the current room, as a new thread, every weekday (Monday through Friday). Does not skip holidays. NOTE all times are interpreted as being in your timezone per the timezone command.
+//   hubot remind(ers) [cancel|del|delete|remove] `id` - Cancel the reminder for the specified id.
+//   hubot reminder(ers) [upd|update] `id` to say `message` - Update the message for the reminder with the specified id.
+//   hubot reminder(ers) [upd|update] `id` to every `when` - Update the repetition of the reminder with the specified id, e.g. `to every 5 days` or `to every Monday at 1:35pm` or `to every 3rd of the month at 15:13`. NOTE all times are interpreted as being in your timezone per the timezone command.
+//   hubot reminder(ers) [upd|update] `id` to every weekday at `time` - Update the repetition of the reminder with the specified id to be every weekday at the specified time. NOTE all times are interpreted as being in your timezone per the timezone command.
+//   hubot reminder(ers) list - List all reminders for the current room or DM. NOTE all times are displayed in your timezone per the timezone command.
+//   hubot reminder(ers) list `room` - List all reminders for the specified room. NOTE all times are displayed in your timezone per the timezone command.
+//   hubot reminder(ers) list all - List all reminders for any public rooms (reminders in DMs or invite-only rooms are hidden from this list, except when called from a DM or private room). NOTE all times are displayed in your timezone per the timezone command.
 //
 // Author:
 //   kb0rg
+//   shadowfiend
 //
 
 import { Robot } from "hubot"
@@ -25,6 +25,8 @@ import {
   robotIsInRoom,
   isRoomNonPublic,
 } from "../lib/adapter-util"
+// @ts-expect-error module.exports vs TypeScript battle
+import { userTimezoneFor } from "./user-preferences"
 import JobScheduler from "../lib/remind"
 import {
   formatJobForMessage,
@@ -43,10 +45,13 @@ module.exports = function setupRemind(robot: Robot) {
     )
 
     robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, (msg) => {
+      const timezone = userTimezoneFor(robot, msg.envelope.user.id)
+
       try {
         msg.reply(
           `Scheduled new reminder with ${formatJobForMessage(
-            jobScheduler.addJobFromMessageEnvelope(msg.envelope),
+            jobScheduler.addJobFromMessageEnvelope(msg.envelope, timezone),
+            timezone,
           )}`,
         )
       } catch (error) {
@@ -61,6 +66,8 @@ module.exports = function setupRemind(robot: Robot) {
     })
 
     robot.respond(/remind(?:ers?)? list(?: (all|.*))?/i, async (msg) => {
+      const timezone = userTimezoneFor(robot, msg.envelope.user.id)
+
       let outputPrefix
       const targetRoom = msg.match[1]
       let targetRoomId = null
@@ -90,7 +97,7 @@ module.exports = function setupRemind(robot: Robot) {
 
       try {
         const jobs = jobScheduler.jobsForRooms()
-        output = formatJobsForListMessage(jobs)
+        output = formatJobsForListMessage(jobs, timezone)
 
         if (output.length) {
           output = `${outputPrefix ?? ""}\n\n----\n\n${output}`
@@ -113,6 +120,8 @@ module.exports = function setupRemind(robot: Robot) {
     robot.respond(
       /remind(?:ers?)? (?:upd|update|edit) (?<id>\d+)\sto\s(?<specOrMessage>(?:.|\s)*)/i,
       (msg) => {
+        const timezone = userTimezoneFor(robot, msg.envelope.user.id)
+
         try {
           const { id: unparsedId, specOrMessage } = msg.match.groups ?? {
             id: "",
@@ -129,14 +138,16 @@ module.exports = function setupRemind(robot: Robot) {
                 id,
                 specOrMessage.replace(/^say\s+/, ""),
               )
-            : jobScheduler.updateJobSpec(id, specOrMessage)
+            : jobScheduler.updateJobSpec(id, specOrMessage, timezone)
 
           if (updatedJob === undefined) {
             msg.reply(`Could not find a reminder with id ${msg.match[1]}`)
             return
           }
 
-          msg.reply(`Updated reminder to ${formatJobForMessage(updatedJob)}`)
+          msg.reply(
+            `Updated reminder to ${formatJobForMessage(updatedJob, timezone)}`,
+          )
         } catch (error) {
           robot.logger.error(
             `Error updating reminder (${JSON.stringify(msg.match)}): ${
@@ -153,6 +164,8 @@ module.exports = function setupRemind(robot: Robot) {
     robot.respond(
       /remind(?:ers?)? (?:del|delete|remove|cancel) (\d+)/i,
       (msg) => {
+        const timezone = userTimezoneFor(robot, msg.envelope.user.id)
+
         try {
           const removedJob = jobScheduler.removeJob(parseInt(msg.match[1], 10))
 
@@ -162,7 +175,10 @@ module.exports = function setupRemind(robot: Robot) {
           }
 
           msg.reply(
-            `Cancelled reminder with ${formatJobForMessage(removedJob)}`,
+            `Cancelled reminder with ${formatJobForMessage(
+              removedJob,
+              timezone,
+            )}`,
           )
         } catch (error) {
           robot.logger.error(
