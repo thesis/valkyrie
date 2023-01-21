@@ -1,7 +1,5 @@
-import * as dayjs from "dayjs"
-import * as utc from "dayjs/plugin/utc"
-import * as dayjsTimezone from "dayjs/plugin/timezone"
 import { Envelope, Message, User } from "hubot"
+import { DateTime } from "luxon"
 import { sendThreaded } from "../adapter-util"
 import {
   Job,
@@ -10,10 +8,6 @@ import {
   SingleShotDefinition,
 } from "./data"
 import { parseFromString, parseSpec as parseJobSpec } from "./parsing"
-
-dayjs.extend(utc)
-dayjs.extend(dayjsTimezone)
-dayjs.tz.setDefault("UTC")
 
 /**
  * Given the previous recurrence as an ISO-8601 date and a recurring or
@@ -31,7 +25,7 @@ export function computeNextRecurrence(
 
   const { repeat, hour, minute } = normalizedSpec
 
-  let repeatDate = dayjs.tz(previousRecurrenceISO)
+  let repeatDate = DateTime.fromISO(previousRecurrenceISO).toUTC()
 
   if (repeat === "month") {
     const { dayOfMonth } = normalizedSpec
@@ -39,14 +33,14 @@ export function computeNextRecurrence(
     // supposed to recur, advance by a month. Otherwise, do it the next time we
     // hit that day of the month.
     if (
-      repeatDate.date() < dayOfMonth ||
-      (repeatDate.date() === dayOfMonth &&
-        (repeatDate.hour() < hour ||
-          (repeatDate.hour() === hour && repeatDate.minute() < minute)))
+      repeatDate.day < dayOfMonth ||
+      (repeatDate.day === dayOfMonth &&
+        (repeatDate.hour < hour ||
+          (repeatDate.hour === hour && repeatDate.minute < minute)))
     ) {
-      repeatDate = repeatDate.date(dayOfMonth)
+      repeatDate = repeatDate.set({ day: dayOfMonth })
     } else {
-      repeatDate = repeatDate.add(1, "month").date(dayOfMonth)
+      repeatDate = repeatDate.plus({ month: 1 }).set({ day: dayOfMonth })
     }
   } else if (repeat === "week") {
     const { interval, dayOfWeek } = normalizedSpec
@@ -57,30 +51,35 @@ export function computeNextRecurrence(
     const earliestMatchingDay =
       possibleDays.find(
         (day) =>
-          repeatDate.day() < day ||
-          (repeatDate.day() === day &&
-            (repeatDate.hour() < hour ||
-              (repeatDate.hour() === hour && repeatDate.minute() < minute))),
+          repeatDate.weekday < day ||
+          (repeatDate.weekday === day &&
+            (repeatDate.hour < hour ||
+              (repeatDate.hour === hour && repeatDate.minute < minute))),
       ) ?? possibleDays[0]
 
     if (
-      repeatDate.day() < earliestMatchingDay ||
-      (repeatDate.day() === earliestMatchingDay &&
-        (repeatDate.hour() < hour ||
-          (repeatDate.hour() === hour && repeatDate.minute() < minute)))
+      repeatDate.weekday < earliestMatchingDay ||
+      (repeatDate.weekday === earliestMatchingDay &&
+        (repeatDate.hour < hour ||
+          (repeatDate.hour === hour && repeatDate.minute < minute)))
     ) {
-      repeatDate = repeatDate.day(earliestMatchingDay)
+      repeatDate = repeatDate.set({ weekday: earliestMatchingDay })
     } else {
-      repeatDate = repeatDate.add(interval, "week").day(earliestMatchingDay)
+      repeatDate = repeatDate
+        .plus({ week: interval })
+        .set({ weekday: earliestMatchingDay })
     }
   }
 
   return repeatDate
-    .hour(hour)
-    .minute(minute)
-    .second(0)
-    .millisecond(0)
-    .toISOString()
+    .set({
+      hour,
+      minute,
+      second: 0,
+      millisecond: 0,
+    })
+    .toUTC()
+    .toISO()
 }
 
 /**
@@ -173,7 +172,7 @@ export default class JobScheduler {
 
     const job: Job = {
       ...partialJob,
-      next: computeNextRecurrence(dayjs().toISOString(), partialJob.spec),
+      next: computeNextRecurrence(DateTime.utc().toISO(), partialJob.spec),
     }
 
     return this.addJob(job)
@@ -378,13 +377,13 @@ export default class JobScheduler {
     const nextJobDate = this.jobs[0].next
     this.robot.logger.info(
       `Found next job at ${nextJobDate}; scheduling in ${
-        dayjs(nextJobDate).valueOf() - dayjs().valueOf()
+        DateTime.fromISO(nextJobDate).toMillis() - DateTime.now().toMillis()
       }ms`,
     )
 
     this.nextScheduledRun = setTimeout(
       () => this.runAndSchedule(),
-      dayjs(nextJobDate).valueOf() - dayjs().valueOf(),
+      DateTime.fromISO(nextJobDate).toMillis() - DateTime.now().toMillis(),
     )
   }
 
