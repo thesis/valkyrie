@@ -10,15 +10,7 @@
 //
 
 import { Robot } from "hubot"
-import * as dayjs from "dayjs"
-import * as utc from "dayjs/plugin/utc"
-import * as timezone from "dayjs/plugin/timezone"
-import * as advancedFormat from "dayjs/plugin/advancedFormat"
-
-dayjs.extend(utc)
-dayjs.extend(timezone)
-dayjs.extend(advancedFormat)
-dayjs.tz.setDefault("UTC")
+import { DateTime, Info } from "luxon"
 
 const USER_PREFERENCES_BRAIN_KEY = "preferences"
 
@@ -29,7 +21,8 @@ export type UserPreferences = {
 // Eastern time in particular must be stated as EST5EDT to properly handle
 // daylight savings time automatically (other timezones like CET, Pacific, etc,
 // do this by default). Additionally, we want to support commonly-used aliases
-// like "Pacific", "Eastern", etc which are not directly supported by dayjs.
+// like "Pacific", "Eastern", etc which are not directly supported by
+// luxon.DateTime.
 const TIMEZONE_MAPS: { [alias: string]: string } = {
   Eastern: "EST5EDT",
   EST: "EST5EDT",
@@ -50,8 +43,8 @@ module.exports = (robot: Robot<any>) => {
       msg.reply(`I have you in ${userPreferences.timezone}.`)
     } else {
       msg.reply(
-        `I don't know your timezone, so I'm assuming ${dayjs().format(
-          "zzz (z)",
+        `I don't know your timezone, so I'm assuming ${DateTime.now().toFormat(
+          "ZZZZ (ZZZZZ)",
         )}.`,
       )
     }
@@ -62,7 +55,8 @@ module.exports = (robot: Robot<any>) => {
       msg.envelope.user.id
     ] as UserPreferences
 
-    const existingTimezone = userPreferences?.timezone ?? dayjs().format("zzz")
+    const existingTimezone =
+      userPreferences?.timezone ?? DateTime.now().toFormat("z")
 
     const trimmedUserTimezone = msg.match[1].trim()
     const adjustedTimezone =
@@ -76,9 +70,7 @@ module.exports = (robot: Robot<any>) => {
       // If not, just use the provided value directly.
       msg.match[1]
 
-    try {
-      dayjs.tz("2023-08-19T17:15", adjustedTimezone)
-
+    if (Info.isValidIANAZone(adjustedTimezone)) {
       robot.brain.set(USER_PREFERENCES_BRAIN_KEY, {
         ...robot.brain.get(USER_PREFERENCES_BRAIN_KEY),
         [msg.envelope.user.id]: {
@@ -90,7 +82,7 @@ module.exports = (robot: Robot<any>) => {
       msg.reply(
         `Updated your timezone from ${existingTimezone} to ${adjustedTimezone}.`,
       )
-    } catch (error) {
+    } else {
       msg.reply(
         `Couldn't properly understand ${msg.match[1]} as a timezone. Try ` +
           "going to https://greenwichmeantime.com/time-zone/ and using the " +
@@ -114,12 +106,16 @@ module.exports.userPreferencesFor = function userPreferencesFor(
   ] as UserPreferences
 }
 
+/**
+ * Exported function to look up a user's timezone on a given robot for a given
+ * user id; defaults to the system timezone if the user has not set a timezone.
+ */
 module.exports.userTimezoneFor = function timezoneFor(
   robot: Robot<any>,
   userId: string,
 ) {
   return (
     module.exports.userPreferencesFor(robot, userId)?.timezone ??
-    dayjs().format("Z")
+    DateTime.now().zoneName
   )
 }

@@ -1,16 +1,6 @@
-import * as dayjs from "dayjs"
-import * as utc from "dayjs/plugin/utc"
-import * as dayjsTimezone from "dayjs/plugin/timezone"
-import * as localizedFormat from "dayjs/plugin/localizedFormat"
-import * as advancedFormat from "dayjs/plugin/advancedFormat"
-
+import { DateTime } from "luxon"
 import { encodeThreadId, matrixUrlFor } from "../adapter-util"
 import { PersistedJob, RecurringDefinition } from "./data"
-
-dayjs.extend(utc)
-dayjs.extend(dayjsTimezone)
-dayjs.extend(localizedFormat)
-dayjs.extend(advancedFormat)
 
 // List of escape regex patterns (search to replace) to use when formatting a
 // reminder message for display. Used to show raw input and avoid tagging
@@ -26,7 +16,9 @@ function formatNextOccurrence(
   nextIsoRecurrenceDate: string,
   timezone?: string,
 ): string {
-  return dayjs(nextIsoRecurrenceDate).tz(timezone).format("llll z")
+  return DateTime.fromISO(nextIsoRecurrenceDate)
+    .setZone(timezone)
+    .toFormat("ccc, ff ZZZZ")
 }
 
 function formatRecurringSpec(
@@ -37,32 +29,35 @@ function formatRecurringSpec(
   const formattedNextOccurrence = formatNextOccurrence(nextOccurrence)
 
   if (spec.repeat === "week") {
-    const baseDate = dayjs
-      .tz(Date.now())
-      .hour(spec.hour)
-      .minute(spec.minute)
-      .tz(timezone)
+    const baseDate = DateTime.now()
+      .toUTC()
+      .set({
+        hour: spec.hour,
+        minute: spec.minute,
+      })
+      .setZone(timezone)
     const daysOfWeek =
       typeof spec.dayOfWeek === "number" ? [spec.dayOfWeek] : spec.dayOfWeek
 
     const formattedDays = daysOfWeek
-      .map((day) => baseDate.day(day).format("dddd"))
+      .map((day) => baseDate.set({ weekday: day }).toFormat("EEEE"))
       .join(", ")
 
     return (
       formattedNextOccurrence +
-      baseDate.format(`[ (recurs weekly at] HH:mm [on ${formattedDays}])]`)
+      baseDate.toFormat(`' (recurs weekly at' HH:mm 'on ${formattedDays})'`)
     )
   }
 
-  const baseDate = dayjs()
-    .date(spec.dayOfMonth)
-    .hour(spec.hour)
-    .minute(spec.minute)
+  const baseDate = DateTime.now().set({
+    day: spec.dayOfMonth,
+    hour: spec.hour,
+    minute: spec.minute,
+  })
 
   return (
     formattedNextOccurrence +
-    baseDate.format("[ (recurs monthly on the] Do [at] HH:mm[)]")
+    baseDate.toFormat("' (recurs monthly on the' d 'at' HH:mm')'")
   )
 }
 
