@@ -49,11 +49,13 @@ function formatRecurringSpec(
     )
   }
 
-  const baseDate = DateTime.now().set({
-    day: spec.dayOfMonth,
-    hour: spec.hour,
-    minute: spec.minute,
-  })
+  const baseDate = DateTime.now()
+    .set({
+      day: spec.dayOfMonth,
+      hour: spec.hour,
+      minute: spec.minute,
+    })
+    .setZone(timezone)
 
   return (
     formattedNextOccurrence +
@@ -92,6 +94,9 @@ export function formatJobForMessage(
   return `ID ${job.id}: **${formattedSpec}** ${targetDisplayText}:\n>${messageParsed}\n\n`
 }
 
-export function formatJobsForListMessage(jobs: PersistedJob[]) {
-  return jobs.map((job) => formatJobForMessage(job)).join("\n\n")
+export function formatJobsForListMessage(
+  jobs: PersistedJob[],
+  timezone?: string,
+) {
+  return jobs.map((job) => formatJobForMessage(job, timezone)).join("\n\n")
 }
