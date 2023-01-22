@@ -443,7 +443,7 @@ describe("reminder spec parsing", () => {
   ])("supports relative specs $name", ({ str, expectedSpec }) => {
     jest.useFakeTimers({ now: new Date(`${baseDate}T${baseTime}`) })
 
-    expect(expectedSpec).toEqual(parseSpec(str, "UTC")?.jobSpec)
+    expect(expectedSpec).toEqual(parseSpec(str, "utc")?.jobSpec)
   })
 
   const baseSingleTimeSpec = {
@@ -457,7 +457,7 @@ describe("reminder spec parsing", () => {
       str: "remind me in 6 days at 13:12 to do things",
       expectedSpec: {
         ...baseSingleTimeSpec,
-        spec: { ...baseSingleTimeSpec.spec, dayOfWeek: 12 },
+        spec: { ...baseSingleTimeSpec.spec, dayOfWeek: 11 },
       },
     },
     {
@@ -465,7 +465,7 @@ describe("reminder spec parsing", () => {
       str: "remind me to do things in 6 days at 13:12",
       expectedSpec: {
         ...baseSingleTimeSpec,
-        spec: { ...baseSingleTimeSpec.spec, dayOfWeek: 12 },
+        spec: { ...baseSingleTimeSpec.spec, dayOfWeek: 11 },
       },
     },
     {
@@ -501,8 +501,8 @@ describe("reminder spec parsing", () => {
       },
     },
   ])("supports relative specs with time $name", ({ str, expectedSpec }) => {
-    // jest.useFakeTimers({ now: new Date(`${baseDate}T${baseTime}`) })
+    jest.useFakeTimers({ now: new Date(`${baseDate}T${baseTime}`) })
 
-    expect(parseSpec(str, "UTC")?.jobSpec).toEqual(expectedSpec)
+    expect(parseSpec(str, "utc")?.jobSpec).toEqual(expectedSpec)
   })
 })
