@@ -96,9 +96,10 @@ export default class JobScheduler {
 
   constructor(
     private robot: Hubot.Robot,
-    initialJobs: PersistedJob[],
     private persistenceKey: string = "jobs",
   ) {
+    const initialJobs = robot.brain.get(persistenceKey) as PersistedJob[]
+
     this.maxId = initialJobs.reduce(
       (runningMax, { id }) => Math.max(runningMax, id),
       0,

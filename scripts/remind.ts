@@ -35,14 +35,9 @@ import {
 
 import { isBlank } from "../lib/schedule-util"
 
-const REMINDER_KEY = "hubot_reminders"
-
 module.exports = function setupRemind(robot: Robot) {
   robot.brain.once("loaded", () => {
-    const jobScheduler = new JobScheduler(
-      robot,
-      robot.brain.get(REMINDER_KEY) ?? [],
-    )
+    const jobScheduler = new JobScheduler(robot)
 
     robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, (msg) => {
       const timezone = userTimezoneFor(robot, msg.envelope.user.id)
