@@ -26,7 +26,7 @@ function formatRecurringSpec(
   nextOccurrence: string,
   timezone?: string,
 ): string {
-  const formattedNextOccurrence = formatNextOccurrence(nextOccurrence)
+  const formattedNextOccurrence = formatNextOccurrence(nextOccurrence, timezone)
 
   if (spec.repeat === "week") {
     const baseDate = DateTime.now()
