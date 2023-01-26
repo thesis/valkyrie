@@ -39,7 +39,7 @@ module.exports = function setupRemind(robot: Robot) {
   robot.brain.once("loaded", () => {
     const jobScheduler = new JobScheduler(robot)
 
-    robot.respond(/remind (me|team|here) ((?:.|\s)*)$/i, (msg) => {
+    robot.respond(/remind (me|team|here|room) ((?:.|\s)*)$/i, (msg) => {
       const timezone = userTimezoneFor(robot, msg.envelope.user.id)
 
       try {
