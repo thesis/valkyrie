@@ -266,8 +266,12 @@ module.exports = (robot: Robot<any>) => {
           updates.
 
           I'm also making sure there's a user-friendly alias for this room across
-          chat.thesis.co.
-        `.replace(/^\s+/gm, ""),
+          chat.thesis.co; henceforth, this room shall be ${
+            existingAlias ?? updatedAlias
+          }. Last but not least---this room has an avatar!
+        `
+            .replace(/(?<!\n)\n(?!\n)/gm, " ")
+            .replace(/^[ \t]+/gm, ""),
         )
 
         const adminPowerLevels = Object.fromEntries(
