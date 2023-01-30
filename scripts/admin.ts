@@ -16,6 +16,27 @@ import { Robot } from "hubot"
 import { MatrixEvent, EventType, RoomMemberEvent } from "matrix-js-sdk"
 import * as hubot from "hubot"
 import { isMatrixAdapter } from "../lib/adapter-util"
+import { generateAvatar, roomNameToAlias } from "../lib/matrix-room-utils"
+
+const SPACE_BASE_COLORS: { [spaceName: string]: string } = {
+  Thesis: "#000000",
+  Keep: "#49DBB4",
+  "Tally Ho": "#EE9C32",
+  Fold: "#FFCF30",
+  Embody: "#0B3CF1",
+}
+
+const SPACE_IDS: { [spaceName: string]: string } = {
+  Thesis: "!outFXRZStxHJasvWKL:thesis.co",
+  Keep: "!YDpOcIsEpQabwiHpdV:thesis.co",
+  "Tally Ho": "!wCfAwzfZOUHTYIDjRn:thesis.co",
+  Fold: "!SuBAnawNxcIXoCHfPM:thesis.co",
+  Embody: "!XEnwlDoWvSBvrloDVH:thesis.co",
+}
+
+const SPACE_NAMES: { [spaceId: string]: string } = Object.fromEntries(
+  Object.entries(SPACE_IDS).map(([name, id]) => [id, name]),
+)
 
 const SUPER_ADMIN_USERS = ["@matt:thesis.co", "@shadowfiend:thesis.co"]
 
@@ -33,17 +54,18 @@ const SPACE_ADMINS: { [spaceRoomId: string]: string[] } = {
   // Thesis* space.
   "!outFXRZStxHJasvWKL:thesis.co": [],
   // Keep space.
-  "!YDpOcIsEpQabwiHpdV:thesis.co": [
-    "@dougvk:thesis.co",
-    "@piotr.dyraga:thesis.co",
-  ],
+  "!YDpOcIsEpQabwiHpdV:thesis.co": ["@piotr.dyraga:thesis.co"],
   // Tally Ho space.
   "!wCfAwzfZOUHTYIDjRn:thesis.co": [
     "@michaelh:thesis.co",
     "@puppycodes:thesis.co",
   ],
   // Fold space.
-  "!fold:thesis.co": ["@michaelh:thesis.co", "@puppycodes:thesis.co"],
+  "!SuBAnawNxcIXoCHfPM:thesis.co": [
+    "@tom:thesis.co",
+    "@willreeves:thesis.co",
+    "@puppycodes:thesis.co",
+  ],
   // Power Period space.
   "!XEnwlDoWvSBvrloDVH:thesis.co": ["@anna:thesis.co"],
 }
@@ -64,16 +86,22 @@ module.exports = (robot: Robot<any>) => {
       return
     }
 
-    const userId = client.getUserId()
-    if (userId === null) {
+    const botUserId = client.getUserId()
+    if (botUserId === null) {
       return
     }
 
-    robot.respond(/relinquish admin/i, (response) => {
+    robot.respond(/relinquish admin/i, async (response) => {
       if (SUPER_ADMIN_USERS.includes(response.envelope.user.id)) {
-        const existingLevels = client
-          .getRoom(response.envelope.room)
-          ?.currentState.getStateEvents(EventType.RoomPowerLevels)
+        const roomFromEnvelope = client.getRoom(response.envelope.room)
+        const roomId =
+          roomFromEnvelope === null
+            ? (await client.getRoomIdForAlias(response.envelope.room)).room_id
+            : response.envelope.room
+        const room = roomFromEnvelope ?? client.getRoom(roomId)
+
+        const existingLevels = room?.currentState
+          .getStateEvents(EventType.RoomPowerLevels)
           ?.at(0)
 
         if (existingLevels === undefined) {
@@ -87,7 +115,7 @@ module.exports = (robot: Robot<any>) => {
 
           const existingContent = existingLevels.getContent()
           client.setPowerLevel(
-            response.envelope.room,
+            roomId,
             response.envelope.user.id,
             100,
             new MatrixEvent({
@@ -96,7 +124,7 @@ module.exports = (robot: Robot<any>) => {
                 ...existingContent,
                 users: {
                   ...existingContent.users,
-                  [userId]: 0,
+                  [botUserId]: 0,
                 },
               },
             }),
@@ -107,7 +135,7 @@ module.exports = (robot: Robot<any>) => {
       }
     })
 
-    const hubotUser = new hubot.User(userId)
+    const hubotUser = new hubot.User(botUserId)
     const envelopeForRoom = (roomId: string) => ({
       user: hubotUser,
       room: roomId,
@@ -191,18 +219,75 @@ module.exports = (robot: Robot<any>) => {
           ),
         )
 
-        const existingAlias = room.getCanonicalAlias()
+        const nearestParentId = parentRoomIds.at(-1)
+        const prefixParentSpaceName =
+          nearestParentId !== undefined && nearestParentId !== SPACE_IDS.Thesis
+            ? SPACE_NAMES[nearestParentId]
+            : undefined
 
-        // TODO How do we handle cases where multiple spaces have the same room
-        // TODO name? Should all non-Thesis level rooms have their containing
-        // TODO space prefixed?
-        if (existingAlias === null) {
-          client.sendEvent(roomId, EventType.RoomCanonicalAlias, {
-            alias: `#${room.name
-              .toLowerCase()
-              .replace(/[^a-z0-9]/g, "-")}:${client.getDomain()}`,
+        const existingAlias = room.getCanonicalAlias()
+        const updatedAlias =
+          existingAlias === null
+            ? `#${roomNameToAlias(
+                room.name,
+                prefixParentSpaceName,
+              )}:${client.getDomain()}`
+            : undefined
+
+        let aliasWasSet = true
+
+        if (updatedAlias !== undefined) {
+          try {
+            await client.createAlias(updatedAlias, roomId)
+
+            await client.sendEvent(roomId, EventType.RoomCanonicalAlias, {
+              alias: updatedAlias,
+            })
+          } catch (error) {
+            robot.logger.error(
+              `Failed to set alias to ${updatedAlias} for ${roomId}.`,
+              error,
+            )
+            aliasWasSet = false
+          }
+        }
+
+        const spaceBaseColor = parentRoomIds
+          .map(
+            (parentRoomId) =>
+              SPACE_BASE_COLORS[
+                Object.entries(SPACE_IDS).find(
+                  ([, id]) => parentRoomId === id,
+                )?.[0] ?? ""
+              ],
+          )
+          .find((baseColor) => baseColor !== undefined)
+
+        if (spaceBaseColor !== undefined) {
+          const { filename, pngStream } = generateAvatar(
+            room.name,
+            spaceBaseColor,
+            prefixParentSpaceName,
+          )
+          const json = await client.uploadContent(pngStream, {
+            name: filename,
+            type: "image/png",
+            rawResponse: false,
+          })
+          const contentUri = json.content_uri
+
+          await client.sendStateEvent(roomId, EventType.RoomAvatar, {
+            url: contentUri,
           })
         }
+
+        const aliasMessage = `
+
+          I'm also making sure there's a user-friendly alias for this room across
+          chat.thesis.co; henceforth, this room shall be ${
+            existingAlias ?? updatedAlias
+          }.
+        `
 
         adapter.send(
           envelopeForRoom(roomId),
@@ -211,10 +296,12 @@ module.exports = (robot: Robot<any>) => {
           95, Thesis-wide admins have that power level, as do Space-specific
           admins. adminbot and I will remain at 100 so we can make any future
           updates.
+          ${aliasWasSet ? aliasMessage : ""}
 
-          I'm also making sure there's a user-friendly alias for this room across
-          chat.thesis.co.
-        `.replace(/^\s+/gm, ""),
+          Last but not least---this room has an avatar!
+        `
+            .replace(/(?<!\n)\n(?!\n)/gm, " ")
+            .replace(/^[ \t]+/gm, ""),
         )
 
         const adminPowerLevels = Object.fromEntries(
@@ -223,7 +310,7 @@ module.exports = (robot: Robot<any>) => {
         const existingContent = event.getContent()
         client.setPowerLevel(
           roomId,
-          userId,
+          botUserId,
           100,
           new MatrixEvent({
             ...event.event,
