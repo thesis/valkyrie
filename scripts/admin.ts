@@ -16,7 +16,23 @@ import { Robot } from "hubot"
 import { MatrixEvent, EventType, RoomMemberEvent } from "matrix-js-sdk"
 import * as hubot from "hubot"
 import { isMatrixAdapter } from "../lib/adapter-util"
-import { roomNameToAlias } from "../lib/matrix-room-utils"
+import { generateAvatar, roomNameToAlias } from "../lib/matrix-room-utils"
+
+const SPACE_BASE_COLORS: { [spaceName: string]: string } = {
+  Thesis: "#000000",
+  Keep: "#49DBB4",
+  "Tally Ho": "#EE9C32",
+  Fold: "#FFCF30",
+  Embody: "#0B3CF1",
+}
+
+const SPACE_IDS: { [spaceName: string]: string } = {
+  Thesis: "!outFXRZStxHJasvWKL:thesis.co",
+  Keep: "!YDpOcIsEpQabwiHpdV:thesis.co",
+  "Tally Ho": "!wCfAwzfZOUHTYIDjRn:thesis.co",
+  Fold: "!fold:thesis.co",
+  Embody: "!XEnwlDoWvSBvrloDVH:thesis.co",
+}
 
 const SUPER_ADMIN_USERS = ["@matt:thesis.co", "@shadowfiend:thesis.co"]
 
@@ -70,7 +86,7 @@ module.exports = (robot: Robot<any>) => {
       return
     }
 
-    robot.respond(/relinquish admin/i, (response) => {
+    robot.respond(/relinquish admin/i, async (response) => {
       if (SUPER_ADMIN_USERS.includes(response.envelope.user.id)) {
         const roomFromEnvelope = client.getRoom(response.envelope.room)
         const roomId =
@@ -210,6 +226,34 @@ module.exports = (robot: Robot<any>) => {
         if (updatedAlias !== undefined) {
           client.sendEvent(roomId, EventType.RoomCanonicalAlias, {
             alias: updatedAlias,
+          })
+        }
+
+        const spaceBaseColor = parentRoomIds
+          .map(
+            (parentRoomId) =>
+              SPACE_BASE_COLORS[
+                Object.entries(SPACE_IDS).find(
+                  ([, id]) => parentRoomId === id,
+                )?.[0] ?? ""
+              ],
+          )
+          .find((baseColor) => baseColor !== undefined)
+
+        if (spaceBaseColor !== undefined) {
+          const { filename, pngStream } = generateAvatar(
+            room.name,
+            spaceBaseColor,
+          )
+          const json = await client.uploadContent(pngStream, {
+            name: filename,
+            type: "image/png",
+            rawResponse: false,
+          })
+          const contentUri = json.content_uri
+
+          await client.sendStateEvent(roomId, "m.room.avatar", {
+            url: contentUri,
           })
         }
 
