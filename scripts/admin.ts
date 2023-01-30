@@ -276,7 +276,7 @@ module.exports = (robot: Robot<any>) => {
           })
           const contentUri = json.content_uri
 
-          await client.sendStateEvent(roomId, "m.room.avatar", {
+          await client.sendStateEvent(roomId, EventType.RoomAvatar, {
             url: contentUri,
           })
         }
