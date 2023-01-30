@@ -219,10 +219,19 @@ module.exports = (robot: Robot<any>) => {
           ),
         )
 
+        const nearestParentId = parentRoomIds.at(-1)
+        const prefixParentSpaceName =
+          nearestParentId !== undefined && nearestParentId !== SPACE_IDS.Thesis
+            ? SPACE_NAMES[nearestParentId]
+            : undefined
+
         const existingAlias = room.getCanonicalAlias()
         const updatedAlias =
           existingAlias === null
-            ? `#${roomNameToAlias(room.name)}:${client.getDomain()}`
+            ? `#${roomNameToAlias(
+                room.name,
+                prefixParentSpaceName,
+              )}:${client.getDomain()}`
             : undefined
 
         let aliasWasSet = true
@@ -258,6 +267,7 @@ module.exports = (robot: Robot<any>) => {
           const { filename, pngStream } = generateAvatar(
             room.name,
             spaceBaseColor,
+            prefixParentSpaceName,
           )
           const json = await client.uploadContent(pngStream, {
             name: filename,
