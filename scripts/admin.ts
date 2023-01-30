@@ -225,13 +225,22 @@ module.exports = (robot: Robot<any>) => {
             ? `#${roomNameToAlias(room.name)}:${client.getDomain()}`
             : undefined
 
-        // TODO How do we handle cases where multiple spaces have the same room
-        // TODO name? Should all non-Thesis level rooms have their containing
-        // TODO space prefixed?
+        let aliasWasSet = true
+
         if (updatedAlias !== undefined) {
-          client.sendEvent(roomId, EventType.RoomCanonicalAlias, {
-            alias: updatedAlias,
-          })
+          try {
+            await client.createAlias(updatedAlias, roomId)
+
+            await client.sendEvent(roomId, EventType.RoomCanonicalAlias, {
+              alias: updatedAlias,
+            })
+          } catch (error) {
+            robot.logger.error(
+              `Failed to set alias to ${updatedAlias} for ${roomId}.`,
+              error,
+            )
+            aliasWasSet = false
+          }
         }
 
         const spaceBaseColor = parentRoomIds
@@ -262,6 +271,14 @@ module.exports = (robot: Robot<any>) => {
           })
         }
 
+        const aliasMessage = `
+
+          I'm also making sure there's a user-friendly alias for this room across
+          chat.thesis.co; henceforth, this room shall be ${
+            existingAlias ?? updatedAlias
+          }.
+        `
+
         adapter.send(
           envelopeForRoom(roomId),
           `
@@ -269,11 +286,9 @@ module.exports = (robot: Robot<any>) => {
           95, Thesis-wide admins have that power level, as do Space-specific
           admins. adminbot and I will remain at 100 so we can make any future
           updates.
+          ${aliasWasSet ? aliasMessage : ""}
 
-          I'm also making sure there's a user-friendly alias for this room across
-          chat.thesis.co; henceforth, this room shall be ${
-            existingAlias ?? updatedAlias
-          }. Last but not least---this room has an avatar!
+          Last but not least---this room has an avatar!
         `
             .replace(/(?<!\n)\n(?!\n)/gm, " ")
             .replace(/^[ \t]+/gm, ""),
