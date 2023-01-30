@@ -34,6 +34,10 @@ const SPACE_IDS: { [spaceName: string]: string } = {
   Embody: "!XEnwlDoWvSBvrloDVH:thesis.co",
 }
 
+const SPACE_NAMES: { [spaceId: string]: string } = Object.fromEntries(
+  Object.entries(SPACE_IDS).map(([name, id]) => [id, name]),
+)
+
 const SUPER_ADMIN_USERS = ["@matt:thesis.co", "@shadowfiend:thesis.co"]
 
 const ADMIN_USERS = [
