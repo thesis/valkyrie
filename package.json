@@ -34,7 +34,7 @@
     "uuid": "^3.2.1"
   },
   "engines": {
-    "node": "<=18 >=16"
+    "node": "<=19 >=16"
   },
   "devDependencies": {
     "@jest/globals": "^29.3.1",
