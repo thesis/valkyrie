@@ -81,8 +81,8 @@ module.exports = (robot: Robot<any>) => {
       return
     }
 
-    const userId = client.getUserId()
-    if (userId === null) {
+    const botUserId = client.getUserId()
+    if (botUserId === null) {
       return
     }
 
@@ -119,7 +119,7 @@ module.exports = (robot: Robot<any>) => {
                 ...existingContent,
                 users: {
                   ...existingContent.users,
-                  [userId]: 0,
+                  [botUserId]: 0,
                 },
               },
             }),
@@ -130,7 +130,7 @@ module.exports = (robot: Robot<any>) => {
       }
     })
 
-    const hubotUser = new hubot.User(userId)
+    const hubotUser = new hubot.User(botUserId)
     const envelopeForRoom = (roomId: string) => ({
       user: hubotUser,
       room: roomId,
@@ -280,7 +280,7 @@ module.exports = (robot: Robot<any>) => {
         const existingContent = event.getContent()
         client.setPowerLevel(
           roomId,
-          userId,
+          botUserId,
           100,
           new MatrixEvent({
             ...event.event,
