@@ -15,13 +15,30 @@ const AVATAR_DIMENSIONS = {
   height: 234,
 }
 
-export function roomNameToAlias(roomName: string): string {
-  return roomName.toLowerCase().replace(/[^a-z0-9]/g, "-")
+/**
+ * Returns the room alias for the given room name. If the prefix parent space
+ * name is given, it is converted to an alias and used as a prefix to the given
+ * room's name.
+ *
+ * For example, calling this with `general` and `Tally Ho` will result in
+ * `tally-ho-general`.
+ */
+export function roomNameToAlias(
+  roomName: string,
+  prefixParentSpaceName?: string,
+): string {
+  const baseAlias = roomName.toLowerCase().replace(/[^a-z0-9]/g, "-")
+
+  if (prefixParentSpaceName !== undefined) {
+    return `${roomNameToAlias(prefixParentSpaceName)}-${baseAlias}`
+  }
+  return baseAlias
 }
 
 export function generateAvatar(
   roomName: string,
   baseColorHex: string,
+  prefixParentSpaceName: string | undefined,
 ): AvatarInfo {
   const { width, height } = AVATAR_DIMENSIONS
 
@@ -52,7 +69,7 @@ export function generateAvatar(
   const stream = canvas.createPNGStream()
 
   return {
-    filename: `${roomNameToAlias(roomName)}.png`,
+    filename: `${roomNameToAlias(roomName, prefixParentSpaceName)}.png`,
     pngStream: stream,
   }
 }
