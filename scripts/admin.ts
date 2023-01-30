@@ -16,6 +16,7 @@ import { Robot } from "hubot"
 import { MatrixEvent, EventType, RoomMemberEvent } from "matrix-js-sdk"
 import * as hubot from "hubot"
 import { isMatrixAdapter } from "../lib/adapter-util"
+import { roomNameToAlias } from "../lib/matrix-room-utils"
 
 const SUPER_ADMIN_USERS = ["@matt:thesis.co", "@shadowfiend:thesis.co"]
 
@@ -71,9 +72,15 @@ module.exports = (robot: Robot<any>) => {
 
     robot.respond(/relinquish admin/i, (response) => {
       if (SUPER_ADMIN_USERS.includes(response.envelope.user.id)) {
-        const existingLevels = client
-          .getRoom(response.envelope.room)
-          ?.currentState.getStateEvents(EventType.RoomPowerLevels)
+        const roomFromEnvelope = client.getRoom(response.envelope.room)
+        const roomId =
+          roomFromEnvelope === null
+            ? (await client.getRoomIdForAlias(response.envelope.room)).room_id
+            : response.envelope.room
+        const room = roomFromEnvelope ?? client.getRoom(roomId)
+
+        const existingLevels = room?.currentState
+          .getStateEvents(EventType.RoomPowerLevels)
           ?.at(0)
 
         if (existingLevels === undefined) {
@@ -87,7 +94,7 @@ module.exports = (robot: Robot<any>) => {
 
           const existingContent = existingLevels.getContent()
           client.setPowerLevel(
-            response.envelope.room,
+            roomId,
             response.envelope.user.id,
             100,
             new MatrixEvent({
@@ -192,15 +199,17 @@ module.exports = (robot: Robot<any>) => {
         )
 
         const existingAlias = room.getCanonicalAlias()
+        const updatedAlias =
+          existingAlias === null
+            ? `#${roomNameToAlias(room.name)}:${client.getDomain()}`
+            : undefined
 
         // TODO How do we handle cases where multiple spaces have the same room
         // TODO name? Should all non-Thesis level rooms have their containing
         // TODO space prefixed?
-        if (existingAlias === null) {
+        if (updatedAlias !== undefined) {
           client.sendEvent(roomId, EventType.RoomCanonicalAlias, {
-            alias: `#${room.name
-              .toLowerCase()
-              .replace(/[^a-z0-9]/g, "-")}:${client.getDomain()}`,
+            alias: updatedAlias,
           })
         }
 
