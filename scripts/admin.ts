@@ -54,17 +54,18 @@ const SPACE_ADMINS: { [spaceRoomId: string]: string[] } = {
   // Thesis* space.
   "!outFXRZStxHJasvWKL:thesis.co": [],
   // Keep space.
-  "!YDpOcIsEpQabwiHpdV:thesis.co": [
-    "@dougvk:thesis.co",
-    "@piotr.dyraga:thesis.co",
-  ],
+  "!YDpOcIsEpQabwiHpdV:thesis.co": ["@piotr.dyraga:thesis.co"],
   // Tally Ho space.
   "!wCfAwzfZOUHTYIDjRn:thesis.co": [
     "@michaelh:thesis.co",
     "@puppycodes:thesis.co",
   ],
   // Fold space.
-  "!fold:thesis.co": ["@michaelh:thesis.co", "@puppycodes:thesis.co"],
+  "!SuBAnawNxcIXoCHfPM:thesis.co": [
+    "@tom:thesis.co",
+    "@willreeves:thesis.co",
+    "@puppycodes:thesis.co",
+  ],
   // Power Period space.
   "!XEnwlDoWvSBvrloDVH:thesis.co": ["@anna:thesis.co"],
 }
