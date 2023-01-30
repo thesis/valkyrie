@@ -30,7 +30,7 @@ const SPACE_IDS: { [spaceName: string]: string } = {
   Thesis: "!outFXRZStxHJasvWKL:thesis.co",
   Keep: "!YDpOcIsEpQabwiHpdV:thesis.co",
   "Tally Ho": "!wCfAwzfZOUHTYIDjRn:thesis.co",
-  Fold: "!fold:thesis.co",
+  Fold: "!SuBAnawNxcIXoCHfPM:thesis.co",
   Embody: "!XEnwlDoWvSBvrloDVH:thesis.co",
 }
 
