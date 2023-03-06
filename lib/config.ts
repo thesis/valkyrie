@@ -1,7 +1,7 @@
 // Provides a collection of configuration validation helpers
 
 import { Adapter } from "hubot"
-import { getRoomInfoFromIdOrName, isRoomNameValid } from "./adapter-util"
+import { getRoomInfoFromIdOrName, isRoomNameValid } from "./adapter-util.ts"
 
 /**
  * Given a config key and an issueReporter:
@@ -112,11 +112,4 @@ export function issueReporterForRobot(
   return (errorMessage: string) => {
     logOrThrow(robot, errorMessage)
   }
-}
-
-module.exports = {
-  withConfigOrReportIssues,
-  fetchRoomInfoOrReportIssue,
-  fetchConfigOrReportIssue,
-  issueReporterForRobot,
 }

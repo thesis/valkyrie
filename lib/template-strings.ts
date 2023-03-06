@@ -1,6 +1,6 @@
 import { Adapter, Brain } from "hubot"
-import { RECURRING_JOB_STORAGE_KEY } from "./schedule-config"
-import { ScheduledJob } from "./scheduled-jobs"
+import { RECURRING_JOB_STORAGE_KEY } from "./schedule-config.ts"
+import { ScheduledJob } from "./scheduled-jobs.ts"
 
 // This is a temporary function to test the template string behavior.
 // It takes a string, coverts it to an int, and returns its square.

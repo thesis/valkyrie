@@ -7,7 +7,7 @@
 // Commands:
 //   None
 
-module.exports = function (robot) {
+export default function (robot) {
   robot.router.get("/", (req, res) =>
     res.status(200).send("I watch for Ragnarok."),
   )

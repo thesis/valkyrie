@@ -1,8 +1,8 @@
 import * as axios from "axios"
-import URLs from "./urls"
-import { Meeting, MeetingScheduleCategory } from "./meeting"
-import { generateZoomPassword, tokenFrom } from "./password"
-import { UserType } from "./user"
+import URLs from "./urls.ts"
+import { Meeting, MeetingScheduleCategory } from "./meeting.ts"
+import { generateZoomPassword, tokenFrom } from "./password.ts"
+import { UserType } from "./user.ts"
 
 export default class Account {
   constructor(

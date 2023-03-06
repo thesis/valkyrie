@@ -2,16 +2,16 @@ import * as scheduler from "node-schedule"
 import * as hubot from "hubot"
 import { MatrixMessage } from "hubot-matrix"
 import util from "util"
-import processTemplateString from "./template-strings"
-import CONFIG, { RECURRING_JOB_STORAGE_KEY } from "./schedule-config"
-import { isMatrixAdapter } from "./adapter-util"
-import { JobUser, MessageMetadata, ScheduledJob } from "./scheduled-jobs"
+import processTemplateString from "./template-strings.ts"
+import CONFIG, { RECURRING_JOB_STORAGE_KEY } from "./schedule-config.ts"
+import { isMatrixAdapter } from "./adapter-util.ts"
+import { JobUser, MessageMetadata, ScheduledJob } from "./scheduled-jobs.ts"
 import {
   isCronPattern,
   logSerializedJobDetails,
   updateJobInBrain,
   urlFor,
-} from "./schedule-util"
+} from "./schedule-util.ts"
 
 export async function postMessageAndSaveThreadId(
   robot: hubot.Robot,

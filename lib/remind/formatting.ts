@@ -1,6 +1,6 @@
 import { DateTime } from "luxon"
-import { encodeThreadId, matrixUrlFor } from "../adapter-util"
-import { PersistedJob, RecurringDefinition } from "./data"
+import { encodeThreadId, matrixUrlFor } from "../adapter-util.ts"
+import { PersistedJob, RecurringDefinition } from "./data.ts"
 
 // List of escape regex patterns (search to replace) to use when formatting a
 // reminder message for display. Used to show raw input and avoid tagging

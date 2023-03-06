@@ -33,7 +33,7 @@ const TIMEZONE_MAPS: { [alias: string]: string } = {
   "Mountain Daylight Time": "America/Boise",
 }
 
-module.exports = (robot: Robot<any>) => {
+export default (robot: Robot<any>) => {
   robot.respond(/timezone$/i, (msg) => {
     const userPreferences = robot.brain.get(USER_PREFERENCES_BRAIN_KEY)?.[
       msg.envelope.user.id
@@ -97,10 +97,7 @@ module.exports = (robot: Robot<any>) => {
  * Exported function to look up user preferences on a given robot for a given
  * user id.
  */
-module.exports.userPreferencesFor = function userPreferencesFor(
-  robot: Robot<any>,
-  userId: string,
-) {
+export function userPreferencesFor(robot: Robot<any>, userId: string) {
   return robot.brain.get(USER_PREFERENCES_BRAIN_KEY)?.[
     userId
   ] as UserPreferences
@@ -110,12 +107,6 @@ module.exports.userPreferencesFor = function userPreferencesFor(
  * Exported function to look up a user's timezone on a given robot for a given
  * user id; defaults to the system timezone if the user has not set a timezone.
  */
-module.exports.userTimezoneFor = function timezoneFor(
-  robot: Robot<any>,
-  userId: string,
-) {
-  return (
-    module.exports.userPreferencesFor(robot, userId)?.timezone ??
-    DateTime.now().zoneName
-  )
+export function userTimezoneFor(robot: Robot<any>, userId: string) {
+  return userPreferencesFor(robot, userId)?.timezone ?? DateTime.now().zoneName
 }

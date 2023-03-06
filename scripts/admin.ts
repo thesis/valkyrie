@@ -15,11 +15,12 @@
 import { Robot } from "hubot"
 import { MatrixEvent, EventType, RoomMemberEvent } from "matrix-js-sdk"
 import * as hubot from "hubot"
-import { isMatrixAdapter } from "../lib/adapter-util"
-import { generateAvatar, roomNameToAlias } from "../lib/matrix-room-utils"
+import { isMatrixAdapter } from "../lib/adapter-util.ts"
+import { generateAvatar, roomNameToAlias } from "../lib/matrix-room-utils.ts"
 
 const SPACE_BASE_COLORS: { [spaceName: string]: string } = {
   Thesis: "#000000",
+  "Thesis Studio": "#000000",
   Keep: "#49DBB4",
   "Tally Ho": "#EE9C32",
   Fold: "#FFCF30",
@@ -28,6 +29,7 @@ const SPACE_BASE_COLORS: { [spaceName: string]: string } = {
 
 const SPACE_IDS: { [spaceName: string]: string } = {
   Thesis: "!outFXRZStxHJasvWKL:thesis.co",
+  "Thesis Studio": "!VRGYJeUwuhkMmZPcpX:thesis.co",
   Keep: "!YDpOcIsEpQabwiHpdV:thesis.co",
   "Tally Ho": "!wCfAwzfZOUHTYIDjRn:thesis.co",
   Fold: "!SuBAnawNxcIXoCHfPM:thesis.co",
@@ -53,6 +55,8 @@ const ADMIN_USERS = [
 const SPACE_ADMINS: { [spaceRoomId: string]: string[] } = {
   // Thesis* space.
   "!outFXRZStxHJasvWKL:thesis.co": [],
+  // Thesis* Studio space.
+  "!VRGYJeUwuhkMmZPcpX:thesis.co": [],
   // Keep space.
   "!YDpOcIsEpQabwiHpdV:thesis.co": ["@piotr.dyraga:thesis.co"],
   // Tally Ho space.
@@ -70,7 +74,7 @@ const SPACE_ADMINS: { [spaceRoomId: string]: string[] } = {
   "!XEnwlDoWvSBvrloDVH:thesis.co": ["@anna:thesis.co"],
 }
 
-module.exports = (robot: Robot<any>) => {
+export default (robot: Robot<any>) => {
   robot.respond(/users/i, (response) => {
     response.reply(
       `\n${Object.values(robot.brain.users())
@@ -221,7 +225,9 @@ module.exports = (robot: Robot<any>) => {
 
         const nearestParentId = parentRoomIds.at(-1)
         const prefixParentSpaceName =
-          nearestParentId !== undefined && nearestParentId !== SPACE_IDS.Thesis
+          nearestParentId !== undefined &&
+          nearestParentId !== SPACE_IDS.Thesis &&
+          nearestParentId !== SPACE_IDS["Thesis Studio"]
             ? SPACE_NAMES[nearestParentId]
             : undefined
 

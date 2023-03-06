@@ -8,12 +8,14 @@
 //
 // Commands:
 //   hubot zoom - Responds with an available meeting from the registered accounts, follows up with a prompt to post meeting notes
-
 import * as util from "util"
 import { Adapter, Robot } from "hubot"
-import { withConfigOrReportIssues, issueReporterForRobot } from "../lib/config"
-import * as zoom from "../lib/zoom"
-import { Meeting } from "../lib/zoom/meeting"
+import {
+  withConfigOrReportIssues,
+  issueReporterForRobot,
+} from "../lib/config.ts"
+import * as zoom from "../lib/zoom/index.ts"
+import { Meeting } from "../lib/zoom/meeting.ts"
 
 let ZOOM_SESSION: zoom.Session | null = null
 
@@ -119,7 +121,7 @@ async function watchMeeting(meeting: Meeting) {
   return meetingFinishedPromise
 }
 
-module.exports = function setupZoom(robot: Robot<Adapter>) {
+export default function setupZoom(robot: Robot<Adapter>) {
   withConfigOrReportIssues(
     issueReporterForRobot(robot),
     "ZOOM_API_KEY",

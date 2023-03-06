@@ -29,7 +29,7 @@ function apiFor(bot: Robot, user: User) {
   return api
 }
 
-module.exports = function setupGitHub(robot: Robot) {
+export default function setupGitHub(robot: Robot) {
   robot.respond(/github who am (i|I)/, (res) => {
     const api = apiFor(robot, res.message.user)
 
@@ -108,7 +108,7 @@ module.exports = function setupGitHub(robot: Robot) {
               return { successes, failures }
             },
             {
-              successes: [] as Exclude<typeof teamResponses[0], string>[],
+              successes: [] as Exclude<(typeof teamResponses)[0], string>[],
               failures: [] as typeof teamResponses,
             },
           )
