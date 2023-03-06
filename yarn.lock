@@ -745,7 +745,7 @@
 
 "@types/body-parser@*":
   version "1.19.2"
-  resolved "https://registry.npmjs.org/@types/body-parser/-/body-parser-1.19.2.tgz"
+  resolved "https://registry.yarnpkg.com/@types/body-parser/-/body-parser-1.19.2.tgz#aea2059e28b7658639081347ac4fab3de166e6f0"
   integrity sha512-ALYone6pm6QmwZoAgeyNksccT9Q4AWZQ6PvfwR37GT6r6FWUPguq6sUmNGSMV2Wr761oQoBxwGGa6DR5o1DC9g==
   dependencies:
     "@types/connect" "*"
@@ -753,7 +753,7 @@
 
 "@types/connect@*":
   version "3.4.35"
-  resolved "https://registry.npmjs.org/@types/connect/-/connect-3.4.35.tgz"
+  resolved "https://registry.yarnpkg.com/@types/connect/-/connect-3.4.35.tgz#5fcf6ae445e4021d1fc2219a4873cc73a3bb2ad1"
   integrity sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==
   dependencies:
     "@types/node" "*"
@@ -763,22 +763,22 @@
   resolved "https://registry.npmjs.org/@types/cookie/-/cookie-0.3.2.tgz"
   integrity sha512-aHQA072E10/8iUQsPH7mQU/KUyQBZAGzTVRCUvnSz8mSvbrYsP4xEO2RSA0Pjltolzi0j8+8ixrm//Hr4umPzw==
 
-"@types/express-serve-static-core@^4.17.18":
-  version "4.17.30"
-  resolved "https://registry.npmjs.org/@types/express-serve-static-core/-/express-serve-static-core-4.17.30.tgz"
-  integrity sha512-gstzbTWro2/nFed1WXtf+TtrpwxH7Ggs4RLYTLbeVgIkUQOI3WG/JKjgeOU1zXDvezllupjrf8OPIdvTbIaVOQ==
+"@types/express-serve-static-core@^4.17.33":
+  version "4.17.33"
+  resolved "https://registry.yarnpkg.com/@types/express-serve-static-core/-/express-serve-static-core-4.17.33.tgz#de35d30a9d637dc1450ad18dd583d75d5733d543"
+  integrity sha512-TPBqmR/HRYI3eC2E5hmiivIzv+bidAfXofM+sbonAGvyDhySGw9/PQZFt2BLOrjUUR++4eJVpx6KnLQK1Fk9tA==
   dependencies:
     "@types/node" "*"
     "@types/qs" "*"
     "@types/range-parser" "*"
 
 "@types/express@*":
-  version "4.17.13"
-  resolved "https://registry.npmjs.org/@types/express/-/express-4.17.13.tgz"
-  integrity sha512-6bSZTPaTIACxn48l50SR+axgrqm6qXFIxrdAKaG6PaJk3+zuUr35hBlgT7vOmJcum+OEaIBLtHV/qloEAFITeA==
+  version "4.17.17"
+  resolved "https://registry.yarnpkg.com/@types/express/-/express-4.17.17.tgz#01d5437f6ef9cfa8668e616e13c2f2ac9a491ae4"
+  integrity sha512-Q4FmmuLGBG58btUnfS1c1r/NQdlp3DMfGDGig8WhfpA2YRUtEkxAjkZb0yvplJGYdF1fsQ81iMDcH24sSCNC/Q==
   dependencies:
     "@types/body-parser" "*"
-    "@types/express-serve-static-core" "^4.17.18"
+    "@types/express-serve-static-core" "^4.17.33"
     "@types/qs" "*"
     "@types/serve-static" "*"
 
@@ -789,10 +789,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/hubot@^3.3.1":
-  version "3.3.1"
-  resolved "https://registry.npmjs.org/@types/hubot/-/hubot-3.3.1.tgz"
-  integrity sha512-hof+STc4L58pVa7cNnhjXKHDFPdL2hD/DYaa2g0EQjcNHAxjSKvwSKy4JfoDZn9MqOkrgH5YnvJwG3Y+oDq7xw==
+"@types/hubot@^3.3.2":
+  version "3.3.2"
+  resolved "https://registry.yarnpkg.com/@types/hubot/-/hubot-3.3.2.tgz#95cecd9dca7e1f6b7b17a68e5ebaa18a53e944a3"
+  integrity sha512-cxwfH8NLHQK6IGqiDnyQVkZE0hY2kuv5W8J2AcqSazBNXqLS6IFFt+J3AHnpFQ8p+rkpArL9gLiUbSceMwDbVQ==
   dependencies:
     "@types/express" "*"
     "@types/scoped-http-client" "*"
@@ -840,7 +840,7 @@
 
 "@types/mime@*":
   version "3.0.1"
-  resolved "https://registry.npmjs.org/@types/mime/-/mime-3.0.1.tgz"
+  resolved "https://registry.yarnpkg.com/@types/mime/-/mime-3.0.1.tgz#5f8f2bca0a5863cb69bc0b0acd88c96cb1d4ae10"
   integrity sha512-Y4XFY5VJAuw0FgAqPNd6NNoV44jbq9Bz2L7Rh/J6jLTiHBSBJa9fxqQIvkIld4GsoDOcCbvzOUAbLPsSKKg+uA==
 
 "@types/mocha@^10.0.0":
@@ -872,12 +872,12 @@
 
 "@types/qs@*":
   version "6.9.7"
-  resolved "https://registry.npmjs.org/@types/qs/-/qs-6.9.7.tgz"
+  resolved "https://registry.yarnpkg.com/@types/qs/-/qs-6.9.7.tgz#63bb7d067db107cc1e457c303bc25d511febf6cb"
   integrity sha512-FGa1F62FT09qcrueBA6qYTrJPVDzah9a+493+o2PCXsesWHIn27G98TsSMs3WPNbZIEj4+VJf6saSFpvD+3Zsw==
 
 "@types/range-parser@*":
   version "1.2.4"
-  resolved "https://registry.npmjs.org/@types/range-parser/-/range-parser-1.2.4.tgz"
+  resolved "https://registry.yarnpkg.com/@types/range-parser/-/range-parser-1.2.4.tgz#cd667bcfdd025213aafb7ca5915a932590acdcdc"
   integrity sha512-EEhsLsD6UsDM1yFhAvy0Cjr6VwmpMWqFBCb9w07wVugF7w9nfajxLuVmngTIpgS6svCnm6Vaw+MZhoDCKnOfsw==
 
 "@types/retry@0.12.0":
@@ -887,7 +887,7 @@
 
 "@types/scoped-http-client@*":
   version "0.11.1"
-  resolved "https://registry.npmjs.org/@types/scoped-http-client/-/scoped-http-client-0.11.1.tgz"
+  resolved "https://registry.yarnpkg.com/@types/scoped-http-client/-/scoped-http-client-0.11.1.tgz#237221396e9b879a1e69a17c7e23a1526a16e3d2"
   integrity sha512-mxTxLAc+yA8FeL3ETkHPY2nAWB5OePEZHy/y4FqzPUslnjKO5xmVgMp33CZLgjcczcDt1whbhr0BgqWzFPbDOw==
   dependencies:
     "@types/node" "*"
@@ -898,9 +898,9 @@
   integrity sha512-WwA1MW0++RfXmCr12xeYOOC5baSC9mSb0ZqCquFzKhcoF4TvHu5MKOuXsncgZcpVFhB1pXd5hZmM0ryAoCp12A==
 
 "@types/serve-static@*":
-  version "1.15.0"
-  resolved "https://registry.npmjs.org/@types/serve-static/-/serve-static-1.15.0.tgz"
-  integrity sha512-z5xyF6uh8CbjAu9760KDKsH2FcDxZ2tFCsA4HIMWE6IkiYMXfVoa+4f9KX+FN0ZLsaMw1WNG2ETLA6N+/YA+cg==
+  version "1.15.1"
+  resolved "https://registry.yarnpkg.com/@types/serve-static/-/serve-static-1.15.1.tgz#86b1753f0be4f9a1bee68d459fcda5be4ea52b5d"
+  integrity sha512-NUo5XNiAdULrJENtJXZZ3fHtfMolzZwczzBbnAeBbqBwG+LaG6YaJtuwzwGSQZ2wsCrxjEhNNjAkKigy3n8teQ==
   dependencies:
     "@types/mime" "*"
     "@types/node" "*"
@@ -3145,7 +3145,7 @@ hubot-test-helper@^1.9.0:
 
 "hubot@git+https://github.com/thesis/hubot.git#v4.0.0-alpha.0":
   version "4.0.0-alpha.0"
-  resolved "git+https://github.com/thesis/hubot.git#29a8e1d508aa2b635a208d39092d39895de7c275"
+  resolved "git+https://github.com/thesis/hubot.git#bbec713568c5fcc54b9a2f554717d0dfb37a9585"
   dependencies:
     async ">=0.1.0 <1.0.0"
     chalk "^1.0.0"
@@ -5688,10 +5688,15 @@ typed-array-length@^1.0.4:
     for-each "^0.3.3"
     is-typed-array "^1.1.9"
 
-typescript@^4.8.3, typescript@^4.9.4:
+typescript@^4.8.3:
   version "4.9.5"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.9.5.tgz#095979f9bcc0d09da324d58d03ce8f8374cbe65a"
   integrity sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==
+
+typescript@^5.0.0-beta:
+  version "5.0.0-dev.20230226"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.0.0-dev.20230226.tgz#39a3f67ee47b3f8eed21a4b4ca110c510dbe7430"
+  integrity sha512-JThVuZ1oAbEqUEN2xvLcO++QpyUcH6Ru6ppL6Q0PStHGjRmSoeJZgOgEdM34jVKv8f1lDpUXQK1cZ1zxbrZaSA==
 
 uid-safe@2.1.5:
   version "2.1.5"

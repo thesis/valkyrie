@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, jest } from "@jest/globals"
-import { computeNextRecurrence } from "../../../lib/remind"
-import { parseSpec } from "../../../lib/remind/parsing"
+import { computeNextRecurrence } from "../../../lib/remind/index.ts"
+import { parseSpec } from "../../../lib/remind/parsing.ts"
 
 afterEach(() => {
   jest.useRealTimers()
