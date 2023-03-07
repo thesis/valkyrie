@@ -32,13 +32,13 @@ import {
   getRoomNameFromId,
   encodeThreadId,
   matrixUrlFor,
-} from "./adapter-util"
-import CONFIG, { RECURRING_JOB_STORAGE_KEY } from "./schedule-config"
+} from "./adapter-util.ts"
+import CONFIG, { RECURRING_JOB_STORAGE_KEY } from "./schedule-config.ts"
 import {
   MessageMetadata,
   ScheduledJob,
   ScheduledJobMap,
-} from "./scheduled-jobs"
+} from "./scheduled-jobs.ts"
 
 function urlFor(roomId: string, serverName: string, eventId: string): string {
   return matrixUrlFor(roomId, serverName, eventId)

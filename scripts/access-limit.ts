@@ -18,7 +18,7 @@
 //   kb0rg
 
 import { Robot } from "hubot"
-import { getRoomNameFromId } from "../lib/adapter-util"
+import { getRoomNameFromId } from "../lib/adapter-util.ts"
 
 const ALLOWED_ROOMS = [
   "Bifrost",
@@ -31,7 +31,7 @@ const ALLOWED_BOTS = ["valkyrie"]
 const BOT_RESTICTED_COMMANDS = ["reload-scripts.reload"] // string that matches the listener ID
 const ROOM_RESTRICTED_COMMANDS = ["pod-bay-doors", "users", "reconnect"] // string that matches the listener ID
 
-module.exports = function setUpAccessLimit(robot: Robot) {
+export default function setUpAccessLimit(robot: Robot) {
   robot.listenerMiddleware((context, next, done) => {
     if (
       BOT_RESTICTED_COMMANDS.indexOf(

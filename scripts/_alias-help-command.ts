@@ -19,10 +19,10 @@
 
 import { Robot, TextMessage } from "hubot"
 
-module.exports = function aliasHelpCommand(robot: Robot<any>) {
+export default function aliasHelpCommand(robot: Robot<any>) {
   robot.receiveMiddleware((context, next, done) => {
     const robotRespondPatternInText = robot
-      .respondPattern(new RegExp(""))
+      .respondPattern(/ /)
       .exec(context.response?.message.text ?? "")
     if (robotRespondPatternInText) {
       // Strip robot pattern from message, clean up for next steps.

@@ -1,8 +1,8 @@
 import * as axios from "axios"
 import * as util from "util"
-import { tokenFrom } from "./password"
-import Session from "./Session"
-import URLs from "./urls"
+import { tokenFrom } from "./password.ts"
+import Session from "./Session.ts"
+import URLs from "./urls.ts"
 
 async function getSession(
   apiKey: string,

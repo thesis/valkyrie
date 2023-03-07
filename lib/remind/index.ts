@@ -1,13 +1,13 @@
 import { Envelope, Message, User } from "hubot"
 import { DateTime } from "luxon"
-import { sendThreaded } from "../adapter-util"
+import { sendThreaded } from "../adapter-util.ts"
 import {
   Job,
   PersistedJob,
   RecurringDefinition,
   SingleShotDefinition,
-} from "./data"
-import { parseFromString, parseSpec as parseJobSpec } from "./parsing"
+} from "./data.ts"
+import { parseFromString, parseSpec as parseJobSpec } from "./parsing.ts"
 
 /**
  * Given the previous recurrence as an ISO-8601 date and a recurring or

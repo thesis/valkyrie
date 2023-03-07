@@ -1,6 +1,6 @@
 import * as hubot from "hubot"
-import { getRoomNameFromId } from "./adapter-util"
-import Job from "./Job"
+import { getRoomNameFromId } from "./adapter-util.ts"
+import Job from "./Job.ts"
 import {
   CONFIG,
   formatJobForMessage,
@@ -8,14 +8,14 @@ import {
   isRestrictedRoom,
   logSerializedJobDetails,
   updateJobInBrain,
-} from "./schedule-util"
+} from "./schedule-util.ts"
 import {
   JobUser,
   MessageMetadata,
   ScheduledJob,
   ScheduledJobMap,
-} from "./scheduled-jobs"
-import processTemplateString from "./template-strings"
+} from "./scheduled-jobs.ts"
+import processTemplateString from "./template-strings.ts"
 
 const JOB_MAX_COUNT = 10000
 

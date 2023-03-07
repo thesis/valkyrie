@@ -17,7 +17,7 @@
 
 import { Adapter, Robot, TextMessage } from "hubot"
 
-module.exports = (robot: Robot<Adapter>) => {
+export default (robot: Robot<Adapter>) => {
   // robot.hear(
   //   /\bdad\b/i,
   //   {

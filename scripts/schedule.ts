@@ -25,13 +25,13 @@ import {
   getPublicJoinedRoomIds,
   isRoomNonPublic,
   robotIsInRoom,
-} from "../lib/adapter-util"
+} from "../lib/adapter-util.ts"
 import {
   cancelScheduledJob,
   createScheduledJob,
   syncSchedules,
   updateScheduledJob,
-} from "../lib/schedule-management"
+} from "../lib/schedule-management.ts"
 
 import {
   CONFIG,
@@ -41,7 +41,7 @@ import {
   getScheduledJobList,
   formatJobsForListMessage,
   RECURRING_JOB_STORAGE_KEY,
-} from "../lib/schedule-util"
+} from "../lib/schedule-util.ts"
 
 const JOBS = {}
 const STORE_KEY = RECURRING_JOB_STORAGE_KEY
@@ -51,7 +51,7 @@ const STORE_KEY = RECURRING_JOB_STORAGE_KEY
 /**
  * @param {Robot} robot
  */
-module.exports = function setupSchedule(robot: Robot<Adapter>) {
+export default function setupSchedule(robot: Robot<Adapter>) {
   robot.brain.on("loaded", () => syncSchedules(robot, STORE_KEY, JOBS))
 
   if (!robot.brain.get(STORE_KEY)) {

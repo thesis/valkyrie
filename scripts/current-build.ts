@@ -10,12 +10,19 @@
 // Author:
 //   shadowfiend
 
+import { dirname } from "path"
+import { fileURLToPath } from "url"
+
 import * as fs from "fs"
 import { Robot } from "hubot"
-import { isRoomNameValid } from "../lib/adapter-util"
+import { isRoomNameValid } from "../lib/adapter-util.ts"
 
 let buildNumberBuffer = Buffer.from("")
 try {
+  // Replacement for global __dirname constant in CJS modules.
+  // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
+  const __dirname = dirname(fileURLToPath(import.meta.url))
+
   buildNumberBuffer = fs.readFileSync(`${__dirname}/../BUILD`)
 } catch (e) {
   console.error(`Error reading buildNumber file: ${e}`)
@@ -32,7 +39,7 @@ function sendReleaseNotification(robot: Robot) {
   }
 }
 
-module.exports = function setUpCurrentBuild(robot: Robot) {
+export default function setUpCurrentBuild(robot: Robot) {
   sendReleaseNotification(robot)
 
   robot.respond(/current build/, (response) =>

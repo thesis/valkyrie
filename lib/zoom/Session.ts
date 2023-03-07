@@ -1,7 +1,7 @@
 import * as moment from "moment"
-import Account from "./account"
-import { tokenFrom } from "./password"
-import { User } from "./user"
+import Account from "./account.ts"
+import { tokenFrom } from "./password.ts"
+import { User } from "./user.ts"
 
 export default class Session {
   constructor(

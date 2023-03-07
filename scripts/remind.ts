@@ -24,18 +24,18 @@ import {
   getRoomIdFromName,
   robotIsInRoom,
   isRoomNonPublic,
-} from "../lib/adapter-util"
+} from "../lib/adapter-util.ts"
 // @ts-expect-error module.exports vs TypeScript battle
-import { userTimezoneFor } from "./user-preferences"
-import JobScheduler from "../lib/remind"
+import { userTimezoneFor } from "./user-preferences.ts"
+import JobScheduler from "../lib/remind/index.ts"
 import {
   formatJobForMessage,
   formatJobsForListMessage,
-} from "../lib/remind/formatting"
+} from "../lib/remind/formatting.ts"
 
-import { isBlank } from "../lib/schedule-util"
+import { isBlank } from "../lib/schedule-util.ts"
 
-module.exports = function setupRemind(robot: Robot) {
+export default function setupRemind(robot: Robot) {
   robot.brain.once("loaded", () => {
     const jobScheduler = new JobScheduler(robot)
 

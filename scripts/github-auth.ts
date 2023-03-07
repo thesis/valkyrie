@@ -13,12 +13,15 @@
 //   hubot github auth - returns a URL where you can identify your GitHub self to the hubot. Upon identification, if a pending addition request exists from a call to `github add user`, it will be executed.
 
 import * as passport from "passport"
-import * as UUIDV4 from "uuid/v4"
+import * as UUIDV4 from "uuid/v4.js"
 import * as cookieParser from "cookie-parser"
 import { Strategy as GitHubStrategy } from "passport-github2"
 import { Robot } from "hubot"
 import { VerifyCallback } from "jsonwebtoken"
-import { withConfigOrReportIssues, issueReporterForRobot } from "../lib/config"
+import {
+  withConfigOrReportIssues,
+  issueReporterForRobot,
+} from "../lib/config.ts"
 
 const HOST = process.env.HUBOT_HOST
 const SECOND = 1000
@@ -27,7 +30,7 @@ const MINUTE = 60 * SECOND
 const PENDING_GITHUB_TOKENS_KEY = "pendingGitHubTokens"
 const GITHUB_TOKENS_KEY = "gitHubTokens"
 
-export = function setupGitHubAuth(robot: Robot) {
+export default function setupGitHubAuth(robot: Robot) {
   withConfigOrReportIssues(
     issueReporterForRobot(robot),
     "GITHUB_CLIENT_ID",
