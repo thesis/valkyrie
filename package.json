@@ -52,7 +52,7 @@
     "@typescript-eslint/parser": "^5.54.0",
     "eslint": "^8.35.0",
     "hubot-chat-testing": "git+https://github.com/thesis/hubot-chat-testing.git#v2.0.0-beta.1",
-    "hubot-test-helper": "^1.9.0",
+    "hubot-test-helper": "git+https://github.com/thesis/hubot-test-helper.git#v2.0.0-beta.3",
     "jest": "^29.3.1",
     "mocha": "10.0.0",
     "npm-run-all": "^4.1.5",
@@ -61,7 +61,7 @@
     "ts-node": "^10.9.1"
   },
   "scripts": {
-    "test:mocha": "mocha -r ts-node/register -r coffeescript/register test/**.ts",
+    "test:mocha": "env NODE_OPTIONS'=--experimental-vm-modules --experimental-loader ts-node/esm' mocha --exit test/**.ts",
     "test:jest": "env NODE_OPTIONS=--experimental-vm-modules jest",
     "test": "run-p test:mocha test:jest",
     "lint:js": "eslint .",

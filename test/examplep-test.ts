@@ -1,10 +1,10 @@
-import * as HubotChatTesting from "hubot-chat-testing"
+import HubotChatTesting from "hubot-chat-testing"
 // @ts-expect-error No types!
-import * as Helper from "hubot-test-helper"
+import Helper from "hubot-test-helper"
 
 const chat = new (HubotChatTesting as any)(
   "hubot",
-  new (Helper as any)("../scripts/example.coffee"),
+  new (Helper as any)("scripts/example.coffee"),
 )
 
 describe("Testing example scripts", () => {

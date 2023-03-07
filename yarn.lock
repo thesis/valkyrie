@@ -3128,6 +3128,10 @@ hubot-test-helper@^1.9.0:
   dependencies:
     hubot ">=3.0.0 <10 || 0.0.0-development"
 
+"hubot-test-helper@git+https://github.com/thesis/hubot-test-helper.git#v2.0.0-beta.3":
+  version "2.0.0-beta.3"
+  resolved "git+https://github.com/thesis/hubot-test-helper.git#1e3c7f90ac6615f3dcd8ea2fb50296ed1ea7494b"
+
 "hubot@>=3.0.0 <10 || 0.0.0-development", hubot@^3.3.2:
   version "3.3.2"
   resolved "https://registry.yarnpkg.com/hubot/-/hubot-3.3.2.tgz#6ad13db19082cbe57ee3f9cc1c2c856d15cba223"
