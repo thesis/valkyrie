@@ -7,7 +7,7 @@ import {
   RecurringDefinition,
   SingleShotDefinition,
   JobSpec,
-} from "./data"
+} from "./data.ts"
 
 // Note: the regexes below were debugged with https://regex101.com/'s debugger
 // to great effect. That said, the "right" solution is probably to use a parser
