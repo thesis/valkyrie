@@ -1,4 +1,4 @@
-import * as axios from "axios"
+import axios from "axios"
 import URLs from "./urls.ts"
 import { Meeting, MeetingScheduleCategory } from "./meeting.ts"
 import { generateZoomPassword, tokenFrom } from "./password.ts"

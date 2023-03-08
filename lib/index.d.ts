@@ -18,6 +18,6 @@ declare module "github-api" {
   export = GitHubApi
 }
 
-declare module "uuid/v4" {
+declare module "uuid/v4.js" {
   export default function (): string
 }

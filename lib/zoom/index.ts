@@ -1,5 +1,5 @@
-import * as axios from "axios"
-import * as util from "util"
+import axios from "axios"
+import util from "util"
 import { tokenFrom } from "./password.ts"
 import Session from "./Session.ts"
 import URLs from "./urls.ts"

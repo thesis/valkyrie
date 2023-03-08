@@ -25,7 +25,6 @@ import {
   robotIsInRoom,
   isRoomNonPublic,
 } from "../lib/adapter-util.ts"
-// @ts-expect-error module.exports vs TypeScript battle
 import { userTimezoneFor } from "./user-preferences.ts"
 import JobScheduler from "../lib/remind/index.ts"
 import {

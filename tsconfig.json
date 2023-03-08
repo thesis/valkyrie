@@ -1,4 +1,5 @@
 {
+  "ts-node": { "files": true },
   "compilerOptions": {
     "alwaysStrict": true,
     "allowJs": true,
@@ -8,13 +9,11 @@
     "noImplicitThis": true,
     "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
     "esModuleInterop": true,
     "strict": true,
     "target": "es2022",
     "module": "es2022",
     "moduleResolution": "node"
-  },
-  "typeAcquisition": {
-    "enable": true
   }
 }

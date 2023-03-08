@@ -1,5 +1,5 @@
 // eslint-disable-next-line max-classes-per-file, import/no-named-default
-import { default as axios, AxiosResponse, AxiosRequestConfig } from "axios"
+import axios, { AxiosResponse, AxiosRequestConfig, AxiosHeaders } from "axios"
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore No types available.
@@ -79,7 +79,7 @@ abstract class Session {
               status: 200,
               statusText: "",
               headers: {},
-              config: config || {},
+              config: { ...config, headers: new AxiosHeaders() },
             })
           }, 1000)
         })
