@@ -12,8 +12,8 @@
 //   hubot suggest <your idea here> - Posts a message to the main hubot flow, with content of the suggestion & name of the user, and replies to the command with a link to that flow
 
 // suggest is currently disabled, don't lint it
-/* eslint-disable */
-
+//
+/*
 if (false) {
   const util = require("util")
 
@@ -166,4 +166,4 @@ if (false) {
       }
     })
   }
-}
+} */

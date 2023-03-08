@@ -1,4 +1,4 @@
-import * as moment from "moment"
+import moment from "moment"
 import Account from "./account.ts"
 import { tokenFrom } from "./password.ts"
 import { User } from "./user.ts"

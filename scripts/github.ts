@@ -10,7 +10,7 @@
 //   hubot github who am i - returns your profile info
 //   hubot github add <username> to [cardforcoin|keep-network] [<team>+] - Adds the given GitHub username to the specified teams in the given group. Teams are the URL name of the team, which has no spaces or special characters other than dashes. The username is a *chat* username, and that user must already have logged in using `github auth` to prove they own that username. If the user has not, the request to add them will be stored until they have.
 
-import * as GitHubApi from "github-api"
+import GitHubApi from "github-api"
 import { Robot, User } from "hubot"
 
 const CLIENT_CACHE = new Map<User, GitHubApi>()
