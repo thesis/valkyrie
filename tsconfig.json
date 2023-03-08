@@ -9,6 +9,7 @@
     "noImplicitThis": true,
     "allowSyntheticDefaultImports": true,
     "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
     "esModuleInterop": true,
     "strict": true,
     "target": "es2022",
