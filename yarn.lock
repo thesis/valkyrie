@@ -3121,9 +3121,9 @@ hubot-test-helper@^1.9.0:
     optparse "1.0.4"
     scoped-http-client "0.11.0"
 
-"hubot@git+https://github.com/thesis/hubot.git#v4.0.0-alpha.0":
-  version "4.0.0-alpha.0"
-  resolved "git+https://github.com/thesis/hubot.git#bbec713568c5fcc54b9a2f554717d0dfb37a9585"
+"hubot@git+https://github.com/thesis/hubot.git#v4.0.0-alpha.1":
+  version "4.0.0-alpha.1"
+  resolved "git+https://github.com/thesis/hubot.git#9d6b86717634c7efec3dfc050b735cfc2ca7a319"
   dependencies:
     async ">=0.1.0 <1.0.0"
     chalk "^1.0.0"
