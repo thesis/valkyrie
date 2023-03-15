@@ -12,4 +12,4 @@ if test -f matrix-password.gpg; then
 	export HUBOT_MATRIX_PASSWORD=`gpg -q -d matrix-password.gpg`
 fi
 
-exec node_modules/.bin/hubot --alias "?" --name "heimdall" "$@"
+NODE_OPTIONS="--experimental-vm-modules --experimental-loader ts-node/esm" exec node_modules/.bin/hubot --alias "?" --name "heimdall" "$@"
