@@ -55,4 +55,4 @@ ENV PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 
 ENV NODE_OPTIONS="--experimental-vm-modules --experimental-loader ts-node/esm"
 
-ENTRYPOINT ["bin/hubot", "--name", "valkyrie", "--adapter", "matrix"]
+ENTRYPOINT ["bin/hubot", "--name", "valkyrie", "--adapter", "discord"]
