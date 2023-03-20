@@ -1,0 +1,26 @@
+import fs from "fs"
+import Hubot, { Adapter } from "hubot"
+import { DiscordBot } from "hubot-discord"
+import { Client } from "discord.js"
+import path from "path"
+
+// A script with a default export that takes a Discord client and returns
+// nothing.
+type DiscordScript = { default: (client: Client) => void }
+
+export default function attachDiscordScripts(hubot: Hubot.Robot) {
+  hubot.events.once("connected", (adapter: Adapter) => {
+    if (adapter instanceof DiscordBot) {
+      const { client } = adapter
+
+      if (client !== undefined) {
+        fs.readdirSync("./discord-scripts")
+          .sort()
+          .map((file) => import(path.join("discord-scripts", file)))
+          .map(async (discordScript: Promise<DiscordScript>) =>
+            (await discordScript).default(client),
+          )
+      }
+    }
+  })
+}
