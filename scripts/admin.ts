@@ -275,7 +275,7 @@ export default (robot: Robot<any>) => {
             spaceBaseColor,
             prefixParentSpaceName,
           )
-          const json = await client.uploadContent(pngStream, {
+          const json = await client.uploadContent(pngStream as any, {
             name: filename,
             type: "image/png",
             rawResponse: false,

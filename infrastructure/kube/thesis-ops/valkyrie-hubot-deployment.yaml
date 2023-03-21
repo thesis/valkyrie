@@ -18,11 +18,11 @@ spec:
         - name: hubot
           # image: gcr.io/thesis-ops-2748/valkyrie:USE_CIRCLE_CI_BUILDS
           env:
-            - name: HUBOT_FLOWDOCK_API_TOKEN
+            - name: HUBOT_DISCORD_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: valkyrie-hubot
-                  key: flowdock_token
+                  key: discord_api_token
             - name: HUBOT_MATRIX_USER
               value: "@valkyrie:thesis.co"
             - name: HUBOT_MATRIX_PASSWORD

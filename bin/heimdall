@@ -12,4 +12,9 @@ if test -f matrix-password.gpg; then
 	export HUBOT_MATRIX_PASSWORD=`gpg -q -d matrix-password.gpg`
 fi
 
+if test -f discord-token.gpg; then
+	echo "Found encrypted Discord token, decrypting and exporting as HUBOT_DISCORD_TOKEN"
+	export HUBOT_DISCORD_TOKEN=`gpg -q -d discord-token.gpg`
+fi
+
 NODE_OPTIONS="--experimental-vm-modules --experimental-loader ts-node/esm" exec node_modules/.bin/hubot --alias "?" --name "heimdall" "$@"
