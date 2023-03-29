@@ -34,7 +34,7 @@ export default function compactGitHubEmbeds(discordClient: Client) {
     compactGithubEmbeds(message)
   })
 
-  discordClient.on("messageUpdate", (message) => {
-    compactGithubEmbeds(message)
+  discordClient.on("messageUpdate", (_, newMessage) => {
+    compactGithubEmbeds(newMessage)
   })
 }
