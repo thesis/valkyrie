@@ -8,19 +8,28 @@ import path from "path"
 // nothing.
 type DiscordScript = { default: (client: Client) => void }
 
-export default function attachDiscordScripts(hubot: Hubot.Robot) {
-  hubot.events.once("connected", (adapter: Adapter) => {
-    if (adapter instanceof DiscordBot) {
-      const { client } = adapter
+function attachWithAdapter(adapter: Adapter) {
+  if (adapter instanceof DiscordBot) {
+    const { client } = adapter
 
-      if (client !== undefined) {
-        fs.readdirSync("./discord-scripts")
-          .sort()
-          .map((file) => import(path.join("discord-scripts", file)))
-          .map(async (discordScript: Promise<DiscordScript>) =>
-            (await discordScript).default(client),
-          )
-      }
+    if (client !== undefined) {
+      fs.readdirSync("./discord-scripts")
+        .sort()
+        .filter((file) => [".ts", ".js"].includes(path.extname(file)))
+        .map((file) => import(path.join("..", "discord-scripts", file)))
+        .map(async (discordScript: Promise<DiscordScript>) =>
+          (await discordScript).default(client),
+        )
     }
-  })
+  }
+}
+
+export default function attachDiscordScripts(hubot: Hubot.Robot) {
+  const { adapter } = hubot
+
+  if (adapter === undefined || adapter === null) {
+    hubot.events.once("adapter-initialized", attachWithAdapter)
+  } else {
+    attachWithAdapter(adapter)
+  }
 }
