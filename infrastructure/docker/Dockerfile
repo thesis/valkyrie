@@ -36,10 +36,11 @@ COPY yarn.lock package.json ./
 
 RUN yarn install
 
-RUN mkdir web bin scripts lib test
+RUN mkdir web bin discord-scripts scripts lib test
 COPY external-scripts.json .
 COPY web ./web
 COPY bin ./bin
+COPY discord-scripts ./discord-scripts
 COPY scripts ./scripts
 COPY lib ./lib
 COPY BUILD ./BUILD
