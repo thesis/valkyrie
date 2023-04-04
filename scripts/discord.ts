@@ -1,16 +1,18 @@
 import fs from "fs"
-import Hubot, { Adapter } from "hubot"
+import Hubot from "hubot"
 import { DiscordBot } from "hubot-discord"
 import { Client } from "discord.js"
 import path from "path"
 
 // A script with a default export that takes a Discord client and returns
 // nothing.
-type DiscordScript = { default: (client: Client) => void }
+type DiscordScript = {
+  default: (client: Client, robot: Hubot.Robot<DiscordBot>) => void
+}
 
-function attachWithAdapter(adapter: Adapter) {
-  if (adapter instanceof DiscordBot) {
-    const { client } = adapter
+function attachWithAdapter(robot: Hubot.Robot) {
+  if (robot.adapter instanceof DiscordBot) {
+    const { client } = robot.adapter
 
     if (client !== undefined) {
       fs.readdirSync("./discord-scripts")
@@ -18,18 +20,21 @@ function attachWithAdapter(adapter: Adapter) {
         .filter((file) => [".ts", ".js"].includes(path.extname(file)))
         .map((file) => import(path.join("..", "discord-scripts", file)))
         .map(async (discordScript: Promise<DiscordScript>) =>
-          (await discordScript).default(client),
+          (await discordScript).default(
+            client,
+            robot as Hubot.Robot<DiscordBot>,
+          ),
         )
     }
   }
 }
 
-export default function attachDiscordScripts(hubot: Hubot.Robot) {
-  const { adapter } = hubot
+export default function attachDiscordScripts(robot: Hubot.Robot) {
+  const { adapter } = robot
 
   if (adapter === undefined || adapter === null) {
-    hubot.events.once("adapter-initialized", attachWithAdapter)
+    robot.events.once("adapter-initialized", attachWithAdapter)
   } else {
-    attachWithAdapter(adapter)
+    attachWithAdapter(robot)
   }
 }
