@@ -25,6 +25,9 @@ const { FIGMA_API_TOKEN } = process.env
 
 const FIGMA_BRAIN_KEY = "figma"
 
+// Only post about an unnamed file update after 10 minutes without changes.
+const FILE_UPDATE_POST_TIMEOUT = 10 * MINUTE
+
 const teamIdsByName: { [name: string]: string } = {
   embody: "1166424569169614354",
   "threshold network": "1004032249327182211",
@@ -112,45 +115,38 @@ const eventHandlers: {
     }: {
       file_key: string
       file_name: string
-      triggered_by: User
       event_type: "FILE_UPDATE"
     },
     channel: TextBasedChannel,
     figma: Figma.Api,
     robot: DiscordHubot,
   ) => {
-    // Don't notify more than once per 30 minutes for a file that's under
-    // active dev. Figma notifies after 30s of idle instead, and we don't want
-    // to flood the channel.
+    // Marks latest updates for this file/channel combo. These are checked
+    // periodically, and files with no changes in FILE_UPDATE_POST_TIMEOUT post
+    // an update notification in the channel.
     const lastMarkedKey = `${fileKey}-${channel.id}`
-    const lastMarkedUpdatesByFileKey =
-      robot.brain.get(FIGMA_BRAIN_KEY).lastMarkedUpdatesByFileKey ?? {}
-    if (
-      Date.now() - (lastMarkedUpdatesByFileKey[lastMarkedKey] ?? 0) <=
-      30 * MINUTE
-    ) {
-      // If we've flagged an update in the last 30 minutes, don't re-notify.
-      return
-    }
+    const lastMarkedUpdatesByFileKey: {
+      [lastMarkedKey: string]: {
+        lastUpdate: number
+        fileKey: string
+        fileName: string
+        channelId: string
+      }
+    } = robot.brain.get(FIGMA_BRAIN_KEY).lastMarkedUpdatesByFileKey ?? {}
 
     // Mark the last notified update.
     robot.brain.set(FIGMA_BRAIN_KEY, {
       ...robot.brain.get(FIGMA_BRAIN_KEY),
       lastMarkedUpdatesByFileKey: {
         ...lastMarkedUpdatesByFileKey,
-        [lastMarkedKey]: Date.now(),
+        [lastMarkedKey]: {
+          lastUpdate: Date.now(),
+          fileKey,
+          fileName,
+          channelId: channel.id,
+        },
       },
     })
-
-    const commentEmbed = new EmbedBuilder()
-    commentEmbed
-      .setURL(`https://www.figma.com/file/${fileKey}`)
-      .setTitle(`Updated ${fileName}`)
-
-    const file = await figma.getFile(fileKey)
-    commentEmbed.setThumbnail(file.thumbnailUrl)
-
-    channel.send({ embeds: [commentEmbed] })
   },
   FILE_VERSION_UPDATE: async (
     {
@@ -182,7 +178,7 @@ const eventHandlers: {
       .setTitle(`Tagged version for ${fileName}: ${label}`)
       .setDescription(description)
       .setFields({
-        name: "Current (untagged) version",
+        name: "Latest (untagged) version",
         value: `https://www.figma.com/file/${fileKey}`,
         inline: true,
       })
@@ -292,6 +288,87 @@ export default async function figmaIntegration(
   const figma = new Figma.Api({
     personalAccessToken: FIGMA_API_TOKEN,
   })
+
+  // Periodically check the list of marked updates for files; once a file was
+  // last updated more than FILE_UPDATE_POST_TIMEOUT ago, post the update to
+  // the connected channel.
+  setInterval(async () => {
+    const lastMarkedUpdatesByFileKey: {
+      [lastMarkedKey: string]: {
+        lastUpdate: number
+        fileKey: string
+        fileName: string
+        channelId: string
+      }
+    } = robot.brain.get(FIGMA_BRAIN_KEY)?.lastMarkedUpdatesByFileKey ?? {}
+
+    const pendingUpdateEntries = Object.entries(
+      lastMarkedUpdatesByFileKey,
+    ).filter(([, { fileKey, fileName, lastUpdate, channelId }]) => {
+      const shouldPostUpdate =
+        Date.now() - lastUpdate >= FILE_UPDATE_POST_TIMEOUT
+
+      if (!shouldPostUpdate) {
+        // Don't post an update, and include for future pending update checks.
+        return true
+      }
+
+      const channel = discordClient.channels.cache.get(channelId)
+      if (channel === undefined || !channel.isTextBased()) {
+        // Don't post an update and don't try again later, since the channel id
+        // resolution failed.
+        robot.logger.error(
+          `Got an invalid channel id ${channelId} while trying to post Figma file update for ${fileKey}; evicting.`,
+        )
+        return false
+      }
+
+      // Use an async IIFE to wrap our awaits for Figma updates. If the update
+      // fails, log it and move on.
+      const postUpdate = async () => {
+        try {
+          const { versions } = await figma.getVersions(fileKey)
+          const latestVersion = versions.at(0)
+          if (latestVersion !== undefined && latestVersion?.label !== null) {
+            // If the latest version is a named version, rely on FILE_VERSION_UPDATE
+            // event and skip notifying.
+            return
+          }
+
+          const commentEmbed = new EmbedBuilder()
+          commentEmbed
+            .setURL(`https://www.figma.com/file/${fileKey}`)
+            .setTitle(`${fileName} Updated`)
+
+          if (latestVersion !== undefined) {
+            commentEmbed.setAuthor({
+              name: latestVersion.user.handle,
+              iconURL: latestVersion.user.img_url,
+            })
+          }
+
+          const file = await figma.getFile(fileKey)
+          commentEmbed.setThumbnail(file.thumbnailUrl)
+
+          channel.send({ embeds: [commentEmbed] })
+        } catch (error) {
+          robot.logger.error(
+            `Failed to post Figma file update for ${fileKey} into channel ${channel}: ${error}`,
+          )
+        }
+      }
+      postUpdate()
+
+      // Update posted, don't include in pending updates.
+      return false
+    })
+
+    // Put remaining update entries back into the brain.
+    robot.brain.set(FIGMA_BRAIN_KEY, {
+      ...robot.brain.get(FIGMA_BRAIN_KEY),
+      lastMarkedUpdatesByFileKey: Object.fromEntries(pendingUpdateEntries),
+    })
+  }, 1 * MINUTE)
 
   discordClient.on("interactionCreate", async (interaction) => {
     if (
@@ -511,5 +588,8 @@ export default async function figmaIntegration(
     }
 
     eventHandlers[eventType]?.(request.body, discordChannel, figma, robot)
+
+    // 200 response ensures Figma won't try to redeliver events.
+    response.sendStatus(200)
   })
 }
