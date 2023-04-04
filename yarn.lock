@@ -3174,9 +3174,9 @@ hubot-diagnostics@^1.0.0:
   resolved "https://registry.yarnpkg.com/hubot-diagnostics/-/hubot-diagnostics-1.0.0.tgz#3a20de525901b83924b523b1244dcb726a8def69"
   integrity sha512-4kuR04lULoDDra/Z7B/rgMQMZW531Ve5hwhd8xNOKAl8e1cb5bZNqVpGFYF174eYcN54+RZuWQFHsntjvczyag==
 
-"hubot-discord@git+https://github.com/thesis/hubot-discord.git#v3.0.0-alpha.8":
-  version "3.0.0-alpha.8"
-  resolved "git+https://github.com/thesis/hubot-discord.git#ff6be52bed115780719fa520795c1671696df14f"
+"hubot-discord@git+https://github.com/thesis/hubot-discord.git#v3.0.0-alpha.9":
+  version "3.0.0-alpha.9"
+  resolved "git+https://github.com/thesis/hubot-discord.git#34edeb28fd88a1ebf46ab82df165a992d07d010f"
   dependencies:
     parent-require "^1.0.0"
     request "^2.79.0"

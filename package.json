@@ -30,7 +30,7 @@
     "github-api": "^3.4.0",
     "hubot": "git+https://github.com/thesis/hubot.git#v4.0.0-alpha.1",
     "hubot-diagnostics": "^1.0.0",
-    "hubot-discord": "git+https://github.com/thesis/hubot-discord.git#v3.0.0-alpha.8",
+    "hubot-discord": "git+https://github.com/thesis/hubot-discord.git#v3.0.0-alpha.9",
     "hubot-even-better-help": "git+https://github.com/thesis/hubot-even-better-help.git#3192eedf2a0f11dd0b5fa736e0b9033741a59050",
     "hubot-gif-locker": "^1.0.7",
     "hubot-matrix": "git+https://github.com/thesis/hubot-matrix.git#v3.0.0-beta.5",
