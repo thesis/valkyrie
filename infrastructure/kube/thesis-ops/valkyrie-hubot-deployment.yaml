@@ -61,6 +61,11 @@ spec:
                 secretKeyRef:
                   name: valkyrie-hubot
                   key: github_client_secret
+            - name: FIGMA_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: figma_api_token
             - name: IMGFLIP_API_USERNAME
               valueFrom:
                 secretKeyRef:
