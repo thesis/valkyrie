@@ -182,7 +182,7 @@ const eventHandlers: {
       .setTitle(`Tagged version for ${fileName}: ${label}`)
       .setDescription(description)
       .setFields({
-        name: "Current (untagged) version",
+        name: "Latest (untagged) version",
         value: `https://www.figma.com/file/${fileKey}`,
         inline: true,
       })
