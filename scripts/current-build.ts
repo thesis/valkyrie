@@ -15,7 +15,6 @@ import { fileURLToPath } from "url"
 
 import * as fs from "fs"
 import { Robot } from "hubot"
-import { isRoomNameValid } from "../lib/adapter-util.ts"
 
 let buildNumberBuffer = Buffer.from("")
 try {
@@ -34,7 +33,7 @@ const buildString = buildNumber
 
 function sendReleaseNotification(robot: Robot) {
   const alertRoom = process.env.RELEASE_NOTIFICATION_ROOM
-  if (alertRoom !== undefined && isRoomNameValid(robot.adapter, alertRoom)) {
+  if (alertRoom !== undefined) {
     robot.messageRoom(alertRoom, `Released ${buildString}!`)
   }
 }
