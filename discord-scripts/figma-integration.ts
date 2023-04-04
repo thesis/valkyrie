@@ -511,5 +511,8 @@ export default async function figmaIntegration(
     }
 
     eventHandlers[eventType]?.(request.body, discordChannel, figma, robot)
+
+    // 200 response ensures Figma won't try to redeliver events.
+    response.sendStatus(200)
   })
 }
