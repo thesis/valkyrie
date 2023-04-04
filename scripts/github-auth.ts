@@ -22,10 +22,7 @@ import {
   withConfigOrReportIssues,
   issueReporterForRobot,
 } from "../lib/config.ts"
-
-const HOST = process.env.HUBOT_HOST
-const SECOND = 1000
-const MINUTE = 60 * SECOND
+import { HOST, MINUTE, SECOND } from "../lib/globals.ts"
 
 const PENDING_GITHUB_TOKENS_KEY = "pendingGitHubTokens"
 const GITHUB_TOKENS_KEY = "gitHubTokens"
