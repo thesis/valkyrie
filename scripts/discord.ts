@@ -24,6 +24,7 @@ function attachWithAdapter(robot: Hubot.Robot) {
               path.join("..", "discord-scripts", file)
             )
             discordScript.default(client, robot as Hubot.Robot<DiscordBot>)
+            robot.logger.info(`Loaded Discord script ${file}.`)
           } catch (error) {
             robot.logger.error(
               `Failed to load Discord script ${file}: ${error}`,
