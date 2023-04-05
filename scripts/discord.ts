@@ -18,13 +18,18 @@ function attachWithAdapter(robot: Hubot.Robot) {
       fs.readdirSync("./discord-scripts")
         .sort()
         .filter((file) => [".ts", ".js"].includes(path.extname(file)))
-        .map((file) => import(path.join("..", "discord-scripts", file)))
-        .map(async (discordScript: Promise<DiscordScript>) =>
-          (await discordScript).default(
-            client,
-            robot as Hubot.Robot<DiscordBot>,
-          ),
-        )
+        .forEach(async (file) => {
+          try {
+            const discordScript: DiscordScript = await import(
+              path.join("..", "discord-scripts", file)
+            )
+            discordScript.default(client, robot as Hubot.Robot<DiscordBot>)
+          } catch (error) {
+            robot.logger.error(
+              `Failed to load Discord script ${file}: ${error}`,
+            )
+          }
+        })
     }
   }
 }
