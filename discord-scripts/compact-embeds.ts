@@ -9,7 +9,9 @@ async function compactGithubEmbeds(message: Message<boolean> | PartialMessage) {
     const receivedEmbeds = message.embeds
     if (
       !receivedEmbeds ||
-      !receivedEmbeds.find((embed) => embed.url && embed.url.includes("github"))
+      !receivedEmbeds.find(
+        (embed) => embed.url && embed.url.includes("github.com"),
+      )
     ) {
       return
     }
