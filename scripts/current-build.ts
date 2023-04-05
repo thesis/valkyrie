@@ -28,7 +28,7 @@ try {
 }
 const buildNumber = buildNumberBuffer.toString().trim()
 const buildString = buildNumber
-  ? `build [${buildNumber}](https://github.com/thesis/valkyrie/commit/${buildNumber})`
+  ? `build ${buildNumber} from https://github.com/thesis/valkyrie/commit/${buildNumber}`
   : "unknown build"
 
 function sendReleaseNotification(robot: Robot) {
