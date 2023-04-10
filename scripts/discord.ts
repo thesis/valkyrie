@@ -32,12 +32,17 @@ function attachWithAdapter(robot: Hubot.Robot) {
             )
             robot.logger.info(`Loaded Discord script ${file}.`)
           } catch (error) {
+            const stackString =
+              // Errors may have a stack trace, or not---anyone's guess!
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              "stack" in (error as any) ? `\n${(error as any).stack}` : ""
+
             robot.logger.error(
               `Failed to load Discord script ${file}: ${JSON.stringify(
                 error,
                 null,
                 2,
-              )}`,
+              )}${stackString}`,
             )
           }
         })

@@ -290,6 +290,10 @@ export default async function figmaIntegration(
     return
   }
 
+  robot.logger.info(
+    "Figma command configured, setting up remaining integration.",
+  )
+
   const figma = new Figma.Api({
     personalAccessToken: FIGMA_API_TOKEN,
   })
