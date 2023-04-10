@@ -7,7 +7,10 @@ import path from "path"
 // A script with a default export that takes a Discord client and returns
 // nothing.
 type DiscordScript = {
-  default: (client: Client, robot: Hubot.Robot<DiscordBot>) => void
+  default: (
+    client: Client,
+    robot: Hubot.Robot<DiscordBot>,
+  ) => void | Promise<void>
 }
 
 function attachWithAdapter(robot: Hubot.Robot) {
@@ -23,11 +26,18 @@ function attachWithAdapter(robot: Hubot.Robot) {
             const discordScript: DiscordScript = await import(
               path.join("..", "discord-scripts", file)
             )
-            discordScript.default(client, robot as Hubot.Robot<DiscordBot>)
+            await discordScript.default(
+              client,
+              robot as Hubot.Robot<DiscordBot>,
+            )
             robot.logger.info(`Loaded Discord script ${file}.`)
           } catch (error) {
             robot.logger.error(
-              `Failed to load Discord script ${file}: ${error}`,
+              `Failed to load Discord script ${file}: ${JSON.stringify(
+                error,
+                null,
+                2,
+              )}`,
             )
           }
         })
