@@ -2,6 +2,7 @@ import {
   ApplicationCommandOptionType,
   ChannelType,
   Client,
+  ClientApplication,
   EmbedBuilder,
   GuildTextBasedChannel,
   TextBasedChannel,
@@ -212,11 +213,45 @@ function resolveTeamFromChannel(channel: GuildTextBasedChannel) {
   return channel.name.replace(/-/g, " ")
 }
 
+async function withRetries<T>(
+  robot: DiscordHubot,
+  description: string,
+  fn: () => Promise<T>,
+  retries = 3,
+): Promise<T> {
+  try {
+    return await fn()
+  } catch (error) {
+    const stackString =
+      "stack" in (error as Error) && (error as Error).stack !== undefined
+        ? `; ${(error as Error).stack}`
+        : ""
+
+    if (retries === 1) {
+      throw new Error(
+        `Failed to ${description} too many times, aborted; last error was:\n${JSON.stringify(
+          error,
+          null,
+          2,
+        )}${stackString}`,
+      )
+    } else {
+      robot.logger.warning(
+        `Failed to ${description}, retrying...\n`,
+        JSON.stringify(error, null, 2),
+        `${stackString}`,
+      )
+
+      return await withRetries(robot, description, fn, retries - 1)
+    }
+  }
+}
+
 export default async function figmaIntegration(
   discordClient: Client,
   robot: DiscordHubot,
 ) {
-  robot.logger.info("Configuring Figma integration.")
+  robot.logger.info("Configuring Figma integration...")
 
   const { application } = discordClient
   if (application === null) {
@@ -226,9 +261,11 @@ export default async function figmaIntegration(
     return
   }
 
-  const existingFigmaCommand = (await application.commands.fetch()).find(
-    (command) => command.name === "figma",
-  )
+  const existingFigmaCommand = (
+    await withRetries(robot, "fetch Discord commands", () =>
+      application.commands.fetch(),
+    )
+  ).find((command) => command.name === "figma")
 
   // Make sure the command exists if we have an API token, or make sure it
   // doesn't if we have no API token.
@@ -291,7 +328,7 @@ export default async function figmaIntegration(
   }
 
   robot.logger.info(
-    "Figma command configured, setting up remaining integration.",
+    "Figma command configured, setting up remaining integration...",
   )
 
   const figma = new Figma.Api({
@@ -588,7 +625,11 @@ export default async function figmaIntegration(
       return
     }
 
-    const discordChannel = await discordClient.channels.fetch(channelId)
+    const discordChannel = await withRetries(
+      robot,
+      "fetch Discord channels",
+      () => discordClient.channels.fetch(channelId),
+    )
     if (discordChannel === null || !discordChannel.isTextBased()) {
       robot.logger.error(
         `When handling event ${eventType} for connection to channel with id ${channelId}, failed to resolve channel to a text channel.`,
