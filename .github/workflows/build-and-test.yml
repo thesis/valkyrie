@@ -14,8 +14,10 @@ jobs:
   decide-parameters:
     runs-on: ubuntu-latest
     steps:
-    - name: noop
-      run: echo ""
+    - name: Output environment
+      run: |
+        echo '${{ github.ref }}'
+        echo '${{ toJSON(github.event) }}'
     outputs:
       # Run builds for all non-comment triggers.
       should-build: >-
@@ -53,6 +55,14 @@ jobs:
             )
           )
         }}
+
+  output-parameters:
+    needs: decide-parameters
+    runs-on: ubuntu-latest
+    steps:
+    - name: Output parameters
+      run: |
+        echo '${{ toJSON(needs.decide-parameters.outputs) }}'
 
   test:
     runs-on: ubuntu-latest

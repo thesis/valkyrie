@@ -57,9 +57,9 @@ const eventHandlers: {
       file_key: string
       event_type: "FILE_COMMENT"
     },
-    channel: TextBasedChannel,
-    figma: Figma.Api,
-    robot: DiscordHubot,
+    channel,
+    figma,
+    robot,
   ) => {
     const postedComment = (await figma.getComments(fileKey)).comments.find(
       ({ id }) => id === commentId,
@@ -117,9 +117,9 @@ const eventHandlers: {
       file_name: string
       event_type: "FILE_UPDATE"
     },
-    channel: TextBasedChannel,
-    figma: Figma.Api,
-    robot: DiscordHubot,
+    channel,
+    _,
+    robot,
   ) => {
     // Marks latest updates for this file/channel combo. These are checked
     // periodically, and files with no changes in FILE_UPDATE_POST_TIMEOUT post
@@ -165,8 +165,8 @@ const eventHandlers: {
       version_id: string
       event_type: "FILE_VERSION_UPDATE"
     },
-    channel: TextBasedChannel,
-    figma: Figma.Api,
+    channel,
+    figma,
   ) => {
     const commentEmbed = new EmbedBuilder()
     commentEmbed
@@ -216,6 +216,8 @@ export default async function figmaIntegration(
   discordClient: Client,
   robot: DiscordHubot,
 ) {
+  robot.logger.info("Configuring up Figma integration.")
+
   const { application } = discordClient
   if (application === null) {
     robot.logger.error(
@@ -274,6 +276,9 @@ export default async function figmaIntegration(
   }
 
   if (existingFigmaCommand !== undefined && FIGMA_API_TOKEN === undefined) {
+    robot.logger.info(
+      "Failed to resolve an API token for Figma, deleting Figma command and dropping Figma handling.",
+    )
     await existingFigmaCommand.delete()
     return
   }
@@ -592,4 +597,6 @@ export default async function figmaIntegration(
     // 200 response ensures Figma won't try to redeliver events.
     response.sendStatus(200)
   })
+
+  robot.logger.info("Figma integration configured.")
 }
