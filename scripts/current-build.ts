@@ -34,7 +34,7 @@ const buildString = buildNumber
 function sendReleaseNotification(robot: Robot) {
   const alertRoom = process.env.RELEASE_NOTIFICATION_ROOM
   if (alertRoom !== undefined) {
-    robot.messageRoom(alertRoom, `Released ${buildString}!`)
+    robot.messageRoom(alertRoom, `Released ${buildString} !`)
   }
 }
 
