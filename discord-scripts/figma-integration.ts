@@ -216,7 +216,7 @@ export default async function figmaIntegration(
   discordClient: Client,
   robot: DiscordHubot,
 ) {
-  robot.logger.info("Configuring up Figma integration.")
+  robot.logger.info("Configuring Figma integration.")
 
   const { application } = discordClient
   if (application === null) {
