@@ -7,10 +7,57 @@ on:
     - main
     tags:
     - v*
+  issue_comment:
+    types: [created, edited]
 
 jobs:
+  decide-parameters:
+    runs-on: ubuntu-latest
+    steps:
+    - name: noop
+      run: echo ""
+    outputs:
+      # Run builds for all non-comment triggers.
+      should-build: >-
+        ${{
+          github.event_name != 'issue_comment'
+        }}
+      # Run tests for all non-comment triggers;
+      # ignore non-PR comment triggers;
+      # and for PR comment triggers, only run tests if they are explicitly
+      # requested.
+      should-test: >-
+        ${{
+          github.event_name != 'issue_comment' ||
+          (
+            github.event.issue.pull_request && (
+              contains(github.event.comment.body, 'rerun tests, please') ||
+              contains(github.event.comment.body, 'Rerun tests, please')
+            )
+          )
+        }}
+      # Deploy for all main merges;
+      # for non-main meges, deploy for all tags;
+      # for comments, only deploy if explicitly requested;
+      # and for PR comment triggers, only run deployments if they are
+      # explicitly requested.
+      should-deploy: >-
+        ${{
+          github.ref == 'refs/heads/main' ||
+          startsWith(github.ref, 'refs/tags/') ||
+          (
+            github.event_name == 'issue_comment' &&
+            github.event.issue.pull_request && (
+              contains(github.event.comment.body, 'deploy, please') ||
+              contains(github.event.comment.body, 'Deploy, please')
+            )
+          )
+        }}
+
   test:
     runs-on: ubuntu-latest
+    needs: decide-parameters
+    if: ${{ needs.decide-parameters.outputs.should-test == 'true' }}
     steps:
     - uses: actions/checkout@v3
     - name: Read .nvmrc
@@ -25,8 +72,9 @@ jobs:
     - run: yarn test
 
   build-and-push-image:
-    needs: test
     runs-on: ubuntu-latest
+    needs: [test, decide-parameters]
+    if: ${{ needs.decide-parameters.outputs.should-build == 'true' || needs.decide-parameters.outputs.should-deploy == 'true' }}
     steps:
     - uses: actions/checkout@v3
       with:
@@ -45,24 +93,24 @@ jobs:
         echo $GITHUB_SHA > BUILD
         docker build . -f infrastructure/docker/Dockerfile -t gcr.io/thesis-ops-2748/valkyrie:$GITHUB_SHA
     - name: Authenticate push with GCP
-      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+      if: ${{ needs.decide-parameters.outputs.should-deploy == 'true' }}
       id: 'auth-push'
       uses: 'google-github-actions/auth@v0'
       with:
         credentials_json: '${{ secrets.GCP_GCR_CREDENTIALS }}'
     - name: Set up GCP tools
-      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+      if: ${{ needs.decide-parameters.outputs.should-deploy == 'true' }}
       uses: google-github-actions/setup-gcloud@v0
     - name: Push docker image to GCP
-      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+      if: ${{ needs.decide-parameters.outputs.should-deploy == 'true' }}
       run: |
         # Set up docker to authenticate via gcloud command-line tool.
         gcloud auth configure-docker
         docker push gcr.io/thesis-ops-2748/valkyrie:${{ github.sha }}
 
   deploy:
-    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-    needs: build-and-push-image
+    needs: [build-and-push-image, decide-parameters]
+    if: ${{ needs.decide-parameters.outputs.should-deploy == 'true' }}
     uses: ./.github/workflows/deploy.yml
     with:
       docker-image-name: valkyrie
@@ -73,6 +121,8 @@ jobs:
       GCP_DEPLOY_CREDENTIALS: ${{ secrets.GCP_DEPLOY_CREDENTIALS }}
 
   lint:
+    needs: [decide-parameters]
+    if: ${{ needs.decide-parameters.outputs.should-build == 'true' }}
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
