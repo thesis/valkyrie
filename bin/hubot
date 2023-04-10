@@ -5,4 +5,4 @@ set -e
 export PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 
 
-NODE_OPTIONS="--experimental-vm-modules --experimental-loader ts-node/esm" exec node_modules/.bin/hubot --alias "\\" --name "valkyrie" "$@"
+NODE_OPTIONS="--experimental-vm-modules --experimental-loader ts-node/esm --no-experimental-fetch" exec node_modules/.bin/hubot --alias "\\" --name "valkyrie" "$@"

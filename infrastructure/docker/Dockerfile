@@ -54,6 +54,6 @@ WORKDIR /hubot
 
 ENV PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 
-ENV NODE_OPTIONS="--experimental-vm-modules --experimental-loader ts-node/esm"
+ENV NODE_OPTIONS="--experimental-vm-modules --experimental-loader ts-node/esm --no-experimental-fetch"
 
 ENTRYPOINT ["bin/hubot", "--name", "valkyrie", "--adapter", "discord"]
