@@ -587,19 +587,19 @@ export default async function figmaIntegration(
 
       response.sendStatus(200)
     } catch (error) {
-      response.send(`Things went boom unf. ${error}`).sendStatus(400)
+      response.status(400).send(`Things went boom unf. ${error}`)
     }
   })
 
   robot.router.post("/figma", async (request, response) => {
     if (typeof request.body !== "object") {
-      response.sendStatus(400).send("Bad request, non-object body.")
+      response.status(400).send("Bad request, non-object body.")
       return
     }
 
     if (!("passcode" in request.body) || !("event_type" in request.body)) {
       response
-        .sendStatus(400)
+        .status(400)
         .send("Bad request, no passcode or event_type passed.")
       return
     }
@@ -619,9 +619,7 @@ export default async function figmaIntegration(
         `Failed to resolve channel ID for passcode ${passcode}.`,
       )
 
-      response
-        .sendStatus(400)
-        .send("Bad request, unknown connection for passcode.")
+      response.status(400).send("Bad request, unknown connection for passcode.")
       return
     }
 
