@@ -455,10 +455,13 @@ export default async function figmaIntegration(
         webhooks
           .filter(({ passcode }) => passcode === existingPasscode)
           .forEach(async ({ id: webhookId }) => {
-            await figma.request(`/v2/webhooks/${webhookId}`, {
-              method: "delete",
-              data: "",
-            })
+            await figma.request(
+              `https://api.figma.com/v2/webhooks/${webhookId}`,
+              {
+                method: "delete",
+                data: "",
+              },
+            )
           })
 
         robot.brain.set(FIGMA_BRAIN_KEY, {
