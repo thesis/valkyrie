@@ -1,4 +1,4 @@
-import * as jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken"
 import * as crypto from "crypto"
 
 export function tokenFrom(apiKey: string, apiSecret: string) {
