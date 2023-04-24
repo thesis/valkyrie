@@ -40,6 +40,10 @@ use by the adapter.
 Note that this file is gitignored, and should be encrypted locally with a key
 accessible to your local gpg, and never committed to source control.
 
+### Local Discord development
+
+If you'd like to run a lightweight version of Valkyrie to test on Discord, the easiest way is to setup your own private discord server with a [custom bot](https://discordjs.guide/preparations/setting-up-a-bot-application.html#creating-your-bot). You'll need a generated Discord token after giving the bot the correct access levels. Copy the Discord Bot Token and set it up as a new `.env` variable `HUBOT_DISCORD_TOKEN=Insertkey`. You can startup the Hubot discord instance by simply running `bin/heimdall --adapter discord` or on your own Hubot shell. There will be some messages about missing .env keys, but as long as you see the terminal message `INFO Logged in: BotName`, you can now test commands directly on your discord server.
+
 ### Running locally in the terminal
 
 Install npm if you don't already have it:
