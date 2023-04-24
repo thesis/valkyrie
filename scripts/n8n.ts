@@ -15,10 +15,34 @@ export default function n8nIssues(robot: Robot) {
 
     axios.get(`${webhookUrl}?${queryParams.toString()}`)
       .then((response) => {
-        res.send(`n8n get issues: ${JSON.stringify(response.data)}`)
+        res.send(`n8n get recent issues: ${JSON.stringify(response.data)}`)
       })
       .catch((error) => {
         res.send(`n8n workflow failed: ${error.message}`)
       })
   })
+
+  robot.respond(/stale-issues (\S+) (\S+)/i, (res) => {
+    const repositoryOwner = res.match[1]
+    const repositoryName = res.match[2]
+    const webhookUrl = 'http://n8n.thesis.co/webhook/ec766fde-4ce5-4679-8a50-462e9e68e16a'
+
+    const queryParams = new URLSearchParams({
+      repositoryOwner: repositoryOwner,
+      repositoryName: repositoryName,
+    })
+
+    axios.get(`${webhookUrl}?${queryParams.toString()}`)
+      .then((response) => {
+        res.send(`n8n get stale issues: ${JSON.stringify(response.data)}`)
+      })
+      .catch((error) => {
+        res.send(`n8n test failed: ${error.message}`)
+      })
+  })
+
+  robot.respond(/help$/i, (res) => {
+    res.send("**These are the commands that have been implemented so far:**",'\n'," - Grab latest issues with: `fjord issues <repo owner> <repo name>`",'\n'," - Get stale issues with `fjord stale-issues <repo owner> <repo name>`")
+  })
+
 }
