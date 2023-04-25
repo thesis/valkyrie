@@ -41,8 +41,32 @@ export default function n8nIssues(robot: Robot) {
       })
   })
 
-  robot.respond(/help$/i, (res) => {
-    res.send("**These are the commands that have been implemented so far:**",'\n'," - Grab latest issues with: `fjord issues <repo owner> <repo name>`",'\n'," - Get stale issues with `fjord stale-issues <repo owner> <repo name>`")
+  robot.respond(/activity (\S+) (\S+)/i, (res) => {
+    const repositoryOwner = res.match[1]
+    const repositoryName = res.match[2]
+    const webhookUrl = 'http://n8n.thesis.co/webhook/8efb5ea2-13e0-4348-a32a-cba2c35114a5'
+
+    const queryParams = new URLSearchParams({
+      repositoryOwner: repositoryOwner,
+      repositoryName: repositoryName,
+    })
+
+    axios.get(`${webhookUrl}?${queryParams.toString()}`)
+      .then((response) => {
+        res.send(`n8n get git activity: ${JSON.stringify(response.data)}`)
+      })
+      .catch((error) => {
+        res.send(`n8n test failed: ${error.message}`)
+      })
   })
+
+  robot.respond(/help$/i, (res) => {
+    res.send("**These are the commands that have been implemented so far:**",'\n'," - Grab latest issues with: `fjord issues <repo owner> <repo name>`",'\n'," - Get stale issues with `fjord stale-issues <repo owner> <repo name>`",'\n'," - Get activity stats `fjord activity <repo owner> <repo name>`")
+  })
+
+  robot.respond(/morning$/i, (res) => {
+    res.send("** :wave: Well Good morning to you too! You can type `fjord help` to get to know your way around**")
+  })
+
 
 }
