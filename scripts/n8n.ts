@@ -61,12 +61,28 @@ export default function n8nIssues(robot: Robot) {
   })
 
   robot.respond(/help$/i, (res) => {
-    res.send("**These are the commands that have been implemented so far:**",'\n'," - Grab latest issues with: `fjord issues <repo owner> <repo name>`",'\n'," - Get stale issues with `fjord stale-issues <repo owner> <repo name>`",'\n'," - Get activity stats `fjord activity <repo owner> <repo name>`")
+    res.send("**These are the commands that have been implemented so far:**",'\n'," - Grab latest issues with: `valkyrie-test issues <repo owner> <repo name>`",'\n'," - Get stale issues with `valkyrie-test stale-issues <repo owner> <repo name>`",'\n'," - Get activity stats `valkyrie-test activity <repo owner> <repo name>`",'\n'," - Run custom workflow `valkyrie-test exec <workflowname>`")
   })
 
   robot.respond(/morning$/i, (res) => {
     res.send("** :wave: Well Good morning to you too! You can type `fjord help` to get to know your way around**")
   })
 
+  robot.respond(/exec (\S+)/i, (res) => {
+    const workflowName = res.match[1]
+    const webhookUrl = 'http://n8n.thesis.co/webhook/a696e0de-998f-4700-a010-12790ab81175'
+
+    const queryParams = new URLSearchParams({
+      workflowName: workflowName
+    })
+
+    axios.get(`${webhookUrl}?${queryParams.toString()}`)
+      .then((response) => {
+        res.send(`n8n run workflow: ${JSON.stringify(response.data)}`)
+      })
+      .catch((error) => {
+        res.send(`n8n test failed: ${error.message}`)
+      })
+  })
 
 }
