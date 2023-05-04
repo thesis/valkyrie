@@ -1,4 +1,4 @@
-import { ApplicationCommandOptionType, Channel, ChannelType, Client } from "discord.js"
+import { ApplicationCommandOptionType, Channel, ChannelType, Client, Message } from "discord.js"
 import axios from 'axios'
 import { Robot } from "hubot"
 
@@ -9,13 +9,21 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
 
     const { guild: server, parent: containingChannel } = thread
 
-    await thread.send("**Fjord is here, listening, waiting for something to automate!**")
-
   })
 
   // test message commands without need for hubot responses for fjord
   discordClient.on("messageCreate", async (message) => {
     const { channel } = message
+
+    const handleThreadCreate = async (message: any, threadName: any, threadReason: any, responseData: any) => {
+      const debugThread = await message.startThread({
+        name: threadName,
+        autoArchiveDuration: 60,
+        reason: threadReason,
+      })
+      await debugThread.send("Over here!")
+      await debugThread.send(responseData)
+    }
 
     if (message.content === "!ping") {
       channel.send("ping pong ping / o \ o")
@@ -31,32 +39,45 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
     }
 
     if (message.content === "!thread") {
-      const discussThread = await message.startThread({
-            name: 'F J O R D - T H R E A D!',
-            autoArchiveDuration: 60,
-            reason: 'test'
-        });
-        discussThread.send("Over here!")
+      const threadName = "Testing 1 2 3"
+      await handleThreadCreate(message, threadName, "thread test", "test")
     }
+
+    if (message.content.startsWith("!stale-issues")) {
+      const parameters = message.content.split(" ").slice(1)
+      if (parameters.length >= 2) {
+        const [repositoryOwner, repositoryName] = parameters
+        const webhookUrl = 'http://n8n.thesis.co/webhook/ec766fde-4ce5-4679-8a50-462e9e68e16a'
+        const queryParams = new URLSearchParams({
+          repositoryOwner: repositoryOwner,
+          repositoryName: repositoryName,
+        })
+        message.reply(`**Stale issue automation started:  ${repositoryOwner} / ${repositoryName}**`)
+        axios.get(`${webhookUrl}?${queryParams.toString()}`)
+          .then(async (response) => {
+            const threadName = `${repositoryOwner}/${repositoryName} - Stale issues`
+            await handleThreadCreate(message, threadName, "stale issues", response.data )
+          })
+          .catch((error) => {
+            channel.send(`Automation stale-issues flow failed: ${error.message}`)
+          })
+
+      } else {
+        channel.send("**Please provide these parameters: !stale-issues <username> <repo> **");
+      }
+    }
+
+      robot.respond(/debug$/i, async (res) => {
+        res.reply("**Running the debugger, check your console output**")
+        console.log("adapter in use:", robot.adapter)
+        const threadName = "Debugging results"
+        await handleThreadCreate(message, threadName, "Debugging test", "test 1 2 3" )
+      })
 
   })
 
     // run hubot commands to interact directly with n8n & debugger
 
-    robot.respond(/debug$/i, async (res) => {
-      res.reply("**Running the debugger, check your console output**")
-      console.log("adapter in use:", robot.adapter)
-      discordClient.on("messageCreate", async (message) => {
-        const { channel } = message
-        const debugThread = await message.startThread({
-            name: 'Debug results',
-            autoArchiveDuration: 60,
-            reason: 'test'
-        });
-        await debugThread.send("Over here!")
-        await debugThread.send("**Debugging complete, check out the logs!**")
-      })
-    })
 
     robot.respond(/issues (\S+) (\S+)/i, async (res) => {
       const repositoryOwner = res.match[1]
@@ -80,24 +101,36 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
         })
     })
 
-    robot.respond(/stale-issues (\S+) (\S+)/i, async (res) => {
-      const repositoryOwner = res.match[1]
-      const repositoryName = res.match[2]
-      const webhookUrl = 'http://n8n.thesis.co/webhook/ec766fde-4ce5-4679-8a50-462e9e68e16a'
-
-      const queryParams = new URLSearchParams({
-        repositoryOwner: repositoryOwner,
-        repositoryName: repositoryName,
-      })
-      res.reply(`**Running n8n workflow to retrieve stale issues from ${repositoryOwner}/${repositoryName}  **`)
-      axios.get(`${webhookUrl}?${queryParams.toString()}`)
-        .then((response) => {
-          res.send(`n8n get stale issues: ${JSON.stringify(response.data)}`)
-        })
-        .catch((error) => {
-          res.send(`n8n test failed: ${error.message}`)
-        })
-    })
+    // robot.respond(/stale-issues (\S+) (\S+)/i, async (res) => {
+    //   const repositoryOwner = res.match[1]
+    //   const repositoryName = res.match[2]
+    //   const webhookUrl = 'http://n8n.thesis.co/webhook/ec766fde-4ce5-4679-8a50-462e9e68e16a'
+    //
+    //   const queryParams = new URLSearchParams({
+    //     repositoryOwner: repositoryOwner,
+    //     repositoryName: repositoryName,
+    //   })
+    //   res.reply(`**Running n8n workflow to retrieve stale issues from ${repositoryOwner}/${repositoryName}  **`)
+    //   axios.get(`${webhookUrl}?${queryParams.toString()}`)
+    //     .then(async (response) => {
+    //       discordClient.on("messageCreate", async (message) => {
+    //         const { channel } = message
+    //         const debugThread = await message.startThread({
+    //             name: `${repositoryOwner} / ${repositoryName} `,
+    //             autoArchiveDuration: 60,
+    //             reason: 'Stale issues automation'
+    //         });
+    //         await debugThread.send("Over here!")
+    //         await debugThread.send(`n8n get stale issues: `)
+    //       })
+    //       await res.send(`n8n get stale issues: `)
+    //       await res.send(`${response.data}`)
+    //     })
+    //     .catch((error) => {
+    //       res.send(`n8n test failed: ${error.message}`)
+    //     })
+    //
+    // })
 
     robot.respond(/activity (\S+) (\S+)/i, async (res) => {
       const repositoryOwner = res.match[1]
