@@ -1,8 +1,9 @@
-import { ApplicationCommandOptionType, Channel, ChannelType, Client, Message } from "discord.js"
+import { ActionRowBuilder, ApplicationCommandOptionType, ButtonBuilder, ButtonStyle, Channel, ChannelType, Client, Message } from "discord.js"
 import axios from 'axios'
 import { Robot } from "hubot"
 
 export default function manageFjord(discordClient: Client, robot: Robot) {
+
   // test fjord replies into new thread
   discordClient.on("threadCreate", async (thread) => {
     await thread.join()
@@ -11,8 +12,31 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
 
   })
 
+  discordClient.on('interactionCreate', async interaction => {
+    if (interaction.isButton()) {
+        const buttonID = interaction.customId
+        if (buttonID === 'ping') {
+            interaction.reply({
+                content: 'pong'
+              })
+          }
+        if (buttonID === 'debug') {
+            interaction.reply({
+                content: '!debug'
+              })
+          }
+        if (buttonID === 'stale-issues') {
+            interaction.reply({
+                content: '!stale-issues'
+              })
+          }
+
+      }
+  })
+
   // test message commands without need for hubot responses for fjord
   discordClient.on("messageCreate", async (message) => {
+
     const { channel } = message
 
     const handleThreadCreate = async (message: any, threadName: any, threadReason: any, responseData: any) => {
@@ -27,11 +51,44 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
 
     if (message.content === "!ping") {
       channel.send("ping pong ping / o \ o")
+      channel.send({
+                "content": "ping pong ping",
+                "components": [
+                    {
+                        "type": 1,
+                        "components": [
+                            {
+                                "type": 2,
+                                "label": "Ping?",
+                                "style": 1,
+                                "custom_id": "ping"
+                            }
+                        ]
+
+                    }
+                ]
+            })
     }
 
     if (message.content === "!debug") {
-      channel.send("**Debugger running, check your console ;)**")
       console.log("adapter in use:", robot.adapter)
+      channel.send({
+                "content": "**Debugger running, check your console ;)**",
+                "components": [
+                    {
+                        "type": 1,
+                        "components": [
+                            {
+                                "type": 2,
+                                "label": "Run debugger again",
+                                "style": 1,
+                                "custom_id": "debug"
+                            }
+                        ]
+
+                    }
+                ]
+            })
     }
 
     if (message.content === "!fjord") {
