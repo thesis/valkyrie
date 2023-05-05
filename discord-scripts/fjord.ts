@@ -116,6 +116,9 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
     }
 
     if (message.content === "!thread") {
+      if (ChannelType.GuildPrivateThread) {
+        channel.send("You can't thread a thread!")
+      }
       const threadName = "New thread"
       await handleThreadCreate(
         message,
@@ -156,13 +159,17 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
         axios
           .get(`${webhookUrl}?${queryParams.toString()}`)
           .then(async (response) => {
-            const threadName = `${repositoryOwner}/${repositoryName} - Stale issues`
-            await handleThreadCreate(
-              message,
-              threadName,
-              "stale issues",
-              response.data,
-            )
+            if (ChannelType.GuildPrivateThread) {
+              channel.send(response.data)
+            } else {
+              const threadName = `${repositoryOwner}/${repositoryName} - Stale issues`
+              await handleThreadCreate(
+                message,
+                threadName,
+                "stale issues",
+                response.data,
+              )
+            }
           })
           .catch((error) => {
             channel.send(
@@ -206,13 +213,17 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
         axios
           .get(`${webhookUrl}?${queryParams.toString()}`)
           .then(async (response) => {
-            const threadName = `${repositoryOwner}/${repositoryName} - recent issues`
-            await handleThreadCreate(
-              message,
-              threadName,
-              "recent issues",
-              response.data,
-            )
+            if (ChannelType.GuildPrivateThread) {
+              channel.send(response.data)
+            } else {
+              const threadName = `${repositoryOwner}/${repositoryName} - recent issues`
+              await handleThreadCreate(
+                message,
+                threadName,
+                "recent issues",
+                response.data,
+              )
+            }
           })
           .catch((error) => {
             channel.send(
@@ -257,13 +268,17 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
         axios
           .get(`${webhookUrl}?${queryParams.toString()}`)
           .then(async (response) => {
-            const threadName = `${repositoryOwner}/${repositoryName} - git activity`
-            await handleThreadCreate(
-              message,
-              threadName,
-              "git activity",
-              response.data,
-            )
+            if (ChannelType.GuildPrivateThread) {
+              channel.send(response.data)
+            } else {
+              const threadName = `${repositoryOwner}/${repositoryName} - git activity`
+              await handleThreadCreate(
+                message,
+                threadName,
+                "git activity",
+                response.data,
+              )
+            }
           })
           .catch((error) => {
             channel.send(`Automation git actvity flow failed: ${error.message}`)
