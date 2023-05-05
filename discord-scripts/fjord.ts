@@ -116,7 +116,7 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
     }
 
     if (message.content === "!thread") {
-      if (ChannelType.GuildPrivateThread) {
+      if (message.channel.type === ChannelType.GuildPublicThread) {
         channel.send("You can't thread a thread!")
       }
       const threadName = "New thread"
@@ -159,7 +159,7 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
         axios
           .get(`${webhookUrl}?${queryParams.toString()}`)
           .then(async (response) => {
-            if (ChannelType.GuildPrivateThread) {
+            if (message.channel.type === ChannelType.GuildPublicThread) {
               channel.send(response.data)
             } else {
               const threadName = `${repositoryOwner}/${repositoryName} - Stale issues`
@@ -213,7 +213,7 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
         axios
           .get(`${webhookUrl}?${queryParams.toString()}`)
           .then(async (response) => {
-            if (ChannelType.GuildPrivateThread) {
+            if (message.channel.type === ChannelType.GuildPublicThread) {
               channel.send(response.data)
             } else {
               const threadName = `${repositoryOwner}/${repositoryName} - recent issues`
@@ -268,7 +268,7 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
         axios
           .get(`${webhookUrl}?${queryParams.toString()}`)
           .then(async (response) => {
-            if (ChannelType.GuildPrivateThread) {
+            if (message.channel.type === ChannelType.GuildPublicThread) {
               channel.send(response.data)
             } else {
               const threadName = `${repositoryOwner}/${repositoryName} - git activity`
