@@ -43,6 +43,11 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
           content: "!" + buttonID,
         })
       }
+      if (buttonID.startsWith("exec")) {
+        interaction.reply({
+          content: "!" + buttonID,
+        })
+      }
     }
   })
 
