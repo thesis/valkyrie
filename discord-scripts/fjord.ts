@@ -1,51 +1,25 @@
 import {
-  ActionRowBuilder,
-  ApplicationCommandOptionType,
-  ButtonBuilder,
-  ButtonStyle,
-  Channel,
   ChannelType,
   Client,
   Message,
+  TextBasedChannel
 } from "discord.js"
 import axios from "axios"
 import { Robot } from "hubot"
 
 // This is the WIP discord implemtnation of commands to trigger certain workflows on the thesis n8n platform. Most of the integration uses webhooks and chat commands with response headers .
 
-export default function manageFjord(discordClient: Client, robot: Robot) {
+export default function manageFjord(discordClient: Client, robot: Robot, channel: TextBasedChannel, message: Message) {
   // Events to fire after certain button interactions
   discordClient.on("interactionCreate", async (interaction) => {
     if (interaction.isButton()) {
       const buttonID = interaction.customId
-      if (buttonID === "ping") {
+      if (buttonID.startsWith("stale-issues") ||
+          buttonID.startsWith("issues") ||
+          buttonID.startsWith("activity") ||
+          buttonID.startsWith("exec")) {
         interaction.reply({
-          content: "pong",
-        })
-      }
-      if (buttonID === "debug") {
-        interaction.reply({
-          content: "!debug",
-        })
-      }
-      if (buttonID.startsWith("stale-issues")) {
-        interaction.reply({
-          content: "!" + buttonID,
-        })
-      }
-      if (buttonID.startsWith("issues")) {
-        interaction.reply({
-          content: "!" + buttonID,
-        })
-      }
-      if (buttonID.startsWith("activity")) {
-        interaction.reply({
-          content: "!" + buttonID,
-        })
-      }
-      if (buttonID.startsWith("exec")) {
-        interaction.reply({
-          content: "!" + buttonID,
+          content: `!${buttonID}`
         })
       }
     }
@@ -55,10 +29,10 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
     const { channel } = message
 
     const handleThreadCreate = async (
-      message: any,
-      threadName: any,
-      threadReason: any,
-      responseData: any,
+      message: Message,
+      threadName: string,
+      threadReason: string,
+      responseData: string,
     ) => {
       const debugThread = await message.startThread({
         name: threadName,
@@ -133,13 +107,13 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
       if (parameters.length >= 2) {
         const [repositoryOwner, repositoryName] = parameters
         const webhookUrl =
-          "http://n8n.thesis.co/webhook/ec766fde-4ce5-4679-8a50-462e9e68e16a"
+          "https://n8n.thesis.co/webhook/ec766fde-4ce5-4679-8a50-462e9e68e16a"
         const queryParams = new URLSearchParams({
-          repositoryOwner: repositoryOwner,
-          repositoryName: repositoryName,
+          repositoryOwner,
+          repositoryName,
         })
 
-        message.reply({
+        await message.reply({
           content: `**Stale issue automation:  ${repositoryOwner} / ${repositoryName}**`,
           components: [
             {
@@ -188,13 +162,13 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
       if (parameters.length >= 2) {
         const [repositoryOwner, repositoryName] = parameters
         const webhookUrl =
-          "http://n8n.thesis.co/webhook/b6ab512e-8229-43ce-b0cb-5e2dd037fd92"
+          "https://n8n.thesis.co/webhook/b6ab512e-8229-43ce-b0cb-5e2dd037fd92"
         const queryParams = new URLSearchParams({
-          repositoryOwner: repositoryOwner,
-          repositoryName: repositoryName,
+          repositoryOwner,
+          repositoryName,
         })
 
-        message.reply({
+        await message.reply({
           content: `**Get issues automation:  ${repositoryOwner} / ${repositoryName}**`,
           components: [
             {
@@ -242,13 +216,13 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
       if (parameters.length >= 2) {
         const [repositoryOwner, repositoryName] = parameters
         const webhookUrl =
-          "http://n8n.thesis.co/webhook/8efb5ea2-13e0-4348-a32a-cba2c35114a5"
+          "https://n8n.thesis.co/webhook/8efb5ea2-13e0-4348-a32a-cba2c35114a5"
         const queryParams = new URLSearchParams({
-          repositoryOwner: repositoryOwner,
-          repositoryName: repositoryName,
+          repositoryOwner,
+          repositoryName,
         })
 
-        message.reply({
+        await message.reply({
           content: `**Git activity automation:  ${repositoryOwner} / ${repositoryName}**`,
           components: [
             {
@@ -295,12 +269,12 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
       if (parameters.length >= 1) {
         const [workflowName] = parameters
         const webhookUrl =
-          "http://n8n.thesis.co/webhook/a696e0de-998f-4700-a010-12790ab81175"
+          "https://n8n.thesis.co/webhook/a696e0de-998f-4700-a010-12790ab81175"
         const queryParams = new URLSearchParams({
-          workflowName: workflowName,
+          workflowName,
         })
 
-        message.reply({
+        await message.reply({
           content: `**n8n worklow:  ${workflowName}**`,
           components: [
             {
