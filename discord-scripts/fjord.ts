@@ -17,6 +17,8 @@ export default function manageFjord(discordClient: Client, robot: Robot, channel
       if (buttonID.startsWith("stale-issues") ||
           buttonID.startsWith("issues") ||
           buttonID.startsWith("activity") ||
+          buttonID.startsWith("debug") ||
+          buttonID.startsWith("ping") ||
           buttonID.startsWith("exec")) {
         interaction.reply({
           content: `!${buttonID}`
