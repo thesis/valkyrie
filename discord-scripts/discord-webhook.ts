@@ -9,14 +9,21 @@ const discordWebhook = {
   async sendToDiscordChannel(channelId: string, title: string, message: string) {
     const channel = await discordClient.channels.fetch(channelId)
     if (channel && channel.isTextBased()) {
-      const webhookThread = await (channel as TextChannel).threads.create({
-        name: title,
-        autoArchiveDuration: 60,
-        reason: message,
-      })
-      await webhookThread.send(message)
-    } else {
-      throw new Error("Channel is not text-based or not found")
+      const channelAsText = channel as TextChannel;
+      const existingThread = channelAsText.threads.cache.find(thread => thread.name === title);
+
+        if (existingThread) {
+          await existingThread.send(message);
+        } else {
+          const newThread = await channelAsText.threads.create({
+            name: title,
+            autoArchiveDuration: 60,
+            reason: message,
+          });
+          await newThread.send(message);
+        }
+      } else {
+        throw new Error("Channel is not text-based or not found");
     }
   }
 }
