@@ -13,13 +13,14 @@ export default function webhookDiscord(robot: Robot, discordClient: Client) {
     "" + webhookUrl + "",
     async (req: express.Request, res: express.Response) => {
       const channelId = req.body.channelId
+      const tagUser = req.body.tagUser
       const title = req.body.title
       const message = req.body.message
 
       robot.logger.info(
-        `Received data: channelId = ${channelId}, title = ${title} , message = ${message}`,
+        `Received data: channelId = ${channelId}, title = ${title}, tagged users = ${tagUser} , message = ${message}`,
       )
-      await discordWebhook.sendToDiscordChannel(channelId, title, message)
+      await discordWebhook.sendToDiscordChannel(channelId, tagUser, title, message)
 
       res.status(200).send("Message sent to Discord")
     },
