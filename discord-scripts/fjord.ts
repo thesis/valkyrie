@@ -1,27 +1,24 @@
-import {
-  ChannelType,
-  Client,
-  Message,
-  TextBasedChannel
-} from "discord.js"
+import { ChannelType, Client, Message } from "discord.js"
 import axios from "axios"
 import { Robot } from "hubot"
 
 // This is the WIP discord implemtnation of commands to trigger certain workflows on the thesis n8n platform. Most of the integration uses webhooks and chat commands with response headers .
-
-export default function manageFjord(discordClient: Client, robot: Robot, channel: TextBasedChannel, message: Message) {
+// eslint-disable-next-line
+export default function manageFjord(discordClient: Client, robot: Robot) {
   // Events to fire after certain button interactions
   discordClient.on("interactionCreate", async (interaction) => {
     if (interaction.isButton()) {
       const buttonID = interaction.customId
-      if (buttonID.startsWith("stale-issues") ||
-          buttonID.startsWith("issues") ||
-          buttonID.startsWith("activity") ||
-          buttonID.startsWith("debug") ||
-          buttonID.startsWith("ping") ||
-          buttonID.startsWith("exec")) {
+      if (
+        buttonID.startsWith("stale-issues") ||
+        buttonID.startsWith("issues") ||
+        buttonID.startsWith("activity") ||
+        buttonID.startsWith("debug") ||
+        buttonID.startsWith("ping") ||
+        buttonID.startsWith("exec")
+      ) {
         interaction.reply({
-          content: `!${buttonID}`
+          content: `!${buttonID}`,
         })
       }
     }
@@ -31,7 +28,7 @@ export default function manageFjord(discordClient: Client, robot: Robot, channel
     const { channel } = message
 
     const handleThreadCreate = async (
-      message: Message,
+      message: Message, // eslint-disable-line
       threadName: string,
       threadReason: string,
       responseData: string,
@@ -125,8 +122,7 @@ export default function manageFjord(discordClient: Client, robot: Robot, channel
                   type: 2,
                   label: "Run again",
                   style: 1,
-                  custom_id:
-                    "stale-issues " + repositoryOwner + " " + repositoryName,
+                  custom_id: `stale-issues ${repositoryOwner} ${repositoryName}`,
                 },
               ],
             },
@@ -180,7 +176,7 @@ export default function manageFjord(discordClient: Client, robot: Robot, channel
                   type: 2,
                   label: "Run again",
                   style: 1,
-                  custom_id: "issues " + repositoryOwner + " " + repositoryName,
+                  custom_id: `issues ${repositoryOwner} ${repositoryName}`,
                 },
               ],
             },
@@ -234,8 +230,7 @@ export default function manageFjord(discordClient: Client, robot: Robot, channel
                   type: 2,
                   label: "Run again",
                   style: 1,
-                  custom_id:
-                    "activity " + repositoryOwner + " " + repositoryName,
+                  custom_id: `activity ${repositoryOwner} ${repositoryName}`,
                 },
               ],
             },
@@ -286,7 +281,7 @@ export default function manageFjord(discordClient: Client, robot: Robot, channel
                   type: 2,
                   label: "Run again",
                   style: 1,
-                  custom_id: "exec " + workflowName,
+                  custom_id: `exec ${workflowName}`,
                 },
               ],
             },
