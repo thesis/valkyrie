@@ -1,11 +1,12 @@
 import { Client, TextChannel } from "discord.js"
+import { Robot } from "hubot"
+import express from "express"
 
-const discordClient = new Client({ intents: [] })
-
-discordClient.login(process.env.HUBOT_DISCORD_TOKEN)
-
-const discordWebhook = {
-  async sendToDiscordChannel(
+export default async function webhookDiscord(
+  discordClient: Client,
+  robot: Robot<any>,
+) {
+  async function sendToDiscordChannel(
     channelId: string,
     tagUser: string,
     title: string,
@@ -29,7 +30,6 @@ const discordWebhook = {
           reason: message,
         })
         await newThread.send("@here")
-        // replace with new user tagging once deployed in new DiscordJS version. Will be updated to add users to the thread dynamically based on
         if (tagUser !== "0") {
           await Promise.all(
             memberIds.map((id) => newThread.members.add(id.trim())),
@@ -40,7 +40,22 @@ const discordWebhook = {
     } else {
       throw new Error("Channel is not text-based or not found")
     }
-  },
-}
+  }
+  if (process.env.HUBOT_WEBHOOK_URL) {
+    const webhookUrl = process.env.HUBOT_WEBHOOK_URL
 
-export default discordWebhook
+    robot.router.post(
+      `${webhookUrl}`,
+      async (req: express.Request, res: express.Response) => {
+        const { channelId, tagUser, title, message } = req.body
+
+        robot.logger.info(
+          `Received data: channelId = ${channelId}, title = ${title}, tagged users = ${tagUser} , message = ${message}`,
+        )
+        await sendToDiscordChannel(channelId, tagUser, title, message)
+
+        res.status(200).send("Message sent to Discord")
+      },
+    )
+  }
+}

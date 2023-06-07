@@ -3,9 +3,11 @@ import axios from "axios"
 import { Robot } from "hubot"
 
 // This is the WIP discord implementation of commands to trigger certain workflows on the thesis n8n platform. Most of the integration uses webhooks and chat commands with response headers .
-// eslint-disable-next-line
-export default function manageFjord(discordClient: Client, robot: Robot) {
-  if (process.env.HUBOT_N8N_ENABLE === "true") {
+export default async function manageFjord(
+  discordClient: Client,
+  robot: Robot<any>,
+) {
+  if (process.env.HUBOT_N8N_WEBHOOK) {
     // Events to fire after certain button interactions
     discordClient.on("interactionCreate", async (interaction) => {
       if (interaction.isButton()) {
@@ -63,7 +65,7 @@ export default function manageFjord(discordClient: Client, robot: Robot) {
       }
 
       if (message.content === "!debug") {
-        console.log("adapter in use:", robot.adapter)
+        robot.logger("adapter in use:", robot.adapter)
         channel.send({
           content: "**Debugger running, check your console ;)**",
           components: [
