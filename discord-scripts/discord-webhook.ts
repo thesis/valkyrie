@@ -43,9 +43,22 @@ export default async function webhookDiscord(
   }
   if (process.env.HUBOT_WEBHOOK_URL) {
     const webhookUrl = process.env.HUBOT_WEBHOOK_URL
+    const requiredAuth = process.env.HUBOT_WEBHOOK_AUTH
 
     robot.router.post(
       `${webhookUrl}`,
+      (
+        req: express.Request,
+        res: express.Response,
+        next: express.NextFunction,
+      ) => {
+        const authHeader = req.headers.authorization
+        if (!authHeader || authHeader !== requiredAuth) {
+          res.status(401).send("Unauthorized")
+        } else {
+          next()
+        }
+      },
       async (req: express.Request, res: express.Response) => {
         const { channelId, tagUser, title, message } = req.body
 
