@@ -4,7 +4,7 @@ import express from "express"
 
 export default async function webhookDiscord(
   discordClient: Client,
-  robot: Robot<any>,
+  robot: Robot,
 ) {
   async function sendToDiscordChannel(
     channelId: string,

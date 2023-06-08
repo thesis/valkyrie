@@ -3,10 +3,7 @@ import axios from "axios"
 import { Robot } from "hubot"
 
 // This is the WIP discord implementation of commands to trigger certain workflows on the thesis n8n platform. Most of the integration uses webhooks and chat commands with response headers .
-export default async function manageFjord(
-  discordClient: Client,
-  robot: Robot<any>,
-) {
+export default async function manageFjord(discordClient: Client, robot: Robot) {
   const guildId = "597157463033100784"
   const guild = discordClient.guilds.cache.get(guildId)
 
@@ -94,18 +91,7 @@ export default async function manageFjord(
         (interaction.isButton() && interaction.customId.startsWith("debug")) ||
         (interaction.isCommand() && interaction.commandName === "debug")
       ) {
-        const { channelId } = interaction
-        const channel = discordClient.channels.cache.get(channelId)
         robot.logger.info("adapter in use:", robot.adapter)
-
-        if (channel instanceof TextChannel) {
-          const thread = await channel.threads.create({
-            name: "debug-thread",
-            autoArchiveDuration: 60,
-          })
-
-          await thread.send("Debug thread started!")
-        }
 
         await interaction.reply({
           content: "**Debugger running, check your console ;)**",
