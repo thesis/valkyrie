@@ -1,4 +1,4 @@
-import { ChannelType, Client, Message } from "discord.js"
+import { ApplicationCommandOptionType, Client, TextChannel } from "discord.js"
 import axios from "axios"
 import { Robot } from "hubot"
 
@@ -7,66 +7,107 @@ export default async function manageFjord(
   discordClient: Client,
   robot: Robot<any>,
 ) {
+  const guildId = "597157463033100784"
+  const guild = discordClient.guilds.cache.get(guildId)
+
+  if (!guild) {
+    robot.logger.error(`Guild with ID ${guildId} not found.`)
+    return
+  }
+
+  guild.commands.set([
+    {
+      name: "debug",
+      description: "Runs the debug command, sending logs to Valkyrie console",
+    },
+    {
+      name: "stale-issues",
+      description: "Retrieve stale issues from specific git repository",
+      options: [
+        {
+          name: "repository-owner",
+          type: ApplicationCommandOptionType.String,
+          description: "The owner of the repository",
+          required: true,
+        },
+        {
+          name: "repository-name",
+          type: ApplicationCommandOptionType.String,
+          description: "The name of the repository",
+          required: true,
+        },
+      ],
+    },
+    {
+      name: "issues",
+      description: "Retrieve recent issues from specific git repository",
+      options: [
+        {
+          name: "repository-owner",
+          type: ApplicationCommandOptionType.String,
+          description: "The owner of the repository",
+          required: true,
+        },
+        {
+          name: "repository-name",
+          type: ApplicationCommandOptionType.String,
+          description: "The name of the repository",
+          required: true,
+        },
+      ],
+    },
+    {
+      name: "activity",
+      description: "Retrieve activity summary from specific git repository",
+      options: [
+        {
+          name: "repository-owner",
+          type: ApplicationCommandOptionType.String,
+          description: "The owner of the repository",
+          required: true,
+        },
+        {
+          name: "repository-name",
+          type: ApplicationCommandOptionType.String,
+          description: "The name of the repository",
+          required: true,
+        },
+      ],
+    },
+    {
+      name: "exec",
+      description: "Run specific workflow from n8n",
+      options: [
+        {
+          name: "workflow-name",
+          type: ApplicationCommandOptionType.String,
+          description: "The name of the workflow to run",
+          required: true,
+        },
+      ],
+    },
+  ])
+
   if (process.env.HUBOT_N8N_WEBHOOK) {
-    // Events to fire after certain button interactions
     discordClient.on("interactionCreate", async (interaction) => {
-      if (interaction.isButton()) {
-        const buttonID = interaction.customId
-        if (
-          buttonID.startsWith("stale-issues") ||
-          buttonID.startsWith("issues") ||
-          buttonID.startsWith("activity") ||
-          buttonID.startsWith("debug") ||
-          buttonID.startsWith("ping") ||
-          buttonID.startsWith("exec")
-        ) {
-          interaction.reply({
-            content: `!${buttonID}`,
+      if (
+        (interaction.isButton() && interaction.customId.startsWith("debug")) ||
+        (interaction.isCommand() && interaction.commandName === "debug")
+      ) {
+        const { channelId } = interaction
+        const channel = discordClient.channels.cache.get(channelId)
+        robot.logger.info("adapter in use:", robot.adapter)
+
+        if (channel instanceof TextChannel) {
+          const thread = await channel.threads.create({
+            name: "debug-thread",
+            autoArchiveDuration: 60,
           })
+
+          await thread.send("Debug thread started!")
         }
-      }
-    })
 
-    discordClient.on("messageCreate", async (message) => {
-      const { channel } = message
-
-      const handleThreadCreate = async (
-        message: Message, // eslint-disable-line
-        threadName: string,
-        threadReason: string,
-        responseData: string,
-      ) => {
-        const debugThread = await message.startThread({
-          name: threadName,
-          autoArchiveDuration: 60,
-          reason: threadReason,
-        })
-        await debugThread.send("Over here!")
-        await debugThread.send(responseData)
-      }
-
-      if (message.content === "!ping") {
-        channel.send({
-          content: "ping pong ping ping pong ping / o  o",
-          components: [
-            {
-              type: 1,
-              components: [
-                {
-                  type: 2,
-                  label: "Ping?",
-                  style: 1,
-                  custom_id: "ping",
-                },
-              ],
-            },
-          ],
-        })
-      }
-
-      if (message.content === "!debug") {
-        robot.logger("adapter in use:", robot.adapter)
-        channel.send({
+        await interaction.reply({
           content: "**Debugger running, check your console ;)**",
           components: [
             {
@@ -74,7 +115,7 @@ export default async function manageFjord(
               components: [
                 {
                   type: 2,
-                  label: "Run debugger again",
+                  label: "Run again",
                   style: 1,
                   custom_id: "debug",
                 },
@@ -84,51 +125,32 @@ export default async function manageFjord(
         })
       }
 
-      if (message.content === "!fjord") {
-        channel.send("**Fjord is listening, what do you want?**")
-        channel.send(
-          "Here's a list of Fjord commands. !issues <repo-owner> <repo-name> !stale-issues <repo-owner> <repo-name> !debug !activity <repo-owner> <repo-name>",
-        )
-      }
+      if (
+        interaction.isCommand() &&
+        interaction.commandName === "stale-issues"
+      ) {
+        const { channelId } = interaction
+        const channel = discordClient.channels.cache.get(channelId)
+        const repositoryOwnerOption =
+          interaction.options.get("repository-owner")
+        const repositoryNameOption = interaction.options.get("repository-name")
+        if (
+          repositoryOwnerOption &&
+          typeof repositoryOwnerOption.value === "string" &&
+          repositoryNameOption &&
+          typeof repositoryNameOption.value === "string"
+        ) {
+          const repositoryOwner = repositoryOwnerOption.value
+          const repositoryName = repositoryNameOption.value
 
-      if (message.content === "!thread") {
-        if (message.channel.type === ChannelType.GuildPublicThread) {
-          channel.send("You can't thread a thread!")
-        }
-        const threadName = "New thread"
-        await handleThreadCreate(
-          message,
-          threadName,
-          "thread test",
-          "Setup a thread for you",
-        )
-      }
-
-      if (message.content.startsWith("!stale-issues")) {
-        const parameters = message.content.split(" ").slice(1)
-        if (parameters.length >= 2) {
-          const [repositoryOwner, repositoryName] = parameters
           const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
           const queryParams = new URLSearchParams({
             repositoryOwner,
             repositoryName,
           })
 
-          await message.reply({
+          await interaction.reply({
             content: `**Stale issue automation:  ${repositoryOwner} / ${repositoryName}**`,
-            components: [
-              {
-                type: 1,
-                components: [
-                  {
-                    type: 2,
-                    label: "Run again",
-                    style: 1,
-                    custom_id: `stale-issues ${repositoryOwner} ${repositoryName}`,
-                  },
-                ],
-              },
-            ],
           })
           const options = {
             headers: {
@@ -138,55 +160,46 @@ export default async function manageFjord(
           axios
             .get(`${webhookUrl}?${queryParams.toString()}`, options)
             .then(async (response) => {
-              if (message.channel.type === ChannelType.GuildPublicThread) {
-                channel.send(response.data)
-              } else {
-                const threadName = `${repositoryOwner}/${repositoryName} - Stale issues`
-                await handleThreadCreate(
-                  message,
-                  threadName,
-                  "stale issues",
-                  response.data,
-                )
+              if (channel instanceof TextChannel) {
+                const thread = await channel.threads.create({
+                  name: `Stale issues: ${repositoryOwner} ${repositoryName}`,
+                  autoArchiveDuration: 60,
+                })
+                await thread.send("@here")
+                await thread.send(response.data)
               }
             })
             .catch((error) => {
-              channel.send(
+              interaction.followUp(
                 `Automation stale-issues flow failed: ${error.message}`,
               )
             })
-        } else {
-          channel.send(
-            "**Please provide these parameters: !stale-issues <username> <repo> **",
-          )
         }
       }
 
-      if (message.content.startsWith("!issues")) {
-        const parameters = message.content.split(" ").slice(1)
-        if (parameters.length >= 2) {
-          const [repositoryOwner, repositoryName] = parameters
+      if (interaction.isCommand() && interaction.commandName === "issues") {
+        const { channelId } = interaction
+        const channel = discordClient.channels.cache.get(channelId)
+        const repositoryOwnerOption =
+          interaction.options.get("repository-owner")
+        const repositoryNameOption = interaction.options.get("repository-name")
+        if (
+          repositoryOwnerOption &&
+          typeof repositoryOwnerOption.value === "string" &&
+          repositoryNameOption &&
+          typeof repositoryNameOption.value === "string"
+        ) {
+          const repositoryOwner = repositoryOwnerOption.value
+          const repositoryName = repositoryNameOption.value
+
           const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
           const queryParams = new URLSearchParams({
             repositoryOwner,
             repositoryName,
           })
 
-          await message.reply({
-            content: `**Get issues automation:  ${repositoryOwner} / ${repositoryName}**`,
-            components: [
-              {
-                type: 1,
-                components: [
-                  {
-                    type: 2,
-                    label: "Run again",
-                    style: 1,
-                    custom_id: `issues ${repositoryOwner} ${repositoryName}`,
-                  },
-                ],
-              },
-            ],
+          await interaction.reply({
+            content: `**Git issues automation:  ${repositoryOwner} / ${repositoryName}**`,
           })
           const options = {
             headers: {
@@ -196,55 +209,46 @@ export default async function manageFjord(
           axios
             .get(`${webhookUrl}?${queryParams.toString()}`, options)
             .then(async (response) => {
-              if (message.channel.type === ChannelType.GuildPublicThread) {
-                channel.send(response.data)
-              } else {
-                const threadName = `${repositoryOwner}/${repositoryName} - recent issues`
-                await handleThreadCreate(
-                  message,
-                  threadName,
-                  "recent issues",
-                  response.data,
-                )
+              if (channel instanceof TextChannel) {
+                const thread = await channel.threads.create({
+                  name: `Issues: ${repositoryOwner} ${repositoryName}`,
+                  autoArchiveDuration: 60,
+                })
+                await thread.send("@here")
+                await thread.send(response.data)
               }
             })
             .catch((error) => {
-              channel.send(
-                `Automation recent issues flow failed: ${error.message}`,
+              interaction.followUp(
+                `Automation issues flow failed: ${error.message}`,
               )
             })
-        } else {
-          channel.send(
-            "**Please provide these parameters: !issues <username> <repo> **",
-          )
         }
       }
 
-      if (message.content.startsWith("!activity")) {
-        const parameters = message.content.split(" ").slice(1)
-        if (parameters.length >= 2) {
-          const [repositoryOwner, repositoryName] = parameters
+      if (interaction.isCommand() && interaction.commandName === "activity") {
+        const { channelId } = interaction
+        const channel = discordClient.channels.cache.get(channelId)
+        const repositoryOwnerOption =
+          interaction.options.get("repository-owner")
+        const repositoryNameOption = interaction.options.get("repository-name")
+        if (
+          repositoryOwnerOption &&
+          typeof repositoryOwnerOption.value === "string" &&
+          repositoryNameOption &&
+          typeof repositoryNameOption.value === "string"
+        ) {
+          const repositoryOwner = repositoryOwnerOption.value
+          const repositoryName = repositoryNameOption.value
+
           const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
           const queryParams = new URLSearchParams({
             repositoryOwner,
             repositoryName,
           })
 
-          await message.reply({
+          await interaction.reply({
             content: `**Git activity automation:  ${repositoryOwner} / ${repositoryName}**`,
-            components: [
-              {
-                type: 1,
-                components: [
-                  {
-                    type: 2,
-                    label: "Run again",
-                    style: 1,
-                    custom_id: `activity ${repositoryOwner} ${repositoryName}`,
-                  },
-                ],
-              },
-            ],
           })
           const options = {
             headers: {
@@ -254,54 +258,40 @@ export default async function manageFjord(
           axios
             .get(`${webhookUrl}?${queryParams.toString()}`, options)
             .then(async (response) => {
-              if (message.channel.type === ChannelType.GuildPublicThread) {
-                channel.send(response.data)
-              } else {
-                const threadName = `${repositoryOwner}/${repositoryName} - git activity`
-                await handleThreadCreate(
-                  message,
-                  threadName,
-                  "git activity",
-                  response.data,
-                )
+              if (channel instanceof TextChannel) {
+                const thread = await channel.threads.create({
+                  name: `Git Activity: ${repositoryOwner} ${repositoryName}`,
+                  autoArchiveDuration: 60,
+                })
+                await thread.send("@here")
+                await thread.send(response.data)
               }
             })
             .catch((error) => {
-              channel.send(
-                `Automation git activity flow failed: ${error.message}`,
+              interaction.followUp(
+                `Automation activity flow failed: ${error.message}`,
               )
             })
-        } else {
-          channel.send(
-            "**Please provide these parameters: !activity <username> <repo> **",
-          )
         }
       }
 
-      if (message.content.startsWith("!exec")) {
-        const parameters = message.content.split(" ").slice(1)
-        if (parameters.length >= 1) {
-          const [workflowName] = parameters
+      if (interaction.isCommand() && interaction.commandName === "exec") {
+        const { channelId } = interaction
+        const channel = discordClient.channels.cache.get(channelId)
+        const workflowNameOption = interaction.options.get("workflow-name")
+        if (
+          workflowNameOption &&
+          typeof workflowNameOption.value === "string"
+        ) {
+          const workflowName = workflowNameOption.value
+
           const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
           const queryParams = new URLSearchParams({
             workflowName,
           })
 
-          await message.reply({
-            content: `**n8n worklow:  ${workflowName}**`,
-            components: [
-              {
-                type: 1,
-                components: [
-                  {
-                    type: 2,
-                    label: "Run again",
-                    style: 1,
-                    custom_id: `exec ${workflowName}`,
-                  },
-                ],
-              },
-            ],
+          await interaction.reply({
+            content: `**Exec automation:  ${workflowName}**`,
           })
           const options = {
             headers: {
@@ -311,15 +301,20 @@ export default async function manageFjord(
           axios
             .get(`${webhookUrl}?${queryParams.toString()}`, options)
             .then(async (response) => {
-              channel.send(response.data)
+              if (channel instanceof TextChannel) {
+                const thread = await channel.threads.create({
+                  name: `Exec: ${workflowName}`,
+                  autoArchiveDuration: 60,
+                })
+                await thread.send("@here")
+                await thread.send(response.data)
+              }
             })
             .catch((error) => {
-              channel.send(`Automation workflow failed: ${error.message}`)
+              interaction.followUp(
+                `Automation activity flow failed: ${error.message}`,
+              )
             })
-        } else {
-          channel.send(
-            "**Please provide these parameters: !exec <workflow-name>**",
-          )
         }
       }
     })
