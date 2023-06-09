@@ -1,4 +1,9 @@
-import { ApplicationCommandOptionType, Client, TextChannel } from "discord.js"
+import {
+  ApplicationCommandOptionType,
+  Client,
+  CommandInteraction,
+  TextChannel,
+} from "discord.js"
 import axios from "axios"
 import { Robot } from "hubot"
 
@@ -72,7 +77,7 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
       ],
     },
     {
-      name: "exec",
+      name: "n8n",
       description: "Run specific workflow from n8n",
       options: [
         {
@@ -85,6 +90,35 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
     },
   ])
 
+  const startLoadingBar = async (
+    interaction: CommandInteraction,
+    repositoryOwner: string,
+    repositoryName: string,
+  ) => {
+    const loadingMessage = await interaction.reply({
+      content: `**Workflow started: ${repositoryOwner} / ${repositoryName}**\n\n:hourglass: In progress...`,
+      ephemeral: true,
+    })
+
+    const loadingBarLength = 10
+    let progress = 0
+
+    const loadingBarInterval = setInterval(() => {
+      progress += 1
+      const progressBar =
+        ":green_square:".repeat(progress) +
+        ":white_large_square:".repeat(loadingBarLength - progress)
+      loadingMessage.edit(
+        `**Workflow started: ${repositoryOwner} / ${repositoryName}**\n\n:hourglass: In progress...\n\n${progressBar}`,
+      )
+
+      if (progress === loadingBarLength) {
+        clearInterval(loadingBarInterval)
+      }
+    }, 1000)
+    return loadingMessage
+  }
+
   if (process.env.HUBOT_N8N_WEBHOOK) {
     discordClient.on("interactionCreate", async (interaction) => {
       if (
@@ -95,6 +129,7 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
 
         await interaction.reply({
           content: "**Debugger running, check your console ;)**",
+          ephemeral: true,
           components: [
             {
               type: 1,
@@ -135,9 +170,12 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
             repositoryName,
           })
 
-          await interaction.reply({
-            content: `**Stale issue automation:  ${repositoryOwner} / ${repositoryName}**`,
-          })
+          const loadingMessage = await startLoadingBar(
+            interaction,
+            repositoryOwner,
+            repositoryName,
+          )
+
           const options = {
             headers: {
               workflowType: "stale-issues",
@@ -146,6 +184,10 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
           axios
             .get(`${webhookUrl}?${queryParams.toString()}`, options)
             .then(async (response) => {
+              await loadingMessage.edit(
+                `**Workflow: ${repositoryOwner} / ${repositoryName}**\n\n:white_check_mark: Workflow completed!`,
+              )
+              await loadingMessage.delete()
               if (channel instanceof TextChannel) {
                 const thread = await channel.threads.create({
                   name: `Stale issues: ${repositoryOwner} ${repositoryName}`,
@@ -156,9 +198,7 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
               }
             })
             .catch((error) => {
-              interaction.followUp(
-                `Automation stale-issues flow failed: ${error.message}`,
-              )
+              interaction.followUp(`workflow failed: ${error.message}`)
             })
         }
       }
@@ -184,9 +224,12 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
             repositoryName,
           })
 
-          await interaction.reply({
-            content: `**Git issues automation:  ${repositoryOwner} / ${repositoryName}**`,
-          })
+          const loadingMessage = await startLoadingBar(
+            interaction,
+            repositoryOwner,
+            repositoryName,
+          )
+
           const options = {
             headers: {
               workflowType: "issues",
@@ -195,6 +238,11 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
           axios
             .get(`${webhookUrl}?${queryParams.toString()}`, options)
             .then(async (response) => {
+              await loadingMessage.edit(
+                `**Workflow: ${repositoryOwner} / ${repositoryName}**\n\n:white_check_mark: Workflow completed!`,
+              )
+              await loadingMessage.delete()
+
               if (channel instanceof TextChannel) {
                 const thread = await channel.threads.create({
                   name: `Issues: ${repositoryOwner} ${repositoryName}`,
@@ -205,9 +253,7 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
               }
             })
             .catch((error) => {
-              interaction.followUp(
-                `Automation issues flow failed: ${error.message}`,
-              )
+              interaction.followUp(`workflow failed: ${error.message}`)
             })
         }
       }
@@ -233,9 +279,12 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
             repositoryName,
           })
 
-          await interaction.reply({
-            content: `**Git activity automation:  ${repositoryOwner} / ${repositoryName}**`,
-          })
+          const loadingMessage = await startLoadingBar(
+            interaction,
+            repositoryOwner,
+            repositoryName,
+          )
+
           const options = {
             headers: {
               workflowType: "activity",
@@ -244,6 +293,11 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
           axios
             .get(`${webhookUrl}?${queryParams.toString()}`, options)
             .then(async (response) => {
+              await loadingMessage.edit(
+                `**Workflow: ${repositoryOwner} / ${repositoryName}**\n\n:white_check_mark: Workflow completed!`,
+              )
+              await loadingMessage.delete()
+
               if (channel instanceof TextChannel) {
                 const thread = await channel.threads.create({
                   name: `Git Activity: ${repositoryOwner} ${repositoryName}`,
@@ -254,14 +308,12 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
               }
             })
             .catch((error) => {
-              interaction.followUp(
-                `Automation activity flow failed: ${error.message}`,
-              )
+              interaction.followUp(`Workflow failed: ${error.message}`)
             })
         }
       }
 
-      if (interaction.isCommand() && interaction.commandName === "exec") {
+      if (interaction.isCommand() && interaction.commandName === "n8n") {
         const { channelId } = interaction
         const channel = discordClient.channels.cache.get(channelId)
         const workflowNameOption = interaction.options.get("workflow-name")
@@ -276,9 +328,12 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
             workflowName,
           })
 
-          await interaction.reply({
-            content: `**Exec automation:  ${workflowName}**`,
-          })
+          const loadingMessage = await startLoadingBar(
+            interaction,
+            workflowName,
+            "running",
+          )
+
           const options = {
             headers: {
               workflowType: "exec",
@@ -287,6 +342,11 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
           axios
             .get(`${webhookUrl}?${queryParams.toString()}`, options)
             .then(async (response) => {
+              await loadingMessage.edit(
+                `**Workflow: ${workflowName}**\n\n:white_check_mark: Workflow completed!`,
+              )
+              await loadingMessage.delete()
+
               if (channel instanceof TextChannel) {
                 const thread = await channel.threads.create({
                   name: `Exec: ${workflowName}`,
@@ -297,9 +357,7 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
               }
             })
             .catch((error) => {
-              interaction.followUp(
-                `Automation activity flow failed: ${error.message}`,
-              )
+              interaction.followUp(`Workflow failed: ${error.message}`)
             })
         }
       }
