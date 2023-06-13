@@ -9,87 +9,88 @@ import { Robot } from "hubot"
 
 // This is the WIP discord implementation of commands to trigger certain workflows on the thesis n8n platform. Most of the integration uses webhooks and chat commands with response headers .
 export default async function manageFjord(discordClient: Client, robot: Robot) {
-  const guildId = "597157463033100784"
-  const guild = discordClient.guilds.cache.get(guildId)
+  const { application } = discordClient
 
-  if (!guild) {
-    robot.logger.error(`Guild with ID ${guildId} not found.`)
-    return
+  if (application) {
+    const existingFjordCommand = (await application.commands.fetch()).find(
+      (command) => command.name === "issues",
+    )
+    if (existingFjordCommand === undefined) {
+      application.commands.set([
+        {
+          name: "debug",
+          description:
+            "Runs the debug command, sending logs to Valkyrie console",
+        },
+        {
+          name: "stale-issues",
+          description: "Retrieve stale issues from specific git repository",
+          options: [
+            {
+              name: "repository-owner",
+              type: ApplicationCommandOptionType.String,
+              description: "The owner of the repository",
+              required: true,
+            },
+            {
+              name: "repository-name",
+              type: ApplicationCommandOptionType.String,
+              description: "The name of the repository",
+              required: true,
+            },
+          ],
+        },
+        {
+          name: "issues",
+          description: "Retrieve recent issues from specific git repository",
+          options: [
+            {
+              name: "repository-owner",
+              type: ApplicationCommandOptionType.String,
+              description: "The owner of the repository",
+              required: true,
+            },
+            {
+              name: "repository-name",
+              type: ApplicationCommandOptionType.String,
+              description: "The name of the repository",
+              required: true,
+            },
+          ],
+        },
+        {
+          name: "activity",
+          description: "Retrieve activity summary from specific git repository",
+          options: [
+            {
+              name: "repository-owner",
+              type: ApplicationCommandOptionType.String,
+              description: "The owner of the repository",
+              required: true,
+            },
+            {
+              name: "repository-name",
+              type: ApplicationCommandOptionType.String,
+              description: "The name of the repository",
+              required: true,
+            },
+          ],
+        },
+        {
+          name: "n8n",
+          description: "Run specific workflow from n8n",
+          options: [
+            {
+              name: "workflow-name",
+              type: ApplicationCommandOptionType.String,
+              description: "The name of the workflow to run",
+              required: true,
+            },
+          ],
+        },
+      ])
+    }
   }
-
-  guild.commands.set([
-    {
-      name: "debug",
-      description: "Runs the debug command, sending logs to Valkyrie console",
-    },
-    {
-      name: "stale-issues",
-      description: "Retrieve stale issues from specific git repository",
-      options: [
-        {
-          name: "repository-owner",
-          type: ApplicationCommandOptionType.String,
-          description: "The owner of the repository",
-          required: true,
-        },
-        {
-          name: "repository-name",
-          type: ApplicationCommandOptionType.String,
-          description: "The name of the repository",
-          required: true,
-        },
-      ],
-    },
-    {
-      name: "issues",
-      description: "Retrieve recent issues from specific git repository",
-      options: [
-        {
-          name: "repository-owner",
-          type: ApplicationCommandOptionType.String,
-          description: "The owner of the repository",
-          required: true,
-        },
-        {
-          name: "repository-name",
-          type: ApplicationCommandOptionType.String,
-          description: "The name of the repository",
-          required: true,
-        },
-      ],
-    },
-    {
-      name: "activity",
-      description: "Retrieve activity summary from specific git repository",
-      options: [
-        {
-          name: "repository-owner",
-          type: ApplicationCommandOptionType.String,
-          description: "The owner of the repository",
-          required: true,
-        },
-        {
-          name: "repository-name",
-          type: ApplicationCommandOptionType.String,
-          description: "The name of the repository",
-          required: true,
-        },
-      ],
-    },
-    {
-      name: "n8n",
-      description: "Run specific workflow from n8n",
-      options: [
-        {
-          name: "workflow-name",
-          type: ApplicationCommandOptionType.String,
-          description: "The name of the workflow to run",
-          required: true,
-        },
-      ],
-    },
-  ])
-
   const startLoadingBar = async (
     interaction: CommandInteraction,
     repositoryOwner: string,
