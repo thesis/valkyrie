@@ -39,6 +39,21 @@ spec:
                   key: host
             - name: HUBOT_SCHEDULE_DEBUG
               value: "1"
+            - name: HUBOT_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: hubot_webhook_url
+            - name: HUBOT_WEBHOOK_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: hubot_webhook_auth
+            - name: HUBOT_N8N_WEBHOOK
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: hubot_n8n_webhook
             - name: RELEASE_NOTIFICATION_ROOM
               valueFrom:
                 secretKeyRef:
