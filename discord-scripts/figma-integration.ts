@@ -2,7 +2,6 @@ import {
   ApplicationCommandOptionType,
   ChannelType,
   Client,
-  ClientApplication,
   EmbedBuilder,
   GuildTextBasedChannel,
   TextBasedChannel,
