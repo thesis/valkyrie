@@ -58,6 +58,7 @@ export default async function webhookDiscord(
     const webhookUrl = process.env.HUBOT_WEBHOOK_URL
     const requiredAuth = process.env.HUBOT_WEBHOOK_AUTH
     robot.logger.info("Webhook URL has been set: ", webhookUrl)
+    robot.logger.info("Webhook Auth has been set: ", requiredAuth)
     robot.router.post(
       `${webhookUrl}`,
       (
