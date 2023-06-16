@@ -40,7 +40,6 @@ export default async function webhookDiscord(
     } else {
       const newThread = await channel.threads.create({
         name: title,
-        autoArchiveDuration: 60,
         reason: message,
       })
       if (tagUser !== "0") {
