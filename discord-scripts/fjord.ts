@@ -194,7 +194,6 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
                   name: `Stale issues: ${repositoryOwner} ${repositoryName}`,
                   autoArchiveDuration: 60,
                 })
-                await thread.send("@here")
                 await thread.send(response.data)
               }
             })
@@ -249,7 +248,6 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
                   name: `Issues: ${repositoryOwner} ${repositoryName}`,
                   autoArchiveDuration: 60,
                 })
-                await thread.send("@here")
                 await thread.send(response.data)
               }
             })
