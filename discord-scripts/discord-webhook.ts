@@ -36,15 +36,12 @@ export default async function webhookDiscord(
     )
 
     if (existingThread) {
-      await existingThread.send("@here")
       await existingThread.send(message)
     } else {
       const newThread = await channel.threads.create({
         name: title,
-        autoArchiveDuration: 60,
         reason: message,
       })
-      await newThread.send("@here")
       if (tagUser !== "0") {
         await Promise.all(
           memberIds.map((id) => newThread.members.add(id.trim())),
