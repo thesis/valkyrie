@@ -17,7 +17,9 @@ jobs:
     - name: Output environment
       run: |
         echo '${{ github.ref }}'
-        echo '${{ toJSON(github.event) }}'
+        echo <<-EOF
+          ${{ toJSON(github.event) }}
+        EOF
     outputs:
       # Run builds for all non-comment triggers.
       should-build: >-
