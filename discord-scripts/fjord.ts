@@ -2,6 +2,8 @@ import {
   ApplicationCommandOptionType,
   Client,
   CommandInteraction,
+  Guild,
+  GuildMember,
   TextChannel,
 } from "discord.js"
 import axios from "axios"
@@ -121,6 +123,58 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
   }
 
   if (process.env.HUBOT_N8N_WEBHOOK) {
+    if (discordClient.user) {
+      const handleGuild = async (guild: Guild) => {
+        await guild.members.fetch()
+
+        const membersList: {
+          username: string
+          nickname: string | null
+          id: string
+        }[] = []
+
+        guild.members.cache.forEach((member: GuildMember) => {
+          membersList.push({
+            username: member.user.username,
+            nickname: member.nickname,
+            id: member.id,
+          })
+        })
+
+        robot.logger.info(`Members of ${guild.name}:`)
+        robot.logger.info(JSON.stringify(membersList, null, 2))
+
+        const membersListString = encodeURIComponent(
+          JSON.stringify(membersList),
+        )
+
+        const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
+
+        const options = {
+          headers: {
+            workflowType: "member-list",
+          },
+        }
+
+        await axios
+          .get(`${webhookUrl}?membersList=${membersListString}`, options)
+          .then(() => {
+            robot.logger.info("Discord Memberlist sent to n8n")
+          })
+          .catch((error) => {
+            robot.logger.info(`Memberlist failed to send: ${error.message}`)
+          })
+      }
+
+      const storeMemberList = async () => {
+        const guilds = Array.from(discordClient.guilds.cache.values())
+        const guildPromises = guilds.map(handleGuild)
+        await Promise.all(guildPromises)
+      }
+
+      storeMemberList()
+    }
+
     discordClient.on("interactionCreate", async (interaction) => {
       if (
         (interaction.isButton() && interaction.customId.startsWith("debug")) ||
