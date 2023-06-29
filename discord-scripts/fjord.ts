@@ -1,10 +1,15 @@
 import {
+  ActionRowBuilder,
   ApplicationCommandOptionType,
   Client,
   CommandInteraction,
   Guild,
   GuildMember,
+  ModalBuilder,
+  ModalActionRowComponentBuilder,
   TextChannel,
+  TextInputBuilder,
+  TextInputStyle,
 } from "discord.js"
 import axios from "axios"
 import { Robot } from "hubot"
@@ -171,7 +176,113 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
       storeMemberList()
     }
 
+    // Use to build events when the user first connects to the discord server. WIP!
+    // discordClient.on('guildMemberAdd', async (member) => {
+    //   if (discordClient.channels) {
+    //     const channel = member.guild.channels.cache.get("1099991409878126624")
+    //     await channel.send({
+    //       content: "**Welcome to the server! Let's get you onboarded to start**",
+    //       ephemeral: true,
+    //       components: [
+    //         {
+    //           type: 1,
+    //           components: [
+    //             {
+    //               type: 2,
+    //               label: "Start here",
+    //               style: 1,
+    //               custom_id: "start-onboarding",
+    //             },
+    //           ],
+    //         },
+    //       ],
+    //     })
+    //   }
+    // })
+
     discordClient.on("interactionCreate", async (interaction) => {
+      if (interaction.isModalSubmit()) {
+        await interaction.reply({
+          content: "Your form submission was received successfully!",
+          ephemeral: true,
+        })
+        if (interaction.customId === "onboardingModal") {
+          robot.logger.info(interaction)
+          const firstName =
+            interaction.fields.getTextInputValue("firstNameInput")
+          const lastName = interaction.fields.getTextInputValue("lastNameInput")
+          const email = interaction.fields.getTextInputValue("emailInput")
+          robot.logger.info(firstName, lastName, email)
+          robot.logger.info(interaction.user.id)
+
+          const userData = [
+            {
+              firstName,
+              lastName,
+              email,
+              id: interaction.user.id,
+            },
+          ]
+
+          const userDataString = encodeURIComponent(JSON.stringify(userData))
+
+          const options = {
+            headers: {
+              workflowType: "onboarding-user",
+            },
+          }
+
+          await axios
+            .get(`${webhookUrl}?onboarding=${userDataString}`, options)
+            .then(() => {
+              robot.logger.info("User onboarding info sent to n8n")
+            })
+            .catch((error) => {
+              robot.logger.info(
+                `User onboarding failed to send: ${error.message}`,
+              )
+            })
+        }
+      }
+
+      if (
+        interaction.isButton() &&
+        interaction.customId.startsWith("start-onboarding")
+      ) {
+        const modal = new ModalBuilder()
+          .setCustomId("onboardingModal")
+          .setTitle("Onboarding Form")
+
+        const firstNameInput = new TextInputBuilder()
+          .setCustomId("firstNameInput")
+          .setLabel("What's your first name?")
+          .setStyle(TextInputStyle.Short)
+        const lastNameInput = new TextInputBuilder()
+          .setCustomId("lastNameInput")
+          .setLabel("What's your last name?")
+          .setStyle(TextInputStyle.Short)
+        const emailInput = new TextInputBuilder()
+          .setCustomId("emailInput")
+          .setLabel("What is your work email?")
+          .setStyle(TextInputStyle.Short)
+
+        const firstActionRow =
+          new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+            firstNameInput,
+          )
+        const secondActionRow =
+          new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+            lastNameInput,
+          )
+        const thirdActionRow =
+          new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+            emailInput,
+          )
+
+        modal.addComponents(firstActionRow, secondActionRow, thirdActionRow)
+        await interaction.showModal(modal)
+      }
+
       if (
         (interaction.isButton() && interaction.customId.startsWith("debug")) ||
         (interaction.isCommand() && interaction.commandName === "debug")
@@ -190,6 +301,12 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
                   label: "Run again",
                   style: 1,
                   custom_id: "debug",
+                },
+                {
+                  type: 2,
+                  label: "Onboarding",
+                  style: 1,
+                  custom_id: "start-onboarding",
                 },
               ],
             },
