@@ -54,6 +54,25 @@ export default function manageThreads(discordClient: Client) {
 
     const { guild: server, parent: containingChannel } = thread
 
+    if (thread.type === ChannelType.GuildPrivateThread) {
+      if (!thread.name.startsWith("🔒")) {
+        await thread.setName(`🔒 ${thread.name.replace(/^ +/, "")}`)
+      }
+
+      if (containingChannel?.name?.toLowerCase() !== "operations") {
+        await thread.send(
+          "Private threads should largely only be used for discussions around " +
+            "confidential topics like legal and hiring. They should as a result " +
+            "almost always be created in #operations; if you know you're " +
+            "breaking both rules on purpose, go forth and conquer, but otherwise " +
+            "please start the thread there. I'm also going to auto-tag the " +
+            "appropriate roles now, which may compromise the privacy of the " +
+            "thread (**all members of the role who have access to this channel " +
+            "will have access to the thread**).",
+        )
+      }
+    }
+
     const placeholder = await thread.send("<placeholder>")
 
     const matchingRole = server.roles.cache.find(
