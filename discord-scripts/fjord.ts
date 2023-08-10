@@ -177,43 +177,59 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
     }
 
     // Use to build events when the user first connects to the discord server. WIP!
-    // discordClient.on('guildMemberAdd', async (member) => {
-    //   if (discordClient.channels) {
-    //     const channel = member.guild.channels.cache.get("1099991409878126624")
-    //     await channel.send({
-    //       content: "**Welcome to the server! Let's get you onboarded to start**",
-    //       ephemeral: true,
-    //       components: [
-    //         {
-    //           type: 1,
-    //           components: [
-    //             {
-    //               type: 2,
-    //               label: "Start here",
-    //               style: 1,
-    //               custom_id: "start-onboarding",
-    //             },
-    //           ],
-    //         },
-    //       ],
-    //     })
-    //   }
-    // })
+    discordClient.on("guildMemberAdd", async (member) => {
+      if (discordClient.channels) {
+        const verifyChannel = member.guild.channels.cache.find((channel) =>
+          channel.name.startsWith("verify"),
+        )
+        if (verifyChannel && verifyChannel instanceof TextChannel) {
+          await verifyChannel.send({
+            content: `**Welcome to the server <@${member.id}>! Let's get your account verified before having access to the discord server** Click the button below to start the process`,
+            components: [
+              {
+                type: 1,
+                components: [
+                  {
+                    type: 2,
+                    label: "Verify yourself",
+                    style: 3,
+                    custom_id: "start-onboarding",
+                  },
+                ],
+              },
+            ],
+          })
+        }
+      }
+    })
 
     discordClient.on("interactionCreate", async (interaction) => {
       if (interaction.isModalSubmit()) {
-        await interaction.reply({
-          content: "Your form submission was received successfully!",
-          ephemeral: true,
-        })
         if (interaction.customId === "onboardingModal") {
-          robot.logger.info(interaction)
+          const { guild } = interaction
+          if (!guild) return
+
+          const verifiedRole = guild.roles.cache.find(
+            (role) => role.name === "verified",
+          )
+          if (!verifiedRole) {
+            robot.logger.info("Verified role not found in the server")
+            return
+          }
+          const member = await guild.members.fetch(interaction.user.id)
+          if (!member) return
+
+          await member.roles.add(verifiedRole)
+
+          await interaction.reply({
+            content:
+              "**:thumbsup: Your verification information was submitted! Welcome to the server**",
+            ephemeral: true,
+          })
           const firstName =
             interaction.fields.getTextInputValue("firstNameInput")
           const lastName = interaction.fields.getTextInputValue("lastNameInput")
           const email = interaction.fields.getTextInputValue("emailInput")
-          robot.logger.info(firstName, lastName, email)
-          robot.logger.info(interaction.user.id)
 
           const userData = [
             {
@@ -235,7 +251,12 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
           await axios
             .get(`${webhookUrl}?onboarding=${userDataString}`, options)
             .then(() => {
-              robot.logger.info("User onboarding info sent to n8n")
+              robot.logger.info(
+                firstName,
+                lastName,
+                email,
+                "User onboarding info sent to n8n",
+              )
             })
             .catch((error) => {
               robot.logger.info(
@@ -251,7 +272,7 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
       ) {
         const modal = new ModalBuilder()
           .setCustomId("onboardingModal")
-          .setTitle("Onboarding Form")
+          .setTitle("Verify your information")
 
         const firstNameInput = new TextInputBuilder()
           .setCustomId("firstNameInput")
@@ -281,6 +302,12 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
 
         modal.addComponents(firstActionRow, secondActionRow, thirdActionRow)
         await interaction.showModal(modal)
+        await interaction.message.delete()
+        await interaction.reply({
+          content:
+            "**Thanks for submitting your information! Your account is now verified**",
+          ephemeral: true,
+        })
       }
 
       if (
