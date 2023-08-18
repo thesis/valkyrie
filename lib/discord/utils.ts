@@ -1,7 +1,26 @@
-import { Channel, ChannelType, AnyThreadChannel } from "discord.js"
+import {
+  Channel,
+  ChannelType,
+  AnyThreadChannel,
+  ClientEvents,
+} from "discord.js"
+import { Robot } from "hubot"
 import { DiscordBot } from "hubot-discord"
 
+/**
+ * Hubot Robot type with Discord adapter.
+ */
 export type DiscordHubot = Hubot.Robot<DiscordBot>
+
+/**
+ * Available handlers for thread management, all taking the Hubot robot as
+ * their last param.
+ */
+export type DiscordEventHandlers = {
+  [Event in keyof ClientEvents]?: (
+    ...params: [...ClientEvents[Event], Robot]
+  ) => Promise<void>
+}
 
 // Category that is treated as recreational, i.e. the rules don't apply baby.
 export const RECREATIONAL_CATEGORY_ID = "1079492118692757605"
