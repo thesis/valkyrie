@@ -1,12 +1,15 @@
 import {
   APIButtonComponentWithCustomId,
+  APIInteractionGuildMember,
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
   Client,
   ComponentEmojiResolvable,
   ComponentType,
+  GuildMember,
   Interaction,
+  InteractionResponse,
   Message,
   PublicThreadChannel,
   ThreadAutoArchiveDuration,
@@ -22,9 +25,12 @@ import {
   isInTestingChannel,
 } from "../../lib/discord/utils.ts"
 
-const MAX_HEURISTIC_SYNC_THREAD_DURATION = 60 * MINUTE
+// The maximum time between any two messages after which a thread is considered
+// async.
+const MAX_HEURISTIC_SYNC_THREAD_DURATION = 0 // 60 * MINUTE
 const CHANNEL_METADATA_KEY = "discord-channel-metadata"
-const THREAD_CHECK_CADENCE = 5 * SECOND
+// How frequently threads are checked for archive requirements.
+const THREAD_CHECK_CADENCE = 5 * SECOND // 12 * HOUR
 // Use a ThreadAutoArchiveDuration as we'll still lean on Discord to
 // auto-archive after issuing the warning, so we want the value to be
 // one that we can update auto-archiving to.
@@ -44,6 +50,40 @@ function getAllThreadMetadata(robot: Robot): AvailableThreadMetadata {
       | AvailableThreadMetadata
       | undefined) ?? {}
   )
+}
+
+/**
+ * A helper to request follow-up action on a thread based on the id of the user
+ * who will follow up and the initial requester of follow-up action.
+ */
+function requestFollowUpAction(
+  thread: ThreadChannel<boolean>,
+  botMessage: InteractionResponse<boolean>,
+  followUpRequester: GuildMember | APIInteractionGuildMember | null,
+  requestedAction: string,
+  followUpUserId: string,
+) {
+  const requestingUserId = followUpRequester?.user.id
+
+  if (followUpUserId === requestingUserId) {
+    // If the user designates themselves to follow up, thank them without
+    // additional message noise.
+    botMessage.edit({
+      content:
+        `Thanks ${followUpRequester}, please ${requestedAction} ` +
+        "this thread or it will be archived in 24 hours ❤️",
+    })
+  } else {
+    // If another user is designated to follow up, ping them and clear the
+    // initial bot reply.
+    thread.send({
+      content:
+        `${userMention(followUpUserId)} please ${requestedAction} ` +
+        "this thread or it will be archived in 24 hours ❤️",
+    })
+
+    botMessage.delete()
+  }
 }
 
 const threadActions: {
@@ -100,14 +140,13 @@ const threadActions: {
 
       const [userIdToTag] = selectInteraction.values
 
-      thread.send({
-        content:
-          `${userMention(
-            userIdToTag,
-          )} please capture the task(s) associated with this thread today; ` +
-          "it will be auto-archived in 24 hours ❤️",
-      })
-      initialReply.delete()
+      requestFollowUpAction(
+        thread,
+        initialReply,
+        interaction.member,
+        "capture the task(s) associated with",
+        userIdToTag,
+      )
     },
   },
   "check-thread-archiving-status-button": {
@@ -146,14 +185,13 @@ const threadActions: {
 
       const [userIdToTag] = selectInteraction.values
 
-      thread.send({
-        content:
-          `${userMention(
-            userIdToTag,
-          )} please post your latest status on this thread or it ` +
-          "will be archived in 24 hours ❤️",
-      })
-      initialReply.delete()
+      requestFollowUpAction(
+        thread,
+        initialReply,
+        interaction.member,
+        "post your latest status on",
+        userIdToTag,
+      )
     },
   },
   "check-thread-archiving-pending-decision-button": {
@@ -192,14 +230,13 @@ const threadActions: {
 
       const [userIdToTag] = selectInteraction.values
 
-      thread.send({
-        content:
-          `${userMention(
-            userIdToTag,
-          )} please post and capture the decision for this thread or it ` +
-          "will be archived in 24 hours ❤️",
-      })
-      initialReply.delete()
+      requestFollowUpAction(
+        thread,
+        initialReply,
+        interaction.member,
+        "post and capture the decision for",
+        userIdToTag,
+      )
     },
   },
 }
@@ -234,7 +271,8 @@ function updateThreadMetadata(
 //
 // This uses a heuristic approach (see the code) to guess whether the
 // converesation is relatively rapid-fire and relatively short. Sync
-// conversations are exempt from prompts to avoid archiving.
+// conversations are exempt from prompts meant to avoid archiving without
+// follow-up actions.
 async function updateThreadStatusFromMessage(
   message: Message<boolean>,
   robot: Robot,
@@ -257,7 +295,7 @@ async function updateThreadStatusFromMessage(
   if (
     channelMetadata.sync &&
     messageTimestamp - (thread.createdTimestamp ?? 0) >
-      0 /* MAX_HEURISTIC_SYNC_THREAD_DURATION */
+      MAX_HEURISTIC_SYNC_THREAD_DURATION
   ) {
     robot.logger.info("Marking thread", thread.id, "as async")
     channelMetadata.sync = false
@@ -378,6 +416,16 @@ async function checkThreadStatus(
         // auto-archiving for us.
         await thread.setAutoArchiveDuration(AUTO_ARCHIVE_WARNING_LEAD_MINUTES)
       }
+      // FIXME Force thread archiving once we hit the auto-archive threshold,
+      // FIXME as Discord no longer _actually_ auto-archives, instead
+      // FIXME preferring to hide the thread from the sidebar but keep it
+      // FIXME unarchived.
+      // FIXME
+      // FIXME See: https://github.com/discord/discord-api-docs/commit/7c4c4976be4c0396f1feef8def24c0e86927e3a4 .
+      // FIXME
+      // FIXME > The auto_archive_duration field previously controlled how long
+      // FIXME > a thread could stay active, but is now repurposed to control how long
+      // FIXME > the thread stays in the channel list.
     })
 }
 
