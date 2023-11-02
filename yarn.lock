@@ -3225,9 +3225,9 @@ hubot-scripts@^2.17.2:
   dependencies:
     redis "0.8.4"
 
-"hubot-shipit@git+https://github.com/thesis/hubot-shipit.git#aa29eec479b57991feca906be5fd37f46ad41168":
+"hubot-shipit@git+https://github.com/thesis/hubot-shipit.git#d9169c374d0a95cafaaa8f69dca501ea29d4f933":
   version "0.2.1"
-  resolved "git+https://github.com/thesis/hubot-shipit.git#aa29eec479b57991feca906be5fd37f46ad41168"
+  resolved "git+https://github.com/thesis/hubot-shipit.git#d9169c374d0a95cafaaa8f69dca501ea29d4f933"
 
 hubot-test-helper@^1.9.0:
   version "1.9.0"
