@@ -1,4 +1,4 @@
-import { Client, TextChannel } from "discord.js"
+import { ChannelType, Client, TextChannel } from "discord.js"
 import { Robot } from "hubot"
 import moment from "moment"
 
@@ -20,21 +20,14 @@ export default async function webhookDiscord(
   robot: Robot,
 ) {
 	robot.hear(/blow everything up/, async (msg) => {
-	const guilds = discordClient.guilds.cache
 	const guild = discordClient.guilds.cache.first()
-	if (guild === undefined) {
-		msg.reply("Whoops, no guilds.")
-		return
-	} else {
-		msg.reply("Running it with", guild.name)
-	}
 	const channels = await guild.channels.fetch()
 	const archiveThreshold = weekdaysBefore(moment(), 4)
 	channels
 		.filter((channel): channel is TextChannel => channel !== null && channel.isTextBased() && channel.viewable)
 		.forEach(async channel => {
-			const threads = await channel.threads.fetch()
-			threads.threads.forEach(async thread => {
+			const { threads } = await channel.threads.fetch()
+			const threadsWithDates = (await Promise.all(threads.map(async thread => {
 				const messages = await thread.messages.fetch({limit: 1})
 
 				const firstMessage = messages.first()
@@ -42,13 +35,11 @@ export default async function webhookDiscord(
 					firstMessage?.createdTimestamp ?? 0,
 					thread.archiveTimestamp ?? 0
 				)
-				if (moment(lastActivity).isAfter(archiveThreshold)) {
-					return
-				}
 
-				// await thread.setArchived(true)
-				msg.reply("We would archive", thread.name)
-			})
+				return { thread, lastActivity: moment(lastActivity) }
+			}))).filter(({ lastActivity }) => lastActivity.isBefore(archiveThreshold))
+
+			msg.reply(`Threads to archive:\n- ${threadsWithDates.map(({ thread, lastActivity }) => `${thread.type === ChannelType.GuildPrivateThread ? "[private]" : thread.name}: ${lastActivity.toLocaleString()}`).join("\n- ")}`)
 		})
 	})
 }
