@@ -21,11 +21,16 @@ export default async function webhookDiscord(
 ) {
 	robot.hear(/blow everything up/, async (msg) => {
 	const guild = discordClient.guilds.cache.first()
+	if (guild === undefined) {
+		msg.send("No guild found.")
+		return
+	}
 	const channels = await guild.channels.fetch()
 	const archiveThreshold = weekdaysBefore(moment(), 4)
 	channels
 		.filter((channel): channel is TextChannel => channel !== null && channel.isTextBased() && channel.viewable)
 		.forEach(async channel => {
+			try {
 			const { threads } = await channel.threads.fetch()
 			const threadsWithDates = (await Promise.all(threads.map(async thread => {
 				const messages = await thread.messages.fetch({limit: 1})
@@ -39,9 +44,12 @@ export default async function webhookDiscord(
 				return { thread, lastActivity: moment(lastActivity) }
 			}))).filter(({ lastActivity }) => lastActivity.isBefore(archiveThreshold))
 
-			const message = `Threads to archive:\n- ${threadsWithDates.map(({ thread, lastActivity }) => `${thread.type === ChannelType.GuildPrivateThread ? "[private]" : thread.name}: ${lastActivity.toLocaleString()}`).join("\n- ")}`
+			const message = `Threads to archive:\n- ${threadsWithDates.map(({ thread, lastActivity }) => `${thread.type === ChannelType.PrivateThread ? "[private]" : thread.name}: ${lastActivity.toLocaleString()}`).join("\n- ")}`
 			console.log(message)
 			msg.reply(message)
+			} catch (err) {
+				console.error(err, (err as any).stack)
+			}
 		})
 	})
 }
