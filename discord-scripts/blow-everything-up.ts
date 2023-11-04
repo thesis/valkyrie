@@ -39,7 +39,9 @@ export default async function webhookDiscord(
 				return { thread, lastActivity: moment(lastActivity) }
 			}))).filter(({ lastActivity }) => lastActivity.isBefore(archiveThreshold))
 
-			msg.reply(`Threads to archive:\n- ${threadsWithDates.map(({ thread, lastActivity }) => `${thread.type === ChannelType.GuildPrivateThread ? "[private]" : thread.name}: ${lastActivity.toLocaleString()}`).join("\n- ")}`)
+			const message = `Threads to archive:\n- ${threadsWithDates.map(({ thread, lastActivity }) => `${thread.type === ChannelType.GuildPrivateThread ? "[private]" : thread.name}: ${lastActivity.toLocaleString()}`).join("\n- ")}`
+			console.log(message)
+			msg.reply(message)
 		})
 	})
 }
