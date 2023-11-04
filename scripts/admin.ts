@@ -74,7 +74,7 @@ const SPACE_ADMINS: { [spaceRoomId: string]: string[] } = {
   "!XEnwlDoWvSBvrloDVH:thesis.co": ["@anna:thesis.co"],
 }
 
-export default (robot: Robot<any>) => {
+export default (robot: Robot) => {
   robot.respond(/users/i, (response) => {
     response.reply(
       `\n${Object.values(robot.brain.users())
@@ -275,11 +275,14 @@ export default (robot: Robot<any>) => {
             spaceBaseColor,
             prefixParentSpaceName,
           )
-          const json = await client.uploadContent(pngStream as any, {
-            name: filename,
-            type: "image/png",
-            rawResponse: false,
-          })
+          const json = await client.uploadContent(
+            pngStream as unknown as BufferSource,
+            {
+              name: filename,
+              type: "image/png",
+              rawResponse: false,
+            },
+          )
           const contentUri = json.content_uri
 
           await client.sendStateEvent(roomId, EventType.RoomAvatar, {

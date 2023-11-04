@@ -2,10 +2,14 @@ import HubotChatTesting from "hubot-chat-testing"
 // @ts-expect-error No types!
 import Helper from "hubot-test-helper"
 
+// We're doing some test-related manual mock construction here that we're not
+// ready to adjust to proper typing.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const chat = new (HubotChatTesting as any)(
   "hubot",
   new (Helper as any)("scripts/example.coffee"),
 )
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 describe("Testing example scripts", () => {
   // chat
