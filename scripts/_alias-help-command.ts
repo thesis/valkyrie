@@ -19,7 +19,7 @@
 
 import { Robot, TextMessage } from "hubot"
 
-export default function aliasHelpCommand(robot: Robot<any>) {
+export default function aliasHelpCommand(robot: Robot) {
   robot.receiveMiddleware((context, next, done) => {
     const robotRespondPatternInText = robot
       .respondPattern(/ /)

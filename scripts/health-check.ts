@@ -9,7 +9,7 @@
 
 import { Robot } from "hubot"
 
-export default function (robot: Robot<any>) {
+export default function setUpHealthCheck(robot: Robot) {
   robot.router.get("/", (req, res) =>
     res.status(200).send("I watch for Ragnarok."),
   )
