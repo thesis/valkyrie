@@ -44,11 +44,9 @@ const SUPER_ADMIN_USERS = ["@matt:thesis.co", "@shadowfiend:thesis.co"]
 
 const ADMIN_USERS = [
   ...SUPER_ADMIN_USERS,
-  "@puppycodes:thesis.co",
   "@carolyn:thesis.co",
   "@gluzman:thesis.co",
   "@jessiefrance:thesis.co",
-  "@veronica:thesis.co",
 ]
 
 // Additional per-space admins beyond the core Thesis admins.
@@ -60,17 +58,10 @@ const SPACE_ADMINS: { [spaceRoomId: string]: string[] } = {
   // Keep space.
   "!YDpOcIsEpQabwiHpdV:thesis.co": ["@piotr.dyraga:thesis.co"],
   // Tally Ho space.
-  "!wCfAwzfZOUHTYIDjRn:thesis.co": [
-    "@michaelh:thesis.co",
-    "@puppycodes:thesis.co",
-  ],
+  "!wCfAwzfZOUHTYIDjRn:thesis.co": ["@michaelh:thesis.co"],
   // Fold space.
-  "!SuBAnawNxcIXoCHfPM:thesis.co": [
-    "@tom:thesis.co",
-    "@willreeves:thesis.co",
-    "@puppycodes:thesis.co",
-  ],
-  // Power Period space.
+  "!SuBAnawNxcIXoCHfPM:thesis.co": ["@tom:thesis.co", "@willreeves:thesis.co"],
+  // Embody space.
   "!XEnwlDoWvSBvrloDVH:thesis.co": ["@anna:thesis.co"],
 }
 
