@@ -8,9 +8,9 @@ export default async function webhookDiscord(
 ) {
   async function sendToDiscordChannel(
     channelName: string,
-    tagUser: string,
     title: string,
     message: string,
+    tagUser: string = "0", // 0 means no user is tagged
   ) {
     let channel: TextChannel | undefined
     const guilds = discordClient.guilds.cache
@@ -30,7 +30,6 @@ export default async function webhookDiscord(
         "Text-based channel with the given name not found in any guild",
       )
 
-    const memberIds = tagUser.split(",")
     const existingThread = channel.threads.cache.find(
       (thread) => thread.name === title,
     )
@@ -43,6 +42,7 @@ export default async function webhookDiscord(
         reason: message,
       })
       if (tagUser !== "0") {
+        const memberIds = tagUser.split(",")
         await Promise.all(
           memberIds.map((id) => newThread.members.add(id.trim())),
         )
@@ -71,12 +71,27 @@ export default async function webhookDiscord(
         }
       },
       async (req: express.Request, res: express.Response) => {
+        const isBodyInvalid = ["channelName", "title", "message"].some(
+          (field) => {
+            const isFieldEmpty = !req.body?.[field]
+
+            if (isFieldEmpty) {
+              res.status(400).send(`Missing field: ${field}`)
+            }
+            return isFieldEmpty
+          },
+        )
+
+        if (isBodyInvalid) {
+          return
+        }
+
         const { channelName, tagUser, title, message } = req.body
 
         robot.logger.info(
           `Received data: channelName = ${channelName}, title = ${title}, tagged users = ${tagUser} , message = ${message}`,
         )
-        await sendToDiscordChannel(channelName, tagUser, title, message)
+        await sendToDiscordChannel(channelName, title, message, tagUser)
 
         res.status(200).send("Message sent to Discord")
       },
