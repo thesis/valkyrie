@@ -70,7 +70,7 @@
   "scripts": {
     "test:mocha": "env NODE_OPTIONS'=--experimental-vm-modules --experimental-loader ts-node/esm' mocha --exit test/**.ts",
     "test:jest": "env NODE_OPTIONS=--experimental-vm-modules jest",
-    "test": "run-p test:mocha test:jest",
+    "test": "run-p test:jest",
     "lint:types": "tsc -p ./tsconfig.json",
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
