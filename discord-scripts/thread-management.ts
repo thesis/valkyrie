@@ -95,20 +95,6 @@ export default function manageThreads(discordClient: Client) {
       return
     }
 
-    if (
-      categoryChannel?.name?.toLowerCase()?.endsWith("general") === true &&
-      containingChannel?.name?.toLowerCase()?.endsWith("main") === true
-    ) {
-      await placeholder.edit(server.roles.everyone.toString())
-    }
-
-    if (
-      categoryChannel?.name?.toLowerCase()?.endsWith("general") === true &&
-      containingChannel?.name?.toLowerCase()?.endsWith("bifrost") === true
-    ) {
-      await placeholder.edit(server.roles.everyone.toString())
-    }
-
     // Monstrous, delete the useless placeholder and pray for our soul.
     // Placeholder code as we figure out the best way to handle the General
     // category.
