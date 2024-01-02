@@ -1,6 +1,6 @@
 import { PartialMessage, Client, Message, EmbedBuilder } from "discord.js"
 
-async function generateCompactGitHubEmbeds(
+async function workingTwitterEmbeds(
   message: Message<boolean> | PartialMessage,
 ) {
   if (message.author === null || message.author === undefined) {
@@ -8,6 +8,19 @@ async function generateCompactGitHubEmbeds(
   }
 
   if (!message.author.bot) {
+    const content = message.content ?? ""
+    if (content.match(/(https:\/\/(x|twitter).com\/[a-zA-Z0-9%/+]+)/)) {
+      const allLinks = Array.from(
+        content.matchAll(/(https:\/\/(x|twitter).com\/[a-zA-Z0-9%/+]+)/g),
+      )
+        .map(([twitterLink]) =>
+          twitterLink.replace(/https:\/\/(x|twitter)/, "https://fxtwitter"),
+        )
+        .join(" , ")
+
+      await message.channel.send(allLinks)
+    }
+
     const receivedEmbeds = message.embeds
     if (
       !receivedEmbeds ||
@@ -30,15 +43,17 @@ async function generateCompactGitHubEmbeds(
   }
 }
 
-// Suppresses default GitHub embeds in all Discord messages, replacing them
-// with an extremely shortened version that only shows the page title with a
-// link.
-export default function compactGitHubEmbeds(discordClient: Client) {
+// Follows up any message with 1+ Twitter links (including x.com) with a
+// message that includes fxtwitter links, which correctly embed into Discord,
+// expand t.co links, and have a couple of other nice features.
+//
+// See https://github.com/FixTweet/FxTwitter for more.
+export default function fixTwitterEmbeds(discordClient: Client) {
   discordClient.on("messageCreate", (message) => {
-    generateCompactGitHubEmbeds(message)
+    workingTwitterEmbeds(message)
   })
 
   discordClient.on("messageUpdate", (_, newMessage) => {
-    generateCompactGitHubEmbeds(newMessage)
+    workingTwitterEmbeds(newMessage)
   })
 }
