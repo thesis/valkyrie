@@ -1,6 +1,8 @@
 import { PartialMessage, Client, Message, EmbedBuilder } from "discord.js"
 
-async function compactGithubEmbeds(message: Message<boolean> | PartialMessage) {
+async function generateCompactGitHubEmbeds(
+  message: Message<boolean> | PartialMessage,
+) {
   if (message.author === null || message.author === undefined) {
     return
   }
@@ -33,10 +35,10 @@ async function compactGithubEmbeds(message: Message<boolean> | PartialMessage) {
 // link.
 export default function compactGitHubEmbeds(discordClient: Client) {
   discordClient.on("messageCreate", (message) => {
-    compactGithubEmbeds(message)
+    generateCompactGitHubEmbeds(message)
   })
 
   discordClient.on("messageUpdate", (_, newMessage) => {
-    compactGithubEmbeds(newMessage)
+    generateCompactGitHubEmbeds(newMessage)
   })
 }
