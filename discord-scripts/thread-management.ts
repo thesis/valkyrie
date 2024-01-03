@@ -1,34 +1,8 @@
-import { Channel, ChannelType, Client } from "discord.js"
+import { ChannelType, Client } from "discord.js"
+import { isInRecreationalCategory } from "../lib/discord/utils.ts"
 
 // Emoji used to suggest a thread.
 const THREAD_EMOJI = "🧵"
-// Category that is treated as recreational, i.e. the rules don't apply baby.
-const RECREATIONAL_CATEGORY_ID = "1079492118692757605"
-
-function isInRecreationalCategory(
-  channel: Channel | undefined | null,
-): boolean {
-  if (
-    channel === undefined ||
-    channel === null ||
-    channel.isDMBased() ||
-    channel.parent === null
-  ) {
-    return false
-  }
-
-  // Channel is inside a category.
-  if (channel.parent.type === ChannelType.GuildCategory) {
-    return channel.parent.id === RECREATIONAL_CATEGORY_ID
-  }
-
-  // Channel's parent is inside a category; this applies to thread channels.
-  if (channel.parent.parent !== null) {
-    return channel.parent.id === RECREATIONAL_CATEGORY_ID
-  }
-
-  return false
-}
 
 export default function manageThreads(discordClient: Client) {
   // When a thread is created, join it.
