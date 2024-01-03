@@ -1,34 +1,8 @@
-import { Channel, ChannelType, Client } from "discord.js"
+import { ChannelType, Client } from "discord.js"
+import { isInRecreationalCategory } from "../lib/discord/utils.ts"
 
 // Emoji used to suggest a thread.
 const THREAD_EMOJI = "🧵"
-// Category that is treated as recreational, i.e. the rules don't apply baby.
-const RECREATIONAL_CATEGORY_ID = "1079492118692757605"
-
-function isInRecreationalCategory(
-  channel: Channel | undefined | null,
-): boolean {
-  if (
-    channel === undefined ||
-    channel === null ||
-    channel.isDMBased() ||
-    channel.parent === null
-  ) {
-    return false
-  }
-
-  // Channel is inside a category.
-  if (channel.parent.type === ChannelType.GuildCategory) {
-    return channel.parent.id === RECREATIONAL_CATEGORY_ID
-  }
-
-  // Channel's parent is inside a category; this applies to thread channels.
-  if (channel.parent.parent !== null) {
-    return channel.parent.id === RECREATIONAL_CATEGORY_ID
-  }
-
-  return false
-}
 
 export default function manageThreads(discordClient: Client) {
   // When a thread is created, join it.
@@ -54,23 +28,20 @@ export default function manageThreads(discordClient: Client) {
 
     const { guild: server, parent: containingChannel } = thread
 
-    if (thread.type === ChannelType.GuildPrivateThread) {
-      if (!thread.name.startsWith("🔒")) {
-        await thread.setName(`🔒 ${thread.name.replace(/^ +/, "")}`)
-      }
-
-      if (containingChannel?.name?.toLowerCase() !== "operations") {
-        await thread.send(
-          "Private threads should largely only be used for discussions around " +
-            "confidential topics like legal and hiring. They should as a result " +
-            "almost always be created in #operations; if you know you're " +
-            "breaking both rules on purpose, go forth and conquer, but otherwise " +
-            "please start the thread there. I'm also going to auto-tag the " +
-            "appropriate roles now, which may compromise the privacy of the " +
-            "thread (**all members of the role who have access to this channel " +
-            "will have access to the thread**).",
-        )
-      }
+    if (
+      thread.type === ChannelType.PrivateThread &&
+      containingChannel?.name?.toLowerCase() !== "operations"
+    ) {
+      await thread.send(
+        "Private threads should largely only be used for discussions around " +
+          "confidential topics like legal and hiring. They should as a result " +
+          "almost always be created in #operations; if you know you're " +
+          "breaking both rules on purpose, go forth and conquer, but otherwise " +
+          "please start the thread there. I'm also going to auto-tag the " +
+          "appropriate roles now, which may compromise the privacy of the " +
+          "thread (**all members of the role who have access to this channel " +
+          "will have access to the thread**).",
+      )
     }
 
     const placeholder = await thread.send("<placeholder>")

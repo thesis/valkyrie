@@ -132,6 +132,21 @@ jobs:
     secrets:
       GCP_DEPLOY_CREDENTIALS: ${{ secrets.GCP_DEPLOY_CREDENTIALS }}
 
+  # Deploy depends on a freshly built image. Force deploy instead runs when
+  # someone requests a deploy from a comment, and bypasses tests and builds (as
+  # these are expected to have run previously).
+  force-deploy:
+    needs: [decide-parameters]
+    if: ${{ needs.decide-parameters.outputs.should-deploy == 'true' && needs.decide-parameters.outputs.should-build == 'false' }}
+    uses: ./.github/workflows/deploy.yml
+    with:
+      docker-image-name: valkyrie
+      docker-image-version: ${{ github.sha }}
+      gcp-project-name: thesis-ops
+      gcp-project-id: thesis-ops-2748
+    secrets:
+      GCP_DEPLOY_CREDENTIALS: ${{ secrets.GCP_DEPLOY_CREDENTIALS }}
+
   lint:
     needs: [decide-parameters]
     if: ${{ needs.decide-parameters.outputs.should-build == 'true' }}

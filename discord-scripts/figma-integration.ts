@@ -10,11 +10,9 @@ import {
 import { randomBytes } from "crypto"
 
 import * as Figma from "figma-api"
-import { DiscordBot } from "hubot-discord"
 import { User } from "figma-api/lib/api-types"
 import { HOST, MINUTE } from "../lib/globals.ts"
-
-type DiscordHubot = Hubot.Robot<DiscordBot>
+import { DiscordHubot } from "../lib/discord/utils.ts"
 
 const COMMAND_NAME = "figma"
 const CONNECT_SUBCOMMAND_NAME = "connect"
