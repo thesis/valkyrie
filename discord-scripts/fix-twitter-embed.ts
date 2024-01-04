@@ -1,4 +1,4 @@
-import { PartialMessage, Client, Message, EmbedBuilder } from "discord.js"
+import { PartialMessage, Client, Message } from "discord.js"
 
 async function workingTwitterEmbeds(
   message: Message<boolean> | PartialMessage,
@@ -20,26 +20,6 @@ async function workingTwitterEmbeds(
 
       await message.channel.send(allLinks)
     }
-
-    const receivedEmbeds = message.embeds
-    if (
-      !receivedEmbeds ||
-      !receivedEmbeds.find(
-        (embed) => embed.url && embed.url.includes("github.com"),
-      )
-    ) {
-      return
-    }
-
-    await message.suppressEmbeds(true)
-    const description = receivedEmbeds
-      .map((embed, i) => `(${i + 1}) [${embed.title}](${embed.url})`)
-      .join("\n")
-    const embed = new EmbedBuilder()
-      .setColor("#0099ff")
-      .setDescription(description)
-
-    message.channel.send({ embeds: [embed] })
   }
 }
 

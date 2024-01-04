@@ -21,11 +21,10 @@ jobs:
           ${{ toJSON(github.event) }}
         EOF
     outputs:
-      # Run builds for all non-comment triggers.
-      should-build: >-
-        ${{
-          github.event_name != 'issue_comment'
-        }}
+      # Run builds for all triggers; ideally we would reuse an existing build
+      # for comment triggers, but since we don't currently push images on
+      # non-deploy builds, that's not currently possible.
+      should-build: true
       # Run tests for all non-comment triggers;
       # ignore non-PR comment triggers;
       # and for PR comment triggers, only run tests if they are explicitly
