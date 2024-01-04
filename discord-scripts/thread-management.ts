@@ -1,110 +1,65 @@
-import { ChannelType, Client } from "discord.js"
-import { isInRecreationalCategory } from "../lib/discord/utils.ts"
+import fs from "fs"
+import { Client } from "discord.js"
+import path from "path"
+import { Robot } from "hubot"
+import { fileURLToPath } from "url"
+import { DiscordEventHandlers } from "../lib/discord/utils.ts"
 
-// Emoji used to suggest a thread.
-const THREAD_EMOJI = "🧵"
-
-export default function manageThreads(discordClient: Client) {
-  // When a thread is created, join it.
-  //
-  // Additionally, quietly tag a role so that all members of it are subscribed
-  // to the thread (they may later leave the thread to opt out). The role that
-  // is tagged is, in order:
-  //
-  // - If the containing channel's category is recreational, no role.
-  // - If the containnig channel has a role with a matching name, that role
-  //   (e.g., a message to #tech will tag a Tech role if it exists).
-  // - If the containing channel's category has a role with a matching name, that role
-  //   (e.g., a message to #taho-standup inside the Taho category will tag the
-  //   Taho role if it exists).
-  // - If the containing channel's category is General and the channel is
-  //   #main, @everyone.
-  discordClient.on("threadCreate", async (thread) => {
-    await thread.join()
-
-    if (isInRecreationalCategory(thread)) {
-      return
-    }
-
-    const { guild: server, parent: containingChannel } = thread
-
-    if (
-      thread.type === ChannelType.PrivateThread &&
-      containingChannel?.name?.toLowerCase() !== "operations"
-    ) {
-      await thread.send(
-        "Private threads should largely only be used for discussions around " +
-          "confidential topics like legal and hiring. They should as a result " +
-          "almost always be created in #operations; if you know you're " +
-          "breaking both rules on purpose, go forth and conquer, but otherwise " +
-          "please start the thread there. I'm also going to auto-tag the " +
-          "appropriate roles now, which may compromise the privacy of the " +
-          "thread (**all members of the role who have access to this channel " +
-          "will have access to the thread**).",
-      )
-    }
-
-    const placeholder = await thread.send("<placeholder>")
-
-    const matchingRole = server.roles.cache.find(
-      (role) =>
-        role.name.toLowerCase() === containingChannel?.name.toLowerCase(),
+export default function manageThreads(discordClient: Client, robot: Robot) {
+  fs.readdirSync(
+    path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      "./thread-management",
+    ),
+  )
+    .sort()
+    .filter(
+      (file) =>
+        [".ts", ".js"].includes(path.extname(file)) && !file.startsWith("_"),
     )
+    .forEach(async (file) => {
+      try {
+        const threadManagementScript: { default: DiscordEventHandlers } =
+          await import(
+            path.join("..", "discord-scripts", "thread-management", file)
+          )
 
-    if (matchingRole !== undefined) {
-      await placeholder.edit(matchingRole.toString())
-      return
-    }
+        Object.entries(threadManagementScript.default).forEach(
+          ([event, handler]) => {
+            discordClient.on(event, (...args) => {
+              const finalArgs = [...args, robot]
+              // @ts-expect-error We are doing some shenanigans here that TS can't
+              // handle to always pass a robot as the last parameter to the
+              // handler.
+              return handler(...finalArgs)
+            })
+          },
+        )
 
-    const categoryChannel = containingChannel?.parent
-    const categoryMatchingRole = server.roles.cache.find(
-      (role) => role.name.toLowerCase() === categoryChannel?.name.toLowerCase(),
-    )
+        if ("setup" in threadManagementScript) {
+          ;(
+            threadManagementScript.setup as (
+              robot: Robot,
+              client: Client,
+            ) => Promise<void>
+          ).call(undefined, robot, discordClient)
+        }
 
-    if (categoryMatchingRole !== undefined) {
-      await placeholder.edit(categoryMatchingRole.toString())
-      return
-    }
+        robot.logger.info(`Loaded Discord thread management script ${file}.`)
+      } catch (error) {
+        const stackString =
+          // Errors may have a stack trace, or not---anyone's guess!
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          "stack" in (error as any) ? `\n${(error as any).stack}` : ""
 
-    // Monstrous, delete the useless placeholder and pray for our soul.
-    // Placeholder code as we figure out the best way to handle the General
-    // category.
-    await placeholder.delete()
-  })
+        const errorJson = JSON.stringify(error, null, 2)
 
-  // Remind users to create a thread with a reacji for reply chains longer than
-  // 1 reply. Skip for messages in the recreational category.
-  discordClient.on("messageCreate", async (message) => {
-    // If we're already in a thread or this is the recreational category, do
-    // nothing.
-    const { channel } = message
-    if (channel.isThread() || isInRecreationalCategory(channel)) {
-      return
-    }
+        const errorDescription =
+          errorJson.trim().length > 0 ? errorJson : String(error)
 
-    // If this message is not in reply to anything, do nothing.
-    if (
-      message.reference === null ||
-      message.reference.messageId === undefined
-    ) {
-      return
-    }
-
-    // If the message replied to is not in reply to anythinbg, still do nothing.
-    const repliedMessage = await message.fetchReference()
-    if (
-      repliedMessage.reference === null ||
-      repliedMessage.reference.messageId === undefined
-    ) {
-      return
-    }
-
-    // Okay, now we've got a chain of two replies, suggest a thread via reacji
-    // on the original message---if it is indeed the original message in the
-    // chain.
-    const potentialOriginalMessage = await repliedMessage.fetchReference()
-    if (potentialOriginalMessage.reference === null) {
-      message.react(THREAD_EMOJI)
-    }
-  })
+        robot.logger.error(
+          `Failed to load Discord script ${file}: ${errorDescription}${stackString}`,
+        )
+      }
+    })
 }

@@ -1,10 +1,45 @@
-import { Channel, ChannelType, AnyThreadChannel } from "discord.js"
+import {
+  Channel,
+  ChannelType,
+  AnyThreadChannel,
+  ClientEvents,
+  ThreadChannel,
+} from "discord.js"
+import { Robot } from "hubot"
 import { DiscordBot } from "hubot-discord"
 
+// Channels that are used for testing, may be treated differently.
+const TESTING_CHANNEL_NAMES = ["playground", "bifrost"]
+
+/**
+ * Hubot Robot type with Discord adapter.
+ */
 export type DiscordHubot = Hubot.Robot<DiscordBot>
+
+/**
+ * Available handlers for thread management, all taking the Hubot robot as
+ * their last param.
+ */
+export type DiscordEventHandlers = {
+  [Event in keyof ClientEvents]?: (
+    ...params: [...ClientEvents[Event], Robot]
+  ) => Promise<void>
+}
 
 // Category that is treated as recreational, i.e. the rules don't apply baby.
 export const RECREATIONAL_CATEGORY_ID = "1079492118692757605"
+
+/**
+ * Checks if a given thread is within a channel used for Hubot testing. At
+ * times, these channels may be subjected to laxer restrictions.
+ */
+export function isInTestingChannel(threadChannel: ThreadChannel): boolean {
+  return (
+    TESTING_CHANNEL_NAMES.indexOf(
+      threadChannel.parent?.name?.toLowerCase() ?? "",
+    ) !== -1
+  )
+}
 
 /**
  * Checks if a given channel is within the category considered "recreational".

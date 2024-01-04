@@ -1,4 +1,4 @@
-import { ChannelType, Client, TextChannel } from "discord.js"
+import { Client, TextChannel } from "discord.js"
 import { Robot } from "hubot"
 import moment from "moment"
 
@@ -18,15 +18,36 @@ export default async function webhookDiscord(
   discordClient: Client,
   robot: Robot,
 ) {
-  robot.hear(/blow everything up/, async (msg) => {
+  robot.hear(/help me archive (.+)/, async (msg) => {
+    const archiveChannelName = msg.match[1]
+
     const guild = discordClient.guilds.cache.first()
     if (guild === undefined) {
-      msg.send("No guild found.")
+      msg.send("Failed to resolve Discord server.")
       return
     }
     const channels = await guild.channels.fetch()
-    const archiveThreshold = weekdaysBefore(moment(), 4)
-    channels
+
+    const archiveChannel =
+      channels.get(archiveChannelName) ??
+      channels.find(
+        (channel) =>
+          channel !== null &&
+          channel.isTextBased() &&
+          !channel.isDMBased() &&
+          channel.name.toLowerCase() === archiveChannelName.toLowerCase(),
+      ) ??
+      undefined
+
+    if (archiveChannel === undefined) {
+      msg.send("No matching channel found.")
+      return
+    }
+
+    const archiveThreshold = weekdaysBefore(moment(), 14)
+
+    // channels
+    Array.from([archiveChannel])
       .filter(
         (channel): channel is TextChannel =>
           channel !== null && channel.isTextBased() && channel.viewable,
@@ -52,20 +73,9 @@ export default async function webhookDiscord(
             lastActivity.isBefore(archiveThreshold),
           )
 
-          const message = `Threads to archive for ${
-            channel.name
-          }:\n- ${threadsWithDates
-            .map(
-              ({ thread, lastActivity }) =>
-                `${
-                  thread.type === ChannelType.PrivateThread
-                    ? "[private]"
-                    : thread.name
-                }: ${lastActivity.toLocaleString()}`,
-            )
-            .join("\n- ")}`
-          console.log(message)
-          msg.reply(message)
+          threadsWithDates[0]?.thread?.send(
+            "@ogshadowfiend check archive status here, please.",
+          )
         } catch (err) {
           console.error(
             `Error for ${channel.name}: `,
