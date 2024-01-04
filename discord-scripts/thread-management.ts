@@ -52,12 +52,13 @@ export default function manageThreads(discordClient: Client, robot: Robot) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           "stack" in (error as any) ? `\n${(error as any).stack}` : ""
 
+        const errorJson = JSON.stringify(error, null, 2)
+
+        const errorDescription =
+          errorJson.trim().length > 0 ? errorJson : String(error)
+
         robot.logger.error(
-          `Failed to load Discord script ${file}: ${JSON.stringify(
-            error,
-            null,
-            2,
-          )}${stackString}`,
+          `Failed to load Discord script ${file}: ${errorDescription}${stackString}`,
         )
       }
     })
