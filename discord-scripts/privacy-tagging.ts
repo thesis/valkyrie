@@ -8,7 +8,12 @@ async function ensurePrivacyEmoji(channel: Channel) {
 
   if (isPrivate(channel)) {
     if (!channel.name.startsWith("🔒")) {
-      await channel.setName(`🔒 ${channel.name.replace(/^ +/, "")}`)
+      // If the channel name has spaces or capital letters, insert a space. In
+      // practice, this usually means we're dealing with a thread.
+      const spaceFirst = channel.name.match(/\s|[A-Z]/)
+      const namePrefix = spaceFirst ? "🔒 " : "🔒"
+
+      await channel.setName(`${namePrefix}${channel.name.replace(/^ +/, "")}`)
     }
   }
 }
