@@ -1,4 +1,4 @@
-import { Client, TextChannel } from "discord.js"
+import { ChannelType, Client, TextChannel, userMention } from "discord.js"
 import { Robot } from "hubot"
 import moment from "moment"
 
@@ -20,6 +20,7 @@ export default async function webhookDiscord(
 ) {
   robot.hear(/help me archive (.+)/, async (msg) => {
     const archiveChannelName = msg.match[1]
+    const senderId = msg.envelope.user.id
 
     const guild = discordClient.guilds.cache.first()
     if (guild === undefined) {
@@ -28,26 +29,34 @@ export default async function webhookDiscord(
     }
     const channels = await guild.channels.fetch()
 
-    const archiveChannel =
+    const archiveChannelMatch =
       channels.get(archiveChannelName) ??
       channels.find(
         (channel) =>
           channel !== null &&
-          channel.isTextBased() &&
           !channel.isDMBased() &&
           channel.name.toLowerCase() === archiveChannelName.toLowerCase(),
       ) ??
       undefined
 
-    if (archiveChannel === undefined) {
+    const archiveChannels = archiveChannelMatch?.isTextBased()
+      ? [archiveChannelMatch]
+      : archiveChannelMatch?.type === ChannelType.GuildCategory &&
+        archiveChannelMatch.children.cache
+
+    if (!Array.isArray(archiveChannels)) {
       msg.send("No matching channel found.")
       return
     }
 
+    msg.send(
+      `Sending archiving pings for threads older than 14 days to ${senderId}!`,
+    )
+
     const archiveThreshold = weekdaysBefore(moment(), 14)
 
     // channels
-    Array.from([archiveChannel])
+    archiveChannels
       .filter(
         (channel): channel is TextChannel =>
           channel !== null && channel.isTextBased() && channel.viewable,
@@ -74,7 +83,7 @@ export default async function webhookDiscord(
           )
 
           threadsWithDates[0]?.thread?.send(
-            "@ogshadowfiend check archive status here, please.",
+            `${userMention(senderId)} check archive status here, please.`,
           )
         } catch (err) {
           console.error(
