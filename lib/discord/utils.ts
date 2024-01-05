@@ -8,6 +8,10 @@ import {
 import { Robot } from "hubot"
 import { DiscordBot } from "hubot-discord"
 
+// The base role id used for base permissions across org
+// members.
+const BASE_ROLE_ID = "1158333090494689290"
+
 // Channels that are used for testing, may be treated differently.
 const TESTING_CHANNEL_NAMES = ["playground", "bifrost"]
 
@@ -108,19 +112,15 @@ export function isPrivate(channel: Channel | undefined | null): boolean {
     AnyThreadChannel
   >
 
-  // For other channels, heck if the base role has an override to prevent it
-  // from viewing the channel.
+  // For other channels, check if the defined base role has view
+  // channel access.
   //
-  // NOTE: The way the Thesis Discord is set up, the base role does NOT have
-  // view access; however, channels that are private have an explicit DENY for
-  // the view permission. This is what we check for here, considering a channel
-  // private ONLY IF it explicitly denies view channel access.
+  // NOTE: The way the Thesis Discord is set up, the base
+  // "@everyone" role does NOT have view access; however,
+  // the base role identified by BASE_ROLE_ID does.
   const everyoneCanView =
-    knownNonThreadChannel.permissionOverwrites.cache
-      .get(channel.guild.roles.everyone.id)
-      ?.allow.has("ViewChannel") ?? true
+    knownNonThreadChannel.permissionsFor(BASE_ROLE_ID)?.has("ViewChannel") ??
+    false
 
   return !everyoneCanView
 }
-
-export default function booyan() {}
