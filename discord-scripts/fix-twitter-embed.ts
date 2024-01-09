@@ -9,9 +9,9 @@ async function workingTwitterEmbeds(
 
   if (!message.author.bot) {
     const content = message.content ?? ""
-    if (content.match(/(https:\/\/(x|twitter).com\/[a-zA-Z0-9%/+]+)/)) {
+    if (content.match(/(https:\/\/(x|twitter).com\/[a-zA-Z0-9%/_+]+)/)) {
       const allLinks = Array.from(
-        content.matchAll(/(https:\/\/(x|twitter).com\/[a-zA-Z0-9%/+]+)/g),
+        content.matchAll(/(https:\/\/(x|twitter).com\/[a-zA-Z0-9%/_+]+)/g),
       )
         .map(([twitterLink]) =>
           twitterLink.replace(/https:\/\/(x|twitter)/, "https://fxtwitter"),
