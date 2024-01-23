@@ -1,24 +1,53 @@
 import { PartialMessage, Client, Message } from "discord.js"
 
+const twitterUrlRegExp = /(https:\/\/(x|twitter).com\/[a-zA-Z0-9%/_+]+)/g
+
+function extractUniqueTwitterLinks(
+  message: Message<boolean> | PartialMessage,
+): string[] {
+  const twitterEmbedUrls = message.embeds
+    .map(({ url }) => url)
+    .filter((url) => url?.match(twitterUrlRegExp) ?? false)
+
+  const content = message.content ?? ""
+  if (content.match(twitterUrlRegExp)) {
+    const allUrl = Array.from(content.matchAll(twitterUrlRegExp)).map(
+      ([twitterUrl]) =>
+        twitterUrl.replace(/https:\/\/(x|twitter)/, "https://fxtwitter").trim(),
+    )
+
+    return allUrl
+      .reduce(
+        (uniqueUrls, url) =>
+          uniqueUrls.includes(url) ? uniqueUrls : [...uniqueUrls, url],
+        [] as string[],
+      )
+      .filter((url) => !twitterEmbedUrls.includes(url))
+  }
+
+  return []
+}
+
 async function workingTwitterEmbeds(
   message: Message<boolean> | PartialMessage,
+  oldMessage?: Message<boolean> | PartialMessage,
 ) {
   if (message.author === null || message.author === undefined) {
     return
   }
 
   if (!message.author.bot) {
-    const content = message.content ?? ""
-    if (content.match(/(https:\/\/(x|twitter).com\/[a-zA-Z0-9%/_+]+)/)) {
-      const allLinks = Array.from(
-        content.matchAll(/(https:\/\/(x|twitter).com\/[a-zA-Z0-9%/_+]+)/g),
-      )
-        .map(([twitterLink]) =>
-          twitterLink.replace(/https:\/\/(x|twitter)/, "https://fxtwitter"),
-        )
-        .join(" , ")
+    // Kill default embeds in favor of ours <_<
+    await message.suppressEmbeds()
 
-      await message.channel.send(allLinks)
+    const existingUrls =
+      oldMessage === undefined ? [] : extractUniqueTwitterLinks(oldMessage)
+    const latestUrls = extractUniqueTwitterLinks(message).filter(
+      (url) => !existingUrls.includes(url),
+    )
+
+    if (latestUrls.length > 0) {
+      await message.channel.send(latestUrls.join(", "))
     }
   }
 }
@@ -33,7 +62,7 @@ export default function fixTwitterEmbeds(discordClient: Client) {
     workingTwitterEmbeds(message)
   })
 
-  discordClient.on("messageUpdate", (_, newMessage) => {
-    workingTwitterEmbeds(newMessage)
+  discordClient.on("messageUpdate", (oldMessage, newMessage) => {
+    workingTwitterEmbeds(newMessage, oldMessage)
   })
 }
