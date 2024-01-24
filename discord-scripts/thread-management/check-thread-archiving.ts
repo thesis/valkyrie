@@ -24,11 +24,16 @@ import {
   isInRecreationalCategory,
   isInTestingChannel,
 } from "../../lib/discord/utils.ts"
+import {
+  getAllThreadMetadata,
+  getThreadMetadata,
+  isInPermittedCategoryOrChannel,
+  updateThreadMetadata,
+} from "../../lib/discord/channel-metadata.ts"
 
 // The maximum time between any two messages after which a thread is considered
 // async.
 const MAX_HEURISTIC_SYNC_THREAD_DURATION = 0 // 60 * MINUTE
-const CHANNEL_METADATA_KEY = "discord-channel-metadata"
 // How frequently threads are checked for archive requirements.
 const THREAD_CHECK_CADENCE = 5 * SECOND // 12 * HOUR
 // Use a ThreadAutoArchiveDuration as we'll still lean on Discord to
@@ -36,21 +41,6 @@ const THREAD_CHECK_CADENCE = 5 * SECOND // 12 * HOUR
 // one that we can update auto-archiving to.
 const AUTO_ARCHIVE_WARNING_LEAD_MINUTES: ThreadAutoArchiveDuration =
   ThreadAutoArchiveDuration.OneDay
-
-type ThreadMetadata = {
-  sync?: boolean
-}
-type AvailableThreadMetadata = {
-  [threadId: string]: ThreadMetadata | undefined
-}
-
-function getAllThreadMetadata(robot: Robot): AvailableThreadMetadata {
-  return (
-    (JSON.parse(robot.brain.get(CHANNEL_METADATA_KEY) ?? "{}") as
-      | AvailableThreadMetadata
-      | undefined) ?? {}
-  )
-}
 
 /**
  * A helper to request follow-up action on a thread based on the id of the user
@@ -241,36 +231,10 @@ const threadActions: {
   },
 }
 
-function getThreadMetadata(
-  robot: Robot,
-  thread: ThreadChannel,
-): ThreadMetadata | undefined {
-  return getAllThreadMetadata(robot)[thread.id]
-}
-
-function updateThreadMetadata(
-  robot: Robot,
-  thread: ThreadChannel,
-  updatedMetadata: ThreadMetadata | undefined,
-): void {
-  const { [thread.id]: _, ...otherChannelMetadata } =
-    getAllThreadMetadata(robot) ?? {}
-
-  const updatedAvailableMetadata =
-    updatedMetadata === undefined
-      ? otherChannelMetadata
-      : { ...otherChannelMetadata, [thread.id]: updatedMetadata }
-
-  robot.brain.set(
-    CHANNEL_METADATA_KEY,
-    JSON.stringify(updatedAvailableMetadata),
-  )
-}
-
 // Updates a thread to indicate whether it's a sync conversation.
 //
 // This uses a heuristic approach (see the code) to guess whether the
-// converesation is relatively rapid-fire and relatively short. Sync
+// conversation is relatively rapid-fire and relatively short. Sync
 // conversations are exempt from prompts meant to avoid archiving without
 // follow-up actions.
 async function updateThreadStatusFromMessage(
@@ -283,6 +247,7 @@ async function updateThreadStatusFromMessage(
   if (
     !thread.isThread() ||
     isInRecreationalCategory(thread) ||
+    !isInPermittedCategoryOrChannel(robot.brain, thread, "archive-checking") ||
     !isInTestingChannel(thread) // FIXME drop once tested
   ) {
     return
@@ -290,7 +255,9 @@ async function updateThreadStatusFromMessage(
 
   robot.logger.info("OHAI I am about to do this")
 
-  const channelMetadata = getThreadMetadata(robot, thread) ?? { sync: true }
+  const channelMetadata = getThreadMetadata(robot.brain, thread) ?? {
+    sync: true,
+  }
 
   if (
     channelMetadata.sync &&
@@ -299,7 +266,7 @@ async function updateThreadStatusFromMessage(
   ) {
     robot.logger.info("Marking thread", thread.id, "as async")
     channelMetadata.sync = false
-    updateThreadMetadata(robot, thread, channelMetadata)
+    updateThreadMetadata(robot.brain, thread, channelMetadata)
   }
 }
 
@@ -344,19 +311,19 @@ async function updateThreadStatusFromThread(
 
   if (
     updatedThread.archived === true &&
-    getThreadMetadata(robot, updatedThread) !== undefined
+    getThreadMetadata(robot.brain, updatedThread) !== undefined
   ) {
     // Clear metadata for an archived thread.
-    updateThreadMetadata(robot, updatedThread, undefined)
+    updateThreadMetadata(robot.brain, updatedThread, undefined)
   }
 
   // Force sync to false for an unarchived thread that was updated.
   if (
     oldThread.archived === true &&
     updatedThread.archived === false &&
-    getThreadMetadata(robot, updatedThread)?.sync !== false
+    getThreadMetadata(robot.brain, updatedThread)?.sync !== false
   ) {
-    updateThreadMetadata(robot, updatedThread, { sync: false })
+    updateThreadMetadata(robot.brain, updatedThread, { sync: false })
   }
 }
 
@@ -364,13 +331,17 @@ async function checkThreadStatus(
   robot: Robot,
   discordClient: Client,
 ): Promise<void> {
-  const threadMetadataByThreadId = getAllThreadMetadata(robot)
+  const threadMetadataByThreadId = getAllThreadMetadata(robot.brain)
   Object.entries(threadMetadataByThreadId)
     .filter(([, metadata]) => metadata?.sync === false)
     .forEach(async ([threadId]) => {
       const thread = discordClient.channels.cache.get(threadId)
 
       if (thread === undefined || !thread.isThread()) {
+        robot.logger.error(
+          `Error looking up thread with id ${threadId} in the client cache; ` +
+            "skipping archive status check.",
+        )
         return
       }
 
