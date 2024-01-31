@@ -1,4 +1,5 @@
 import { PartialMessage, Client, Message } from "discord.js"
+import { Robot } from "hubot"
 
 const twitterUrlRegExp = /(https:\/\/(x|twitter).com\/[a-zA-Z0-9%/_+]+)/g
 
@@ -57,12 +58,18 @@ async function workingTwitterEmbeds(
 // expand t.co links, and have a couple of other nice features.
 //
 // See https://github.com/FixTweet/FxTwitter for more.
-export default function fixTwitterEmbeds(discordClient: Client) {
+export default function fixTwitterEmbeds(discordClient: Client, robot: Robot) {
   discordClient.on("messageCreate", (message) => {
+    robot.logger.info(
+      `fixTwitterEmbeds: processing new message ${message.content}`,
+    )
     workingTwitterEmbeds(message)
   })
 
   discordClient.on("messageUpdate", (oldMessage, newMessage) => {
+    robot.logger.info(
+      `fixTwitterEmbeds: processing updated message ${newMessage.content}`,
+    )
     workingTwitterEmbeds(newMessage, oldMessage)
   })
 }
