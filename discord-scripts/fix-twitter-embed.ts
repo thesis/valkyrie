@@ -63,13 +63,25 @@ export default function fixTwitterEmbeds(discordClient: Client, robot: Robot) {
     robot.logger.info(
       `fixTwitterEmbeds: processing new message ${message.content}`,
     )
-    workingTwitterEmbeds(message)
+    try {
+      workingTwitterEmbeds(message)
+    } catch (err) {
+      robot.logger.error(
+        `fixtwitterembeds: failed to process new message ${message.content}: ${err}`,
+      )
+    }
   })
 
   discordClient.on("messageUpdate", (oldMessage, newMessage) => {
     robot.logger.info(
-      `fixTwitterEmbeds: processing updated message ${newMessage.content}`,
+      `fixTwitterEmbeds: processing updated message ${newMessage.content}, ${oldMessage.content}`,
     )
-    workingTwitterEmbeds(newMessage, oldMessage)
+    try {
+      workingTwitterEmbeds(newMessage, oldMessage)
+    } catch (err) {
+      robot.logger.error(
+        `fixtwitterembeds: failed to process new message ${newMessage.content}: ${err}`,
+      )
+    }
   })
 }
