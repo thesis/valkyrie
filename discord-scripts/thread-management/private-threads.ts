@@ -1,7 +1,10 @@
 import { AnyThreadChannel, channelMention } from "discord.js"
 import { isPrivate } from "../../lib/discord/utils.ts"
 
-const PRIVATE_THREAD_CHANNEL = { id: "1079520580228894771", name: "operations" }
+const PRIVATE_THREAD_CHANNELS = [
+  { id: "1079520580228894771", name: "operations" },
+  { id: "1202691029996675104", name: "hiring-and-peopleops" },
+]
 
 async function privateThreadAdmonishment(
   thread: AnyThreadChannel<boolean>,
@@ -10,14 +13,16 @@ async function privateThreadAdmonishment(
 
   if (
     isPrivate(thread) &&
-    containingChannel?.id?.toLowerCase() !== PRIVATE_THREAD_CHANNEL.id
+    !PRIVATE_THREAD_CHANNELS.some(
+      ({ id }) => containingChannel?.id?.toLowerCase() === id,
+    )
   ) {
     await thread.send(
       "Private threads should largely only be used for discussions around " +
         "confidential topics like legal and hiring. They should as a result " +
-        `almost always be created in ${channelMention(
-          PRIVATE_THREAD_CHANNEL.id,
-        )}; if you know you're ` +
+        `almost always be created in one of ${PRIVATE_THREAD_CHANNELS.map(
+          ({ id }) => channelMention(id),
+        ).join(",")}; if you know you're ` +
         "breaking both rules on purpose, go forth and conquer, but otherwise " +
         "please start the thread there. I'm also going to auto-tag the " +
         "appropriate roles now, which may compromise the privacy of the " +
