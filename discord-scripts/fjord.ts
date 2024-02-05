@@ -2,6 +2,8 @@ import {
   ApplicationCommandOptionType,
   Client,
   CommandInteraction,
+  Guild,
+  GuildMember,
   TextChannel,
 } from "discord.js"
 import axios from "axios"
@@ -10,6 +12,7 @@ import { Robot } from "hubot"
 // This is the WIP discord implementation of commands to trigger certain workflows on the thesis n8n platform. Most of the integration uses webhooks and chat commands with response headers .
 export default async function manageFjord(discordClient: Client, robot: Robot) {
   const { application } = discordClient
+  const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
 
   if (application) {
     const existingFjordCommand = (await application.commands.fetch()).find(
@@ -121,6 +124,53 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
   }
 
   if (process.env.HUBOT_N8N_WEBHOOK) {
+    if (discordClient.user) {
+      const handleGuild = async (guild: Guild) => {
+        await guild.members.fetch()
+
+        const membersList: {
+          username: string
+          nickname: string | null
+          id: string
+        }[] = []
+
+        guild.members.cache.forEach((member: GuildMember) => {
+          membersList.push({
+            username: member.user.username,
+            nickname: member.nickname,
+            id: member.id,
+          })
+        })
+
+        const membersListString = encodeURIComponent(
+          JSON.stringify(membersList),
+        )
+
+        const options = {
+          headers: {
+            workflowType: "member-list",
+          },
+        }
+
+        await axios
+          .get(`${webhookUrl}?membersList=${membersListString}`, options)
+          .then(() => {
+            robot.logger.info("Discord Memberlist sent to n8n")
+          })
+          .catch((error) => {
+            robot.logger.info(`Memberlist failed to send: ${error.message}`)
+          })
+      }
+
+      const storeMemberList = async () => {
+        const guilds = Array.from(discordClient.guilds.cache.values())
+        const guildPromises = guilds.map(handleGuild)
+        await Promise.all(guildPromises)
+      }
+
+      storeMemberList()
+    }
+
     discordClient.on("interactionCreate", async (interaction) => {
       if (
         (interaction.isButton() && interaction.customId.startsWith("debug")) ||
@@ -165,7 +215,6 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
           const repositoryOwner = repositoryOwnerOption.value
           const repositoryName = repositoryNameOption.value
 
-          const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
           const queryParams = new URLSearchParams({
             repositoryOwner,
             repositoryName,
@@ -218,7 +267,6 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
           const repositoryOwner = repositoryOwnerOption.value
           const repositoryName = repositoryNameOption.value
 
-          const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
           const queryParams = new URLSearchParams({
             repositoryOwner,
             repositoryName,
@@ -272,7 +320,6 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
           const repositoryOwner = repositoryOwnerOption.value
           const repositoryName = repositoryNameOption.value
 
-          const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
           const queryParams = new URLSearchParams({
             repositoryOwner,
             repositoryName,
@@ -322,7 +369,6 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
         ) {
           const workflowName = workflowNameOption.value
 
-          const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
           const queryParams = new URLSearchParams({
             workflowName,
           })
