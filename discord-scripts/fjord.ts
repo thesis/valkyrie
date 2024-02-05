@@ -1,8 +1,15 @@
 import {
+  ActionRowBuilder,
   ApplicationCommandOptionType,
   Client,
   CommandInteraction,
+  Guild,
+  GuildMember,
+  ModalBuilder,
+  ModalActionRowComponentBuilder,
   TextChannel,
+  TextInputBuilder,
+  TextInputStyle,
 } from "discord.js"
 import axios from "axios"
 import { Robot } from "hubot"
@@ -10,6 +17,7 @@ import { Robot } from "hubot"
 // This is the WIP discord implementation of commands to trigger certain workflows on the thesis n8n platform. Most of the integration uses webhooks and chat commands with response headers .
 export default async function manageFjord(discordClient: Client, robot: Robot) {
   const { application } = discordClient
+  const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
 
   if (application) {
     const existingFjordCommand = (await application.commands.fetch()).find(
@@ -121,7 +129,187 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
   }
 
   if (process.env.HUBOT_N8N_WEBHOOK) {
+    if (discordClient.user) {
+      const handleGuild = async (guild: Guild) => {
+        await guild.members.fetch()
+
+        const membersList: {
+          username: string
+          nickname: string | null
+          id: string
+        }[] = []
+
+        guild.members.cache.forEach((member: GuildMember) => {
+          membersList.push({
+            username: member.user.username,
+            nickname: member.nickname,
+            id: member.id,
+          })
+        })
+
+        const membersListString = encodeURIComponent(
+          JSON.stringify(membersList),
+        )
+
+        const options = {
+          headers: {
+            workflowType: "member-list",
+          },
+        }
+
+        await axios
+          .get(`${webhookUrl}?membersList=${membersListString}`, options)
+          .then(() => {
+            robot.logger.info("Discord Memberlist sent to n8n")
+          })
+          .catch((error) => {
+            robot.logger.info(`Memberlist failed to send: ${error.message}`)
+          })
+      }
+
+      const storeMemberList = async () => {
+        const guilds = Array.from(discordClient.guilds.cache.values())
+        const guildPromises = guilds.map(handleGuild)
+        await Promise.all(guildPromises)
+      }
+
+      storeMemberList()
+    }
+
+    // Use to build events when the user first connects to the discord server. WIP!
+    discordClient.on("guildMemberAdd", async (member) => {
+      if (discordClient.channels) {
+        const verifyChannel = member.guild.channels.cache.find((channel) =>
+          channel.name.startsWith("verify"),
+        )
+        if (verifyChannel && verifyChannel instanceof TextChannel) {
+          await verifyChannel.send({
+            content: `**Welcome to the server <@${member.id}>! Let's get your account verified before having access to the discord server** Click the button below to start the process`,
+            components: [
+              {
+                type: 1,
+                components: [
+                  {
+                    type: 2,
+                    label: "Verify yourself",
+                    style: 3,
+                    custom_id: "start-onboarding",
+                  },
+                ],
+              },
+            ],
+          })
+        }
+      }
+    })
+
     discordClient.on("interactionCreate", async (interaction) => {
+      if (interaction.isModalSubmit()) {
+        if (interaction.customId === "onboardingModal") {
+          const { guild } = interaction
+          if (!guild) return
+
+          const verifiedRole = guild.roles.cache.find(
+            (role) => role.name === "verified",
+          )
+          if (!verifiedRole) {
+            robot.logger.info("Verified role not found in the server")
+            return
+          }
+          const member = await guild.members.fetch(interaction.user.id)
+          if (!member) return
+
+          await member.roles.add(verifiedRole)
+
+          await interaction.reply({
+            content:
+              "**:thumbsup: Your verification information was submitted! Welcome to the server**",
+            ephemeral: true,
+          })
+          const firstName =
+            interaction.fields.getTextInputValue("firstNameInput")
+          const lastName = interaction.fields.getTextInputValue("lastNameInput")
+          const email = interaction.fields.getTextInputValue("emailInput")
+
+          const userData = [
+            {
+              firstName,
+              lastName,
+              email,
+              id: interaction.user.id,
+            },
+          ]
+
+          const userDataString = encodeURIComponent(JSON.stringify(userData))
+
+          const options = {
+            headers: {
+              workflowType: "onboarding-user",
+            },
+          }
+
+          await axios
+            .get(`${webhookUrl}?onboarding=${userDataString}`, options)
+            .then(() => {
+              robot.logger.info(
+                firstName,
+                lastName,
+                email,
+                "User onboarding info sent to n8n",
+              )
+            })
+            .catch((error) => {
+              robot.logger.info(
+                `User onboarding failed to send: ${error.message}`,
+              )
+            })
+        }
+      }
+
+      if (
+        interaction.isButton() &&
+        interaction.customId.startsWith("start-onboarding")
+      ) {
+        const modal = new ModalBuilder()
+          .setCustomId("onboardingModal")
+          .setTitle("Verify your information")
+
+        const firstNameInput = new TextInputBuilder()
+          .setCustomId("firstNameInput")
+          .setLabel("What's your first name?")
+          .setStyle(TextInputStyle.Short)
+        const lastNameInput = new TextInputBuilder()
+          .setCustomId("lastNameInput")
+          .setLabel("What's your last name?")
+          .setStyle(TextInputStyle.Short)
+        const emailInput = new TextInputBuilder()
+          .setCustomId("emailInput")
+          .setLabel("What is your work email?")
+          .setStyle(TextInputStyle.Short)
+
+        const firstActionRow =
+          new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+            firstNameInput,
+          )
+        const secondActionRow =
+          new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+            lastNameInput,
+          )
+        const thirdActionRow =
+          new ActionRowBuilder<ModalActionRowComponentBuilder>().addComponents(
+            emailInput,
+          )
+
+        modal.addComponents(firstActionRow, secondActionRow, thirdActionRow)
+        await interaction.showModal(modal)
+        await interaction.message.delete()
+        await interaction.reply({
+          content:
+            "**Thanks for submitting your information! Your account is now verified**",
+          ephemeral: true,
+        })
+      }
+
       if (
         (interaction.isButton() && interaction.customId.startsWith("debug")) ||
         (interaction.isCommand() && interaction.commandName === "debug")
@@ -140,6 +328,12 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
                   label: "Run again",
                   style: 1,
                   custom_id: "debug",
+                },
+                {
+                  type: 2,
+                  label: "Onboarding",
+                  style: 1,
+                  custom_id: "start-onboarding",
                 },
               ],
             },
@@ -165,7 +359,6 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
           const repositoryOwner = repositoryOwnerOption.value
           const repositoryName = repositoryNameOption.value
 
-          const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
           const queryParams = new URLSearchParams({
             repositoryOwner,
             repositoryName,
@@ -218,7 +411,6 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
           const repositoryOwner = repositoryOwnerOption.value
           const repositoryName = repositoryNameOption.value
 
-          const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
           const queryParams = new URLSearchParams({
             repositoryOwner,
             repositoryName,
@@ -272,7 +464,6 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
           const repositoryOwner = repositoryOwnerOption.value
           const repositoryName = repositoryNameOption.value
 
-          const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
           const queryParams = new URLSearchParams({
             repositoryOwner,
             repositoryName,
@@ -322,7 +513,6 @@ export default async function manageFjord(discordClient: Client, robot: Robot) {
         ) {
           const workflowName = workflowNameOption.value
 
-          const webhookUrl = process.env.HUBOT_N8N_WEBHOOK
           const queryParams = new URLSearchParams({
             workflowName,
           })
