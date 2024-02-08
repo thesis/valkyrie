@@ -8,6 +8,7 @@ import {
   Message,
 } from "discord.js"
 import { Robot } from "hubot"
+import manageRole from "./role-management/role-management.ts"
 
 const focusModeState: Map<string, boolean> = new Map()
 
@@ -83,7 +84,7 @@ export default async function setupFocusChannels(
     if (!interaction.isButton()) return
 
     const guildId = interaction.guildId
-    if (!guildId) return
+    if (!guildId || !interaction.member) return
 
     let isEnabled = focusModeState.get(guildId) || false
 
@@ -93,17 +94,29 @@ export default async function setupFocusChannels(
         content: "Focus mode enabled.",
         ephemeral: true,
       })
+      await manageRole(
+        discordClient,
+        guildId,
+        interaction.member.user.id,
+        "1205116222161813545",
+        "add",
+      )
     } else if (interaction.customId === "disable-focus") {
       isEnabled = false
       await interaction.reply({
         content: "Focus mode disabled.",
         ephemeral: true,
       })
+      await manageRole(
+        discordClient,
+        guildId,
+        interaction.member.user.id,
+        "1205116222161813545",
+        "remove",
+      )
     }
 
     focusModeState.set(guildId, isEnabled)
-
-    // update original message if possible, or send a new one
     if (interaction.message instanceof Message) {
       sendFocusModeMessage(
         interaction.channel as TextChannel,
