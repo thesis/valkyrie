@@ -5,12 +5,49 @@ import {
   ButtonBuilder,
   ActionRowBuilder,
   TextChannel,
-  Interaction,
   Message,
 } from "discord.js"
 import { Robot } from "hubot"
 
 const focusModeState: Map<string, boolean> = new Map()
+
+async function sendFocusModeMessage(
+  focusChannel: TextChannel,
+  guildId: string,
+  robot: Robot,
+  originalMessage?: Message,
+) {
+  const isEnabled = focusModeState.get(guildId) || false
+
+  const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId("enable-focus")
+      .setLabel("Enable Focus")
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(isEnabled),
+    new ButtonBuilder()
+      .setCustomId("disable-focus")
+      .setLabel("Disable Focus")
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(!isEnabled),
+  )
+
+  const messageContent = {
+    content:
+      "**Focus Mode**\nSelect an option to enable or disable focus mode.",
+    components: [actionRow],
+  }
+
+  if (originalMessage) {
+    await originalMessage.edit(messageContent)
+  } else {
+    await focusChannel.send(messageContent)
+  }
+
+  robot.logger.info(
+    `Focus mode options updated in the focus channel of guild: ${guildId}`,
+  )
+}
 
 export default async function setupFocusChannels(
   discordClient: Client,
@@ -76,42 +113,4 @@ export default async function setupFocusChannels(
       )
     }
   })
-}
-
-async function sendFocusModeMessage(
-  focusChannel: TextChannel,
-  guildId: string,
-  robot: Robot,
-  originalMessage?: Message,
-) {
-  const isEnabled = focusModeState.get(guildId) || false
-
-  const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder()
-      .setCustomId("enable-focus")
-      .setLabel("Enable Focus")
-      .setStyle(ButtonStyle.Success)
-      .setDisabled(isEnabled),
-    new ButtonBuilder()
-      .setCustomId("disable-focus")
-      .setLabel("Disable Focus")
-      .setStyle(ButtonStyle.Danger)
-      .setDisabled(!isEnabled),
-  )
-
-  const messageContent = {
-    content:
-      "**Focus Mode**\nSelect an option to enable or disable focus mode.",
-    components: [actionRow],
-  }
-
-  if (originalMessage) {
-    await originalMessage.edit(messageContent)
-  } else {
-    await focusChannel.send(messageContent)
-  }
-
-  robot.logger.info(
-    `Focus mode options updated in the focus channel of guild: ${guildId}`,
-  )
 }
