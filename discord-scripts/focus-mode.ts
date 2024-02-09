@@ -8,7 +8,7 @@ import {
   Message,
 } from "discord.js"
 import { Robot } from "hubot"
-import manageRole from "./role-management/role-management.ts"
+import manageRole from "./role-management/index.ts"
 
 const focusModeState: Map<string, boolean> = new Map()
 
