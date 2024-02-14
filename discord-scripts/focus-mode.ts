@@ -54,31 +54,36 @@ export default async function setupFocusChannels(
   discordClient: Client,
   robot: Robot,
 ) {
-  discordClient.on("messageCreate", async (message) => {
-    if (message.author.bot) return
+  const { application } = discordClient
 
-    if (
-      message.guild &&
-      message.channel.type === ChannelType.GuildText &&
-      message.channel.name.startsWith("focus")
-    ) {
-      const guildId = message.guild.id
-      const focusChannel = message.channel as TextChannel
+  if (application) {
+    robot.logger.info("Discord client ready, setting up focus channels.")
 
-      if (!focusModeState.has(guildId)) {
-        focusModeState.set(guildId, false)
-        robot.logger.info(
-          `Initializing focus mode state for guild: ${message.guild.name}`,
-        )
-      }
-
-      robot.logger.info(
-        `Message received in focus channel of guild: ${message.guild.name}`,
+    discordClient.guilds.cache.forEach(async (guild) => {
+      const focusChannels = guild.channels.cache.filter(
+        (channel) =>
+          channel.type === ChannelType.GuildText &&
+          channel.name.startsWith("focus"),
       )
 
-      await sendFocusModeMessage(focusChannel, guildId, robot)
-    }
-  })
+      focusChannels.forEach(async (channel) => {
+        const focusChannel = channel as TextChannel
+        const guildId = guild.id
+
+        if (!focusModeState.has(guildId)) {
+          focusModeState.set(guildId, false)
+          robot.logger.info(
+            `Initializing focus mode state for guild: ${guild.name}`,
+          )
+        }
+
+        robot.logger.info(
+          `Setting up focus mode for channel: ${channel.name} in guild: ${guild.name}`,
+        )
+        await sendFocusModeMessage(focusChannel, guildId, robot)
+      })
+    })
+  }
 
   discordClient.on("interactionCreate", async (interaction) => {
     if (!interaction.isButton()) return
