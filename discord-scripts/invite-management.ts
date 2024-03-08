@@ -90,5 +90,45 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         message.channel.send(`An error occurred: ${error}`)
       }
     })
+
+    // Generates an invite if the channel name matches ext-*-audit format
+    discordClient.on("channelCreate", async (channel) => {
+      if (channel.parent && channel.parent.name === "defense") {
+        const regex = /^ext-.*-audit$/
+        if (regex.test(channel.name)) {
+          try {
+            const guildId = channel.guild.id
+            const channelId = channel.id
+            const maxAge = 86400 // 1 day
+            const maxUses = 5
+            const inviteUrl = await manageInvite(
+              discordClient,
+              guildId,
+              channelId,
+              "create",
+              maxAge,
+              maxUses,
+            )
+            if (inviteUrl) {
+              robot.logger.info(
+                `New invite created for defense audit channel: ${channel.name}, URL: ${inviteUrl}`,
+              )
+              if (channel instanceof TextChannel) {
+                channel.send(
+                  `Here is your invite link: ${inviteUrl}\n` +
+                    `This invite expires in ${
+                      maxAge / 3600
+                    } hours and has a maximum of ${maxUses} uses.`,
+                )
+              }
+            }
+          } catch (error) {
+            robot.logger.error(
+              `An error occurred setting up the defense audit channel: ${error}`,
+            )
+          }
+        }
+      }
+    })
   }
 }
