@@ -1,11 +1,9 @@
 import { Robot } from "hubot"
 import { Client, TextChannel, VoiceChannel, StageChannel } from "discord.js"
 
-async function manageInvite(
+async function createInvite(
   discordClient: Client,
-  guildId: string,
   channelId: string,
-  action: "create" | "delete",
   maxAge: number | string = 86400,
   maxUses: number | string = 0,
 ): Promise<string | null> {
@@ -13,41 +11,38 @@ async function manageInvite(
     throw new Error("Discord client is not initialized.")
   }
 
-  const guild = await discordClient.guilds.fetch(guildId)
-  if (!guild) throw new Error("Guild not found.")
+  let channelOrigin: TextChannel | VoiceChannel | StageChannel | null = null
+  try {
+    const fetchedChannel = await discordClient.channels.fetch(channelId)
+    if (
+      fetchedChannel instanceof TextChannel ||
+      fetchedChannel instanceof VoiceChannel ||
+      fetchedChannel instanceof StageChannel
+    ) {
+      channelOrigin = fetchedChannel
+    }
+  } catch (error) {
+    throw new Error("Channel not found or access denied.")
+  }
 
-  const channel = await guild.channels.cache.get(channelId)
-  if (!channel) throw new Error("Channel not found.")
+  if (!channelOrigin) {
+    return null
+  }
 
-  const numericMaxAge =
-    typeof maxAge === "string" ? parseInt(maxAge, 10) : maxAge
-  const numericMaxUses =
-    typeof maxUses === "string" ? parseInt(maxUses, 10) : maxUses
+  const numericMaxAge = parseInt(maxAge.toString(), 10)
+  const numericMaxUses = parseInt(maxUses.toString(), 10)
 
   if (Number.isNaN(numericMaxAge) || Number.isNaN(numericMaxUses)) {
     throw new Error("maxAge and maxUses must be valid numbers.")
   }
 
-  if (action === "create") {
-    if (
-      channel instanceof TextChannel ||
-      channel instanceof VoiceChannel ||
-      channel instanceof StageChannel
-    ) {
-      const invite = await channel.createInvite({
-        maxAge: numericMaxAge,
-        maxUses: numericMaxUses,
-        unique: true,
-      })
-      return invite.url
-    }
-  }
-  if (action === "delete") {
-    throw new Error(
-      "Delete action is not supported directly through this function.",
-    )
-  }
-  return null
+  const invite = await channelOrigin.createInvite({
+    maxAge: numericMaxAge,
+    maxUses: numericMaxUses,
+    unique: true,
+  })
+
+  return invite.url
 }
 
 export default async function sendInvite(discordClient: Client, robot: Robot) {
@@ -61,16 +56,13 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
       if (!message.guild) return
 
       const channelId = message.channel.id
-      const guildId = message.guild.id
       const maxAge = 86400 // 1 day
       const maxUses = 10
 
       try {
-        const inviteUrl = await manageInvite(
+        const inviteUrl = await createInvite(
           discordClient,
-          guildId,
           channelId,
-          "create",
           maxAge,
           maxUses,
         )
@@ -97,15 +89,12 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         const regex = /^ext-.*-audit$/
         if (regex.test(channel.name)) {
           try {
-            const guildId = channel.guild.id
             const channelId = channel.id
             const maxAge = 86400 // 1 day
             const maxUses = 5
-            const inviteUrl = await manageInvite(
+            const inviteUrl = await createInvite(
               discordClient,
-              guildId,
               channelId,
-              "create",
               maxAge,
               maxUses,
             )
