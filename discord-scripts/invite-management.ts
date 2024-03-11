@@ -150,6 +150,22 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
                 )
               }
             }
+            // create a new role with the exact name of the channel with permissions only to that channel
+            const role = await channel.guild.roles.create({
+              name: channel.name,
+              reason: `Role for ${channel.name} channel`,
+            })
+
+            await channel.permissionOverwrites.create(role, {
+              ViewChannel: true,
+              SendMessages: true,
+              ReadMessageHistory: true
+            })
+            if (channel instanceof TextChannel) {
+              channel.send(`Role ${role.name} created and permissions set for ${channel.name}`)
+            }
+            robot.logger.info(`Role ${role.name} created and permissions set for channel ${channel.name}`)
+
           } catch (error) {
             robot.logger.error(
               `An error occurred setting up the defense audit channel: ${error}`,
