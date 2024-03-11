@@ -1,5 +1,11 @@
 import { Robot } from "hubot"
-import { Client, TextChannel, VoiceChannel, StageChannel } from "discord.js"
+import {
+  Client,
+  TextChannel,
+  VoiceChannel,
+  StageChannel,
+  ApplicationCommandOptionType,
+} from "discord.js"
 
 async function createInvite(
   discordClient: Client,
@@ -28,14 +34,11 @@ async function createInvite(
   if (!channelOrigin) {
     return null
   }
-
   const numericMaxAge = parseInt(maxAge.toString(), 10)
   const numericMaxUses = parseInt(maxUses.toString(), 10)
-
   if (Number.isNaN(numericMaxAge) || Number.isNaN(numericMaxUses)) {
     throw new Error("maxAge and maxUses must be valid numbers.")
   }
-
   const invite = await channelOrigin.createInvite({
     maxAge: numericMaxAge,
     maxUses: numericMaxUses,
@@ -49,37 +52,73 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
   const { application } = discordClient
 
   if (application) {
-    discordClient.on("messageCreate", async (message) => {
-      if (message.author.bot || !message.content.startsWith("!create-invite"))
+    // Check if create-invite command already exists, if not create it
+    const existingInviteCommand = (await application.commands.fetch()).find(
+      (command) => command.name === "create-invite",
+    )
+    if (existingInviteCommand === undefined) {
+      robot.logger.info("No create-invite command found, creating it!")
+      await application.commands.set([
+        {
+          name: "create-invite",
+          description: "Creates a new invite",
+          options: [
+            {
+              name: "max-age",
+              description: "The maximum age of the invite in hours",
+              type: ApplicationCommandOptionType.Number,
+              required: false,
+            },
+            {
+              name: "max-uses",
+              description: "The maximum uses of the invite",
+              type: ApplicationCommandOptionType.Number,
+              required: false,
+            },
+          ],
+        },
+      ])
+      robot.logger.info("create invite command set")
+    }
+    // create an invite based of the command and channel where the command has been run
+    discordClient.on("interactionCreate", async (interaction) => {
+      if (
+        !interaction.isCommand() ||
+        interaction.commandName !== "create-invite"
+      )
         return
 
-      if (!message.guild) return
+      if (!interaction.guild) {
+        await interaction.reply("This command can only be used in a server.")
+        return
+      }
 
-      const channelId = message.channel.id
-      const maxAge = 86400 // 1 day
-      const maxUses = 10
+      const maxAge =
+        ((interaction.options.get("max-age", false)?.value as number) ?? 24) *
+        3600
+      const maxUses =
+        (interaction.options.get("max-uses", false)?.value as number) ?? 10
 
       try {
-        const inviteUrl = await createInvite(
-          discordClient,
-          channelId,
-          maxAge,
-          maxUses,
-        )
-
-        if (inviteUrl) {
-          robot.logger.info("New invite URL:", inviteUrl)
-          message.channel.send(
-            `Here is your invite link: ${inviteUrl}\n` +
-              `This invite expires in ${
-                maxAge / 3600
-              } hours and has a maximum of ${maxUses} uses.`,
+        const { channel } = interaction
+        if (channel instanceof TextChannel) {
+          const invite = await channel.createInvite({
+            maxAge,
+            maxUses,
+            unique: true,
+          })
+          await interaction.reply(
+            `Here is your invite link: ${invite.url}\nThis invite expires in ${
+              maxAge / 3600
+            } hours and has a maximum of ${maxUses} uses.`,
           )
         } else {
-          message.channel.send("Unable to create an invite link.")
+          await interaction.reply(
+            "Cannot create an invite for this type of channel.",
+          )
         }
       } catch (error) {
-        message.channel.send(`An error occurred: ${error}`)
+        await interaction.reply("An error occurred while creating an invite.")
       }
     })
 
