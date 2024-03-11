@@ -159,13 +159,16 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             await channel.permissionOverwrites.create(role, {
               ViewChannel: true,
               SendMessages: true,
-              ReadMessageHistory: true
+              ReadMessageHistory: true,
             })
             if (channel instanceof TextChannel) {
-              channel.send(`Role ${role.name} created and permissions set for ${channel.name}`)
+              channel.send(
+                `Role ${role.name} created and permissions set for ${channel.name}`,
+              )
             }
-            robot.logger.info(`Role ${role.name} created and permissions set for channel ${channel.name}`)
-
+            robot.logger.info(
+              `Role ${role.name} created and permissions set for channel ${channel.name}`,
+            )
           } catch (error) {
             robot.logger.error(
               `An error occurred setting up the defense audit channel: ${error}`,
