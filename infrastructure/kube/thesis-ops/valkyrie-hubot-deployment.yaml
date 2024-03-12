@@ -23,15 +23,6 @@ spec:
                 secretKeyRef:
                   name: valkyrie-hubot
                   key: discord_api_token
-            - name: HUBOT_MATRIX_USER
-              value: "@valkyrie:thesis.co"
-            - name: HUBOT_MATRIX_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: valkyrie-hubot
-                  key: matrix_valkyrie_password
-            - name: HUBOT_MATRIX_HOST_SERVER
-              value: "https://thesisco.ems.host"
             - name: HUBOT_HOST
               valueFrom:
                 secretKeyRef:
@@ -66,6 +57,11 @@ spec:
                   key: valkyrie_alert_flow
             - name: REDIS_URL
               value: $(VALKYRIE_REDIS_SERVICE_PORT)
+            - name: DEFENSE_CATEGORY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: defense_category_id
             - name: GITHUB_CLIENT_ID
               valueFrom:
                 secretKeyRef:
