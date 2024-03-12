@@ -1,47 +1,24 @@
 import { Robot } from "hubot"
-import {
-  Client,
-  TextChannel,
-  VoiceChannel,
-  StageChannel,
-  ApplicationCommandOptionType,
-} from "discord.js"
+import { Client, TextChannel } from "discord.js"
+import { WEEK } from "../lib/globals.ts"
+
+const EXTERNAL_AUDIT_CHANNEL_REGEXP = /^ext-(?<client>.*)-audit$/
 
 async function createInvite(
   discordClient: Client,
   channelId: string,
-  maxAge: number | string = 86400,
-  maxUses: number | string = 0,
+  maxAge = WEEK,
+  maxUses = 10,
 ): Promise<string | null> {
-  if (!discordClient) {
-    throw new Error("Discord client is not initialized.")
-  }
+  const channelForInvite = await discordClient.channels.fetch(channelId)
 
-  let channelOrigin: TextChannel | VoiceChannel | StageChannel | null = null
-  try {
-    const fetchedChannel = await discordClient.channels.fetch(channelId)
-    if (
-      fetchedChannel instanceof TextChannel ||
-      fetchedChannel instanceof VoiceChannel ||
-      fetchedChannel instanceof StageChannel
-    ) {
-      channelOrigin = fetchedChannel
-    }
-  } catch (error) {
+  if (channelForInvite === null || !("createInvite" in channelForInvite)) {
     throw new Error("Channel not found or access denied.")
   }
 
-  if (!channelOrigin) {
-    return null
-  }
-  const numericMaxAge = parseInt(maxAge.toString(), 10)
-  const numericMaxUses = parseInt(maxUses.toString(), 10)
-  if (Number.isNaN(numericMaxAge) || Number.isNaN(numericMaxUses)) {
-    throw new Error("maxAge and maxUses must be valid numbers.")
-  }
-  const invite = await channelOrigin.createInvite({
-    maxAge: numericMaxAge,
-    maxUses: numericMaxUses,
+  const invite = await channelForInvite.createInvite({
+    maxAge,
+    maxUses,
     unique: true,
   })
 
@@ -62,25 +39,11 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         {
           name: "create-invite",
           description: "Creates a new invite",
-          options: [
-            {
-              name: "max-age",
-              description: "The maximum age of the invite in hours",
-              type: ApplicationCommandOptionType.Number,
-              required: false,
-            },
-            {
-              name: "max-uses",
-              description: "The maximum uses of the invite",
-              type: ApplicationCommandOptionType.Number,
-              required: false,
-            },
-          ],
         },
       ])
       robot.logger.info("create invite command set")
     }
-    // create an invite based of the command and channel where the command has been run
+    // Create an invite based of the command and channel where the command has been run
     discordClient.on("interactionCreate", async (interaction) => {
       if (
         !interaction.isCommand() ||
@@ -93,11 +56,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         return
       }
 
-      const maxAge =
-        ((interaction.options.get("max-age", false)?.value as number) ?? 24) *
-        3600
-      const maxUses =
-        (interaction.options.get("max-uses", false)?.value as number) ?? 10
+      const maxAge = WEEK // default 7 days
+      const maxUses = 10 // default 10 uses
 
       try {
         const { channel } = interaction
@@ -109,8 +69,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
           })
           await interaction.reply(
             `Here is your invite link: ${invite.url}\nThis invite expires in ${
-              maxAge / 3600
-            } hours and has a maximum of ${maxUses} uses.`,
+              maxAge / (3600 * 24)
+            } days and has a maximum of ${maxUses} uses.`,
           )
         } else {
           await interaction.reply(
@@ -118,62 +78,66 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
           )
         }
       } catch (error) {
-        await interaction.reply("An error occurred while creating an invite.")
+        await interaction.reply("An error occurred while creating the invite.")
       }
     })
 
     // Generates an invite if the channel name matches ext-*-audit format
     discordClient.on("channelCreate", async (channel) => {
-      if (channel.parent && channel.parent.name === "defense") {
-        const regex = /^ext-.*-audit$/
-        if (regex.test(channel.name)) {
-          try {
-            const channelId = channel.id
-            const maxAge = 86400 // 1 day
-            const maxUses = 5
-            const inviteUrl = await createInvite(
-              discordClient,
-              channelId,
-              maxAge,
-              maxUses,
-            )
-            if (inviteUrl) {
-              robot.logger.info(
-                `New invite created for defense audit channel: ${channel.name}, URL: ${inviteUrl}`,
-              )
-              if (channel instanceof TextChannel) {
-                channel.send(
-                  `Here is your invite link: ${inviteUrl}\n` +
-                    `This invite expires in ${
-                      maxAge / 3600
-                    } hours and has a maximum of ${maxUses} uses.`,
-                )
-              }
-            }
-            // create a new role with the exact name of the channel with permissions only to that channel
-            const role = await channel.guild.roles.create({
-              name: channel.name,
-              reason: `Role for ${channel.name} channel`,
-            })
-
-            await channel.permissionOverwrites.create(role, {
-              ViewChannel: true,
-              SendMessages: true,
-              ReadMessageHistory: true,
-            })
-            if (channel instanceof TextChannel) {
-              channel.send(
-                `Role ${role.name} created and permissions set for ${channel.name}`,
-              )
-            }
+      if (
+        channel.parent &&
+        channel.parent.name === "defense" &&
+        channel instanceof TextChannel &&
+        EXTERNAL_AUDIT_CHANNEL_REGEXP.test(channel.name)
+      ) {
+        try {
+          const channelId = channel.id
+          const maxAge = WEEK
+          const maxUses = 10
+          const inviteUrl = await createInvite(
+            discordClient,
+            channelId,
+            maxAge,
+            maxUses,
+          )
+          if (inviteUrl) {
             robot.logger.info(
-              `Role ${role.name} created and permissions set for channel ${channel.name}`,
+              `New invite created for defense audit channel: ${channel.name}, URL: ${inviteUrl}`,
             )
-          } catch (error) {
-            robot.logger.error(
-              `An error occurred setting up the defense audit channel: ${error}`,
+            channel.send(
+              `Here is your invite link: ${inviteUrl}\n` +
+                `This invite expires in ${
+                  maxAge / (3600 * 24)
+                } days and has a maximum of ${maxUses} uses.`,
             )
           }
+          // Create a new role with the client name extracted and set permissions to that channel
+          const auditChannel = channel.name.split("-")
+          const clientName = auditChannel[0].includes("🔒")
+            ? auditChannel[1]
+            : ""
+          const roleName = clientName
+            ? `Defense: ${clientName}`
+            : `Defense: ${channel.name}`
+
+          const role = await channel.guild.roles.create({
+            name: roleName,
+            reason: `Role for ${channel.name} channel`,
+          })
+
+          await channel.permissionOverwrites.create(role, {
+            ViewChannel: true,
+          })
+          channel.send(
+            `**${role.name}** role created and permissions set for **${channel.name}**`,
+          )
+          robot.logger.info(
+            `${role.name} role created and permissions set for channel ${channel.name}`,
+          )
+        } catch (error) {
+          robot.logger.error(
+            `An error occurred setting up the defense audit channel: ${error}`,
+          )
         }
       }
     })
