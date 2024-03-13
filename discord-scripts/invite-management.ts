@@ -109,24 +109,30 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             )
             .join(" ")
 
-          const roleName = clientName
-            ? `Defense: ${clientName}`
-            : `Defense: ${channel.name}`
+          if (clientName) {
+            const roleName = clientName
+              ? `Defense: ${clientName}`
+              : `Defense: ${channel.name}`
 
-          const role = await channel.guild.roles.create({
-            name: roleName,
-            reason: `Role for ${channel.name} channel`,
-          })
+            const role = await channel.guild.roles.create({
+              name: roleName,
+              reason: `Role for ${channel.name} channel`,
+            })
 
-          await channel.permissionOverwrites.create(role, {
-            ViewChannel: true,
-          })
-          channel.send(
-            `**${role.name}** role created and permissions set for **${channel.name}**`,
-          )
-          robot.logger.info(
-            `${role.name} role created and permissions set for channel ${channel.name}`,
-          )
+            await channel.permissionOverwrites.create(role, {
+              ViewChannel: true,
+            })
+            channel.send(
+              `**${role.name}** role created and permissions set for **${channel.name}**`,
+            )
+            robot.logger.info(
+              `${role.name} role created and permissions set for channel ${channel.name}`,
+            )
+          } else {
+            robot.logger.info(
+              `Skipping role creation due to empty client name for channel ${channel.name}`,
+            )
+          }
         } catch (error) {
           robot.logger.error(
             `An error occurred setting up the defense audit channel: ${error}`,
