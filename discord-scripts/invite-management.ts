@@ -32,12 +32,10 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
     )
     if (existingInviteCommand === undefined) {
       robot.logger.info("No create-invite command found, creating it!")
-      await application.commands.set([
-        {
-          name: "create-invite",
-          description: "Creates a new invite",
-        },
-      ])
+      await application.commands.create({
+        name: "create-invite",
+        description: "Creates a new invite",
+      })
       robot.logger.info("create invite command set")
     }
     // Create an invite based of the command and channel where the command has been run
