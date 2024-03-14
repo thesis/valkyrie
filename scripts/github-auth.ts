@@ -22,7 +22,7 @@ import {
   withConfigOrReportIssues,
   issueReporterForRobot,
 } from "../lib/config.ts"
-import { HOST, MINUTE, SECOND } from "../lib/globals.ts"
+import { HOST, MINUTE, MILLISECOND } from "../lib/globals.ts"
 
 const PENDING_GITHUB_TOKENS_KEY = "pendingGitHubTokens"
 const GITHUB_TOKENS_KEY = "gitHubTokens"
@@ -70,7 +70,7 @@ export default function setupGitHubAuth(robot: Robot) {
       robot.brain.set(PENDING_GITHUB_TOKENS_KEY, pendingGitHubTokens)
     }
 
-    setInterval(cleanPending, 30 * SECOND)
+    setInterval(cleanPending, 30 * MILLISECOND)
     cleanPending()
 
     robot.respond(/github auth/, (res) => {
