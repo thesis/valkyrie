@@ -26,18 +26,31 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
   const { application } = discordClient
 
   if (application) {
+    // Remove after using, just to clean all commands if n8n is there
+    const existingCommands = await application.commands.fetch()
+    const n8nCommandExists = existingCommands.some((cmd) => cmd.name === "n8n")
+
+    if (n8nCommandExists) {
+      await Promise.all(
+        existingCommands.map((cmd) => application.commands.delete(cmd.id)),
+      )
+      robot.logger.info(
+        "All old commands deleted because 'n8n' command was found",
+      )
+    } else {
+      robot.logger.info("No n8n command found, no commands were deleted")
+    }
+
     // Check if create-invite command already exists, if not create it
     const existingInviteCommand = (await application.commands.fetch()).find(
       (command) => command.name === "create-invite",
     )
     if (existingInviteCommand === undefined) {
       robot.logger.info("No create-invite command found, creating it!")
-      await application.commands.set([
-        {
-          name: "create-invite",
-          description: "Creates a new invite",
-        },
-      ])
+      await application.commands.create({
+        name: "create-invite",
+        description: "Creates a new invite",
+      })
       robot.logger.info("create invite command set")
     }
     // Create an invite based of the command and channel where the command has been run
