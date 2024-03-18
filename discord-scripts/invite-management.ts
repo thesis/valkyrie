@@ -1,9 +1,10 @@
 import { Robot } from "hubot"
-import { Client, TextChannel } from "discord.js"
+import { Client, Collection, TextChannel, GuildMember } from "discord.js"
 import { DAY, MILLISECOND, WEEK } from "../lib/globals.ts"
 
 const EXTERNAL_AUDIT_CHANNEL_REGEXP = /^ext-(?<client>.*)-audit$/
 const INTERNAL_AUDIT_CHANNEL_REGEXP = /^int-(?<client>.*)-audit$/
+const guildInvites = new Collection()
 
 async function createInvite(
   channel: TextChannel,
@@ -27,6 +28,20 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
   const { application } = discordClient
 
   if (application) {
+    // stores a list of all invites on runtime
+    setTimeout(async () => {
+      discordClient.guilds.cache.forEach(async (guild) => {
+        const fetchInvites = await guild.invites.fetch()
+        guildInvites.set(
+          guild.id,
+          new Collection(
+            fetchInvites.map((invite) => [invite.code, invite.uses]),
+          ),
+        )
+        robot.logger.info("List all guild invites:", guildInvites)
+      })
+    }, 1000)
+
     // Check if create-invite command already exists, if not create it
     const existingInviteCommand = (await application.commands.fetch()).find(
       (command) => command.name === "create-invite",
@@ -176,6 +191,79 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             `An error occurred setting up the defense ${auditChannelType.toLowerCase()} audit channel: ${error}`,
           )
         }
+      }
+    })
+
+    // WIP, just testing out invite counting in order to verify which invite was used on join
+    discordClient.on("guildMemberAdd", async (member: GuildMember) => {
+      // for debugging
+      robot.logger.info(member)
+
+      const oldInvites =
+        (guildInvites.get(member.guild.id) as Collection<
+          string,
+          { uses: number }
+        >) || new Collection<string, { uses: number }>()
+      const fetchedInvites = await member.guild.invites.fetch()
+      const newInvites = new Collection<string, { uses: number }>(
+        fetchedInvites.map((invite) => [
+          invite.code,
+          { uses: invite.uses ?? 0 },
+        ]),
+      )
+      guildInvites.set(member.guild.id, newInvites)
+
+      robot.logger.info(
+        `Old Invites: ${JSON.stringify(Array.from(oldInvites.entries()))}`,
+      )
+      robot.logger.info(
+        `New Invites: ${JSON.stringify(Array.from(newInvites.entries()))}`,
+      )
+
+      const usedInvite = fetchedInvites.find((fetchedInvite) => {
+        const oldUseCount = oldInvites.get(fetchedInvite.code)?.uses ?? 0
+        return (fetchedInvite.uses ?? 0) > oldUseCount
+      })
+
+      robot.logger.info(`Used Invite: ${usedInvite ? usedInvite.code : "None"}`)
+
+      if (usedInvite && usedInvite.channelId) {
+        const channel = member.guild.channels.cache.get(
+          usedInvite.channelId,
+        ) as TextChannel
+        if (channel) {
+          const channelTypeMatch = channel.name.match(/(ext|int)-(.*)-audit/)
+          const auditChannelType = channelTypeMatch
+            ? channelTypeMatch[1] === "ext"
+              ? "External"
+              : "Internal"
+            : null
+          const clientName = channelTypeMatch ? channelTypeMatch[2] : ""
+          robot.logger.info(`Channel Name: ${channelTypeMatch}`)
+          robot.logger.info(`Audit Channel Type: ${auditChannelType}`)
+
+          if (auditChannelType) {
+            const roleName = `Defense ${auditChannelType}: ${clientName}`
+            const role = member.guild.roles.cache.find(
+              (r) =>
+                r.name
+                  .toLowerCase()
+                  .includes(`defense ${auditChannelType}`.toLowerCase()) &&
+                r.name.toLowerCase().includes(clientName.toLowerCase()),
+            )
+
+            if (role) {
+              await member.roles.add(role)
+              robot.logger.info(
+                `Assigned role ${roleName} to ${member.displayName}`,
+              )
+            } else {
+              robot.logger.info(`Role ${roleName} not found in guild.`)
+            }
+          }
+        }
+      } else {
+        robot.logger.info("Could not find which invite was used.")
       }
     })
   }
