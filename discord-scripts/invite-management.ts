@@ -3,6 +3,7 @@ import { Client, TextChannel } from "discord.js"
 import { DAY, MILLISECOND, WEEK } from "../lib/globals.ts"
 
 const EXTERNAL_AUDIT_CHANNEL_REGEXP = /^ext-(?<client>.*)-audit$/
+const INTERNAL_AUDIT_CHANNEL_REGEXP = /^int-(?<client>.*)-audit$/
 
 async function createInvite(
   channel: TextChannel,
@@ -81,13 +82,21 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         channel.parent &&
         channel.parent.name === "defense" &&
         channel instanceof TextChannel &&
-        EXTERNAL_AUDIT_CHANNEL_REGEXP.test(channel.name)
+        (EXTERNAL_AUDIT_CHANNEL_REGEXP.test(channel.name) ||
+          INTERNAL_AUDIT_CHANNEL_REGEXP.test(channel.name))
       ) {
+        const auditChannelType: string = EXTERNAL_AUDIT_CHANNEL_REGEXP.test(
+          channel.name,
+        )
+          ? "External"
+          : "Internal"
         try {
           const defenseInvite = await createInvite(channel)
           if (defenseInvite) {
             robot.logger.info(
-              `New invite created for defense audit channel: ${channel.name}, URL: ${defenseInvite.url}`,
+              `New invite created for defense ${auditChannelType.toLowerCase()} audit channel: ${
+                channel.name
+              }, URL: ${defenseInvite.url}`,
             )
             channel.send(
               `Here is your invite link: ${
@@ -108,9 +117,9 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             .join(" ")
 
           if (clientName) {
-            const roleName = clientName
-              ? `Defense: ${clientName}`
-              : `Defense: ${channel.name}`
+            const roleName = `Defense ${auditChannelType}: ${
+              clientName || channel.name
+            }`
 
             const role = await channel.guild.roles.create({
               name: roleName,
@@ -120,6 +129,37 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             await channel.permissionOverwrites.create(role, {
               ViewChannel: true,
             })
+
+            if (auditChannelType === "Internal") {
+              const externalAuditChannel = channel.guild.channels.cache.find(
+                (c) =>
+                  c.name === `🔒ext-${clientName.toLowerCase()}-audit` &&
+                  c.parent &&
+                  c.parent.name === "defense",
+              ) as TextChannel
+
+              if (externalAuditChannel) {
+                await externalAuditChannel.permissionOverwrites.create(
+                  role.id,
+                  {
+                    ViewChannel: true,
+                  },
+                )
+                channel.send(
+                  `**${role.name}** role granted ViewChannel access to the external audit channel **${externalAuditChannel.name}**`,
+                )
+                robot.logger.info(
+                  `ViewChannel access granted to ${role.name} for external audit channel ${externalAuditChannel.name}`,
+                )
+              } else {
+                channel.send("No matching external audit channel found.")
+                robot.logger.info(
+                  "No matching external audit channel found for " +
+                    `ext-${clientName.toLowerCase()}-audit`,
+                )
+              }
+            }
+
             channel.send(
               `**${role.name}** role created and permissions set for **${channel.name}**`,
             )
@@ -133,7 +173,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
           }
         } catch (error) {
           robot.logger.error(
-            `An error occurred setting up the defense audit channel: ${error}`,
+            `An error occurred setting up the defense ${auditChannelType.toLowerCase()} audit channel: ${error}`,
           )
         }
       }
