@@ -226,11 +226,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
           { uses: number }
         >) || new Collection<string, { uses: number }>()
       const fetchedInvites = await member.guild.invites.fetch()
-      const newInvites = new Collection<string, { uses: number }>(
-        fetchedInvites.map((invite) => [
-          invite.code,
-          { uses: invite.uses ?? 0 },
-        ]),
+      const newInvites = new Collection<string, number>(
+        fetchedInvites.map((invite) => [invite.code, invite.uses ?? 0]),
       )
       guildInvites.set(member.guild.id, newInvites)
 
@@ -243,7 +240,9 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
 
       const usedInvite = fetchedInvites.find((fetchedInvite) => {
         const oldInvite = oldInvites.get(fetchedInvite.code)
-        return (fetchedInvite.uses ?? 0) > (oldInvite ? oldInvite.uses : 0)
+        const oldUses =
+          typeof oldInvite === "object" ? oldInvite.uses : oldInvite
+        return (fetchedInvite.uses ?? 0) > (oldUses ?? 0)
       })
 
       robot.logger.info(`Used Invite: ${usedInvite ? usedInvite.code : "None"}`)
