@@ -26,14 +26,24 @@ async function createInvite(
 
 async function listInvites(discordClient: Client, robot: Robot): Promise<void> {
   discordClient.guilds.cache.forEach(async (guild) => {
-    const fetchInvites = await guild.invites.fetch().catch(error => {
-      robot.logger.error(`Failed to fetch invites for guild ${guild.name}: ${error}`)
+    const fetchInvites = await guild.invites.fetch().catch((error) => {
+      robot.logger.error(
+        `Failed to fetch invites for guild ${guild.name}: ${error}`,
+      )
     })
 
     if (fetchInvites) {
-      guildInvites.set(guild.id, new Collection(fetchInvites.map(invite => [invite.code, invite.uses])))
+      guildInvites.set(
+        guild.id,
+        new Collection(
+          fetchInvites.map((invite) => [invite.code, invite.uses]),
+        ),
+      )
       // just for debugging
-      robot.logger.info(`List all guild invites for ${guild.name}:`, guildInvites.get(guild.id))
+      robot.logger.info(
+        `List all guild invites for ${guild.name}:`,
+        guildInvites.get(guild.id),
+      )
     }
   })
 }
@@ -241,26 +251,25 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         ) as TextChannel
         if (channel) {
           const channelTypeMatch = channel.name.match(/(ext|int)-(.*)-audit/)
-          const auditChannelType = channelTypeMatch
-            ? channelTypeMatch[1] === "ext"
-              ? "External"
-              : "Internal"
-            : null
           const clientName = channelTypeMatch
-            ? channelTypeMatch[2].replace(/-/g, " ")
+            ? channelTypeMatch[2]
+                .replace(/-/g, " ")
+                .split(" ")
+                .map(
+                  (word) =>
+                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+                )
+                .join(" ")
             : ""
-          robot.logger.info(`Channel Name: ${channel.name}`)
-          robot.logger.info(`Audit Channel Type: ${auditChannelType}`)
 
-          if (auditChannelType) {
-            const fixedClientName = clientName
-              .split(" ")
-              .map(
-                (word) =>
-                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-              )
-              .join(" ")
-            const roleName = `Defense ${auditChannelType}: ${fixedClientName}`
+          robot.logger.info(`Channel Name: ${channel.name}`)
+
+          if (channelTypeMatch) {
+            const auditType =
+              channelTypeMatch[1] === "ext" ? "External" : "Internal"
+            robot.logger.info(`Audit Channel Type: ${auditType}`)
+            const roleName = `Defense ${auditType}: ${clientName}`
+
             const role = member.guild.roles.cache.find(
               (r) => r.name.toLowerCase() === roleName.toLowerCase(),
             )
