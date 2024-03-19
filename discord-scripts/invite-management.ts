@@ -164,9 +164,12 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             })
 
             if (auditChannelType === "Internal") {
+              const normalizedClientName = clientName
+                .replace(/\s+/g, "-")
+                .toLowerCase()
               const externalAuditChannel = channel.guild.channels.cache.find(
                 (c) =>
-                  c.name === `🔒ext-${clientName.toLowerCase()}-audit` &&
+                  c.name === `🔒ext-${normalizedClientName}-audit` &&
                   c.parent &&
                   c.parent.name === "defense",
               ) as TextChannel
