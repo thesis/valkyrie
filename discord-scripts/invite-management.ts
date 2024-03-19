@@ -24,22 +24,27 @@ async function createInvite(
   }
 }
 
+async function listInvites(discordClient: Client, robot: Robot): Promise<void> {
+  discordClient.guilds.cache.forEach(async (guild) => {
+    const fetchInvites = await guild.invites.fetch().catch(error => {
+      robot.logger.error(`Failed to fetch invites for guild ${guild.name}: ${error}`)
+    })
+
+    if (fetchInvites) {
+      guildInvites.set(guild.id, new Collection(fetchInvites.map(invite => [invite.code, invite.uses])))
+      // just for debugging
+      robot.logger.info(`List all guild invites for ${guild.name}:`, guildInvites.get(guild.id))
+    }
+  })
+}
+
 export default async function sendInvite(discordClient: Client, robot: Robot) {
   const { application } = discordClient
 
   if (application) {
     // stores a list of all invites on runtime
     setTimeout(async () => {
-      discordClient.guilds.cache.forEach(async (guild) => {
-        const fetchInvites = await guild.invites.fetch()
-        guildInvites.set(
-          guild.id,
-          new Collection(
-            fetchInvites.map((invite) => [invite.code, invite.uses]),
-          ),
-        )
-        robot.logger.info("List all guild invites:", guildInvites)
-      })
+      await listInvites(discordClient, robot)
     }, 1000)
 
     // Check if create-invite command already exists, if not create it
@@ -121,6 +126,9 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
               } days and has a maximum of ${defenseInvite.maxUses} uses.`,
             )
           }
+          // store new invites
+          await listInvites(discordClient, robot)
+
           // Create a new role with the client name extracted and set permissions to that channel
           const clientName = channel.name
             .split("-")
