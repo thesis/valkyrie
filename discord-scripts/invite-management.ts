@@ -221,8 +221,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
       )
 
       const usedInvite = fetchedInvites.find((fetchedInvite) => {
-        const oldUseCount = oldInvites.get(fetchedInvite.code)?.uses ?? 0
-        return (fetchedInvite.uses ?? 0) > oldUseCount
+        const oldInvite = oldInvites.get(fetchedInvite.code)
+        return (fetchedInvite.uses ?? 0) > (oldInvite ? oldInvite.uses : 0)
       })
 
       robot.logger.info(`Used Invite: ${usedInvite ? usedInvite.code : "None"}`)
@@ -238,18 +238,23 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
               ? "External"
               : "Internal"
             : null
-          const clientName = channelTypeMatch ? channelTypeMatch[2] : ""
-          robot.logger.info(`Channel Name: ${channelTypeMatch}`)
+          const clientName = channelTypeMatch
+            ? channelTypeMatch[2].replace(/-/g, " ")
+            : ""
+          robot.logger.info(`Channel Name: ${channel.name}`)
           robot.logger.info(`Audit Channel Type: ${auditChannelType}`)
 
           if (auditChannelType) {
-            const roleName = `Defense ${auditChannelType}: ${clientName}`
+            const fixedClientName = clientName
+              .split(" ")
+              .map(
+                (word) =>
+                  word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+              )
+              .join(" ")
+            const roleName = `Defense ${auditChannelType}: ${fixedClientName}`
             const role = member.guild.roles.cache.find(
-              (r) =>
-                r.name
-                  .toLowerCase()
-                  .includes(`defense ${auditChannelType}`.toLowerCase()) &&
-                r.name.toLowerCase().includes(clientName.toLowerCase()),
+              (r) => r.name.toLowerCase() === roleName.toLowerCase(),
             )
 
             if (role) {
