@@ -9,8 +9,6 @@ import {
 } from "discord.js"
 import { DAY, MILLISECOND, WEEK } from "../lib/globals.ts"
 
-// const EXTERNAL_AUDIT_CHANNEL_REGEXP = /^ext-(?<client>.*)-audit$/
-// const INTERNAL_AUDIT_CHANNEL_REGEXP = /^int-(?<client>.*)-audit$/
 const guildInvites = new Collection()
 
 async function createInvite(
@@ -45,11 +43,6 @@ async function listInvites(discordClient: Client, robot: Robot): Promise<void> {
         new Collection(
           fetchInvites.map((invite) => [invite.code, invite.uses]),
         ),
-      )
-      // just for debugging
-      robot.logger.info(
-        `List all guild invites for ${guild.name}:`,
-        guildInvites.get(guild.id),
       )
     }
   })
@@ -264,13 +257,6 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         fetchedInvites.map((invite) => [invite.code, invite.uses ?? 0]),
       )
       guildInvites.set(member.guild.id, newInvites)
-
-      robot.logger.info(
-        `Old Invites: ${JSON.stringify(Array.from(oldInvites.entries()))}`,
-      )
-      robot.logger.info(
-        `New Invites: ${JSON.stringify(Array.from(newInvites.entries()))}`,
-      )
 
       const usedInvite = fetchedInvites.find((fetchedInvite) => {
         const oldInvite = oldInvites.get(fetchedInvite.code)
