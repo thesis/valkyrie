@@ -152,6 +152,20 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         return
       }
 
+      if (
+        !interaction.guild ||
+        !(interaction.channel instanceof TextChannel) ||
+        (interaction.channel.parent &&
+          interaction.channel.parent.name !== "defense")
+      ) {
+        await interaction.reply({
+          content:
+            "This command can only be run in channels under the 'defense' category.",
+          ephemeral: true,
+        })
+        return
+      }
+
       const clientName = interaction.options.get("client-name")
       if (!clientName) {
         await interaction.reply({
@@ -163,6 +177,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
 
       try {
         if (typeof clientName.value === "string") {
+          await interaction.deferReply({ ephemeral: true })
           const normalizedClientName = clientName.value
             .replace(/\s+/g, "-")
             .toLowerCase()
@@ -217,9 +232,12 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
           const internalInvite = await createInvite(internalChannel)
           const externalInvite = await createInvite(externalChannel)
 
-          await interaction.reply({
-            content: `Defense audit setup complete for: ${clientName}\n\nInternal Channel Invite: ${internalInvite.url}\nExternal Channel Invite: ${externalInvite.url}`,
-            ephemeral: true,
+          await interaction.editReply({
+            content:
+              `**Defense audit setup complete for: ${clientName.value}**\n\n` +
+              `Internal Channel: <#${internalChannel.id}> (Invite: ${internalInvite.url})\n` +
+              `External Channel: <#${externalChannel.id}> (Invite: ${externalInvite.url})\n\n` +
+              `Roles created: <@&${internalRole.id}>, <@&${externalRole.id}>`,
           })
         }
       } catch (error) {
@@ -230,115 +248,6 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         })
       }
     })
-
-    // // Generates an invite if the channel name matches ext-*-audit format
-    // discordClient.on("channelCreate", async (channel) => {
-    //   if (
-    //     channel.parent &&
-    //     channel.parent.name === "defense" &&
-    //     channel instanceof TextChannel &&
-    //     (EXTERNAL_AUDIT_CHANNEL_REGEXP.test(channel.name) ||
-    //       INTERNAL_AUDIT_CHANNEL_REGEXP.test(channel.name))
-    //   ) {
-    //     const auditChannelType: string = EXTERNAL_AUDIT_CHANNEL_REGEXP.test(
-    //       channel.name,
-    //     )
-    //       ? "External"
-    //       : "Internal"
-    //     try {
-    //       const defenseInvite = await createInvite(channel)
-    //       if (defenseInvite) {
-    //         robot.logger.info(
-    //           `New invite created for defense ${auditChannelType.toLowerCase()} audit channel: ${
-    //             channel.name
-    //           }, URL: ${defenseInvite.url}`,
-    //         )
-    //         channel.send(
-    //           `Here is your invite link: ${
-    //             defenseInvite.url
-    //           }\nThis invite expires in ${
-    //             (defenseInvite.maxAge / DAY) * MILLISECOND
-    //           } days and has a maximum of ${defenseInvite.maxUses} uses.`,
-    //         )
-    //       }
-    //       // store new invites
-    //       await listInvites(discordClient, robot)
-
-    //       // Create a new role with the client name extracted and set permissions to that channel
-    //       const clientName = channel.name
-    //         .split("-")
-    //         .slice(1, -1)
-    //         .map(
-    //           (segment) =>
-    //             segment.substring(0, 1).toUpperCase() + segment.substring(1),
-    //         )
-    //         .join(" ")
-
-    //       if (clientName) {
-    //         const roleName = `Defense ${auditChannelType}: ${
-    //           clientName || channel.name
-    //         }`
-
-    //         const role = await channel.guild.roles.create({
-    //           name: roleName,
-    //           reason: `Role for ${channel.name} channel`,
-    //         })
-
-    //         await channel.permissionOverwrites.create(role, {
-    //           ViewChannel: true,
-    //         })
-
-    //         if (auditChannelType === "Internal") {
-    //           const normalizedClientName = clientName
-    //             .replace(/\s+/g, "-")
-    //             .toLowerCase()
-    //           const externalAuditChannel = channel.guild.channels.cache.find(
-    //             (c) =>
-    //               c.name === `🔒ext-${normalizedClientName}-audit` &&
-    //               c.parent &&
-    //               c.parent.name === "defense",
-    //           ) as TextChannel
-
-    //           if (externalAuditChannel) {
-    //             await externalAuditChannel.permissionOverwrites.create(
-    //               role.id,
-    //               {
-    //                 ViewChannel: true,
-    //               },
-    //             )
-    //             channel.send(
-    //               `**${role.name}** role granted ViewChannel access to the external audit channel **${externalAuditChannel.name}**`,
-    //             )
-    //             robot.logger.info(
-    //               `ViewChannel access granted to ${role.name} for external audit channel ${externalAuditChannel.name}`,
-    //             )
-    //           } else {
-    //             channel.send("No matching external audit channel found.")
-    //             robot.logger.info(
-    //               "No matching external audit channel found for " +
-    //                 `ext-${clientName.toLowerCase()}-audit`,
-    //             )
-    //           }
-    //         }
-
-    //         channel.send(
-    //           `**${role.name}** role created and permissions set for **${channel.name}**`,
-    //         )
-    //         robot.logger.info(
-    //           `${role.name} role created and permissions set for channel ${channel.name}`,
-    //         )
-    //       } else {
-    //         robot.logger.info(
-    //           `Skipping role creation due to empty client name for channel ${channel.name}`,
-    //         )
-    //       }
-    //     } catch (error) {
-    //       robot.logger.error(
-    //         `An error occurred setting up the defense ${auditChannelType.toLowerCase()} audit channel: ${error}`,
-    //       )
-    //     }
-    //   }
-    // })
 
     // WIP, just testing out invite counting in order to verify which invite was used on join
     discordClient.on("guildMemberAdd", async (member: GuildMember) => {
