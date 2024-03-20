@@ -242,11 +242,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
       }
     })
 
-    // WIP, just testing out invite counting in order to verify which invite was used on join
+    // Check list of invites and compare when a new user joins which invite code has been used, then assign role based on channel.name.match TO DO: Modify this to work with potentially all invites
     discordClient.on("guildMemberAdd", async (member: GuildMember) => {
-      // for debugging
-      robot.logger.info(member)
-
       const oldInvites =
         (guildInvites.get(member.guild.id) as Collection<
           string,
