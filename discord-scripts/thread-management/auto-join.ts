@@ -23,7 +23,7 @@ import {
 // it to mention the right role. Discord's behavior in this scenario is not to
 // ping the role, but to add all its members to the thread.
 
-const PRIVATE_CHANNELS = [{ channelName: "hiring", roleName: "PeopleOps" }]
+const CUSTOM_CHANNEL_ROLE = [{ channelName: "hiring", roleName: "PeopleOps" }]
 
 async function autoJoinThread(
   thread: AnyThreadChannel<boolean>,
@@ -37,6 +37,21 @@ async function autoJoinThread(
   const { guild: server, parent: containingChannel } = thread
 
   const placeholder = await thread.send("<placeholder>")
+
+  // Use this to assign a specific role based on the mapping in CUSTOM_CHANNEL_ROLE, in order to map specific roles/channels
+  const matchingChannel = CUSTOM_CHANNEL_ROLE.find(
+    (channel) => containingChannel?.name.endsWith(channel.channelName),
+  )
+  if (matchingChannel) {
+    const channelMatchingRole = server.roles.cache.find(
+      (role) =>
+        role.name.toLowerCase() === matchingChannel.roleName.toLowerCase(),
+    )
+    if (channelMatchingRole) {
+      await placeholder.edit(channelMatchingRole.toString())
+      return
+    }
+  }
 
   const matchingRole = server.roles.cache.find(
     (role) => role.name.toLowerCase() === containingChannel?.name.toLowerCase(),
@@ -72,21 +87,6 @@ async function autoJoinThread(
     // it does _not_ add everyone to the thread. Instead, it just sits there,
     // looking pretty.
     await placeholder.edit(server.roles.everyone.toString())
-  }
-
-  // Use this to assign a specific role based on the mapping in PRIVATE_CHANNELS, in order to map specific roles/channels
-  const matchingChannel = PRIVATE_CHANNELS.find(
-    (channel) => containingChannel?.name.endsWith(channel.channelName),
-  )
-  if (matchingChannel) {
-    const channelMatchingRole = server.roles.cache.find(
-      (role) =>
-        role.name.toLowerCase() === matchingChannel.roleName.toLowerCase(),
-    )
-    if (channelMatchingRole) {
-      await placeholder.edit(channelMatchingRole.toString())
-      return
-    }
   }
 
   // If we hit this spot, be a monster and delete the useless placeholder and
