@@ -22,6 +22,9 @@ import {
 // Quiet tags are achieved by dropping a placeholder message and then editing
 // it to mention the right role. Discord's behavior in this scenario is not to
 // ping the role, but to add all its members to the thread.
+
+const CUSTOM_CHANNEL_ROLE = [{ channelName: "hiring", roleName: "PeopleOps" }]
+
 async function autoJoinThread(
   thread: AnyThreadChannel<boolean>,
 ): Promise<void> {
@@ -34,6 +37,21 @@ async function autoJoinThread(
   const { guild: server, parent: containingChannel } = thread
 
   const placeholder = await thread.send("<placeholder>")
+
+  // Use this to assign a specific role based on the mapping in CUSTOM_CHANNEL_ROLE, in order to map specific roles/channels
+  const matchingChannel = CUSTOM_CHANNEL_ROLE.find(
+    (channel) => containingChannel?.name.endsWith(channel.channelName),
+  )
+  if (matchingChannel) {
+    const channelMatchingRole = server.roles.cache.find(
+      (role) =>
+        role.name.toLowerCase() === matchingChannel.roleName.toLowerCase(),
+    )
+    if (channelMatchingRole) {
+      await placeholder.edit(channelMatchingRole.toString())
+      return
+    }
+  }
 
   const matchingRole = server.roles.cache.find(
     (role) => role.name.toLowerCase() === containingChannel?.name.toLowerCase(),
