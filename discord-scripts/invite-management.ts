@@ -82,7 +82,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         description: "Creates Defense audit channels",
         options: [
           {
-            name: "client-name",
+            name: "audit-name",
             type: ApplicationCommandOptionType.String,
             description:
               "The name of the audit/client to create the channels for.",
@@ -161,7 +161,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         return
       }
 
-      const clientName = interaction.options.get("client-name")
+      const clientName = interaction.options.get("audit-name")
       if (!clientName) {
         await interaction.reply({
           content: "Client name is required for the defense-audit command.",
