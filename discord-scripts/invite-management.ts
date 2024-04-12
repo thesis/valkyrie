@@ -275,10 +275,10 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             await interaction.editReply({
               content:
                 `**Defense audit channels already set up for: ${clientName.value}**\n\n` +
-                `These channels were found here:\n` +
+                "These channels were found here:\n" +
                 `- Internal Channel: <#${internalChannel.id}> (Invite: \`${internalInvite.url}\`)\n` +
                 `- External Channel: <#${externalChannel.id}> (Invite: \`${externalInvite.url}\`)\n\n` +
-                `We've updated permissions to these roles:\n` +
+                "We've updated permissions to these roles:\n" +
                 `- Internal Role: <@&${internalRole.id}>\n` +
                 `- External Role: <@&${externalRole.id}>`,
             })
