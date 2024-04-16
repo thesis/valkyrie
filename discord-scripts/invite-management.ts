@@ -71,7 +71,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
 
     // Check if defense-audit command exists, if not create it
     const existingDefenseCommand = (await application.commands.fetch()).find(
-      (command) => command.name === "defense-audit2",
+      (command) => command.name === "defense-audit",
     )
     if (existingDefenseCommand === undefined) {
       robot.logger.info("No defense-audit command found, creating it!")
