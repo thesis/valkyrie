@@ -3,13 +3,12 @@ import {
   ApplicationCommandOptionType,
   Client,
   ChannelType,
-  Collection,
   TextChannel,
   GuildMember,
 } from "discord.js"
 import { DAY, MILLISECOND, WEEK } from "../lib/globals.ts"
 
-const guildInvites = new Collection()
+const guildInvites: { [guildId: string]: { [inviteCode: string]: number } } = {}
 
 async function createInvite(
   channel: TextChannel,
@@ -34,12 +33,11 @@ async function listInvites(discordClient: Client, robot: Robot): Promise<void> {
     try {
       const fetchInvites = await guild.invites.fetch()
       if (fetchInvites) {
-        guildInvites.set(
-          guild.id,
-          new Collection(
-            fetchInvites.map((invite) => [invite.code, invite.uses]),
-          ),
-        )
+        guildInvites[guild.id] = guildInvites[guild.id] || {}
+
+        fetchInvites.forEach((invite) => {
+          guildInvites[guild.id][invite.code] = invite.uses ?? 0
+        })
       }
     } catch (error) {
       robot.logger.error(
@@ -267,8 +265,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             await interaction.editReply({
               content:
                 `**Defense audit setup complete for: ${clientName.value}**\n\n` +
-                `Internal Channel: <#${internalChannel.id}> (Invite: \`${internalInvite.url}\`)\n` +
-                `External Channel: <#${externalChannel.id}> (Invite: \`${externalInvite.url}\`)\n\n` +
+                `Internal Channel: <#${internalChannel.id}> - Invite: \`${internalInvite.url}\`\n` +
+                `External Channel: <#${externalChannel.id}> - Invite: \`${externalInvite.url}\`\n\n` +
                 `Roles created: <@&${internalRole.id}>, <@&${externalRole.id}>`,
             })
           } else {
@@ -276,8 +274,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
               content:
                 `**Defense audit channels already set up for: ${clientName.value}**\n\n` +
                 "These channels were found here:\n" +
-                `- Internal Channel: <#${internalChannel.id}> (Invite: \`${internalInvite.url}\`)\n` +
-                `- External Channel: <#${externalChannel.id}> (Invite: \`${externalInvite.url}\`)\n\n` +
+                `- Internal Channel: <#${internalChannel.id}> - Invite: \`${internalInvite.url}\`\n` +
+                `- External Channel: <#${externalChannel.id}> - Invite: \`${externalInvite.url}\`\n\n` +
                 "We've updated permissions to these roles:\n" +
                 `- Internal Role: <@&${internalRole.id}>\n` +
                 `- External Role: <@&${externalRole.id}>`,
@@ -295,22 +293,19 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
 
     // Check list of invites and compare when a new user joins which invite code has been used, then assign role based on channel.name.match TO DO: Modify this to work with potentially all invites
     discordClient.on("guildMemberAdd", async (member: GuildMember) => {
-      const oldInvites =
-        (guildInvites.get(member.guild.id) as Collection<
-          string,
-          { uses: number }
-        >) || new Collection<string, { uses: number }>()
+      const oldInvites = guildInvites[member.guild.id] || {}
       const fetchedInvites = await member.guild.invites.fetch()
-      const newInvites = new Collection<string, number>(
-        fetchedInvites.map((invite) => [invite.code, invite.uses ?? 0]),
-      )
-      guildInvites.set(member.guild.id, newInvites)
+
+      const newInvites: { [code: string]: number } = {}
+      fetchedInvites.forEach((invite) => {
+        newInvites[invite.code] = invite.uses ?? 0
+      })
+
+      guildInvites[member.guild.id] = newInvites
 
       const usedInvite = fetchedInvites.find((fetchedInvite) => {
-        const oldInvite = oldInvites.get(fetchedInvite.code)
-        const oldUses =
-          typeof oldInvite === "object" ? oldInvite.uses : oldInvite
-        return (fetchedInvite.uses ?? 0) > (oldUses ?? 0)
+        const oldUses = oldInvites[fetchedInvite.code] || 0
+        return (fetchedInvite.uses ?? 0) > oldUses
       })
 
       if (usedInvite && usedInvite.channelId) {
