@@ -23,7 +23,17 @@ import {
 // it to mention the right role. Discord's behavior in this scenario is not to
 // ping the role, but to add all its members to the thread.
 
-const CUSTOM_CHANNEL_ROLE = [{ channelName: "hiring", roleName: "PeopleOps" }]
+interface ChannelRoleMapping {
+  channelName?: string
+  roleName?: string
+}
+// For setting up custom channel tagging, follow the below format
+// const CUSTOM_CHANNEL_ROLE: ChannelRoleMapping[] = [{ channelName: "hiring", roleName: "PeopleOps" }]
+const CUSTOM_CHANNEL_ROLE: ChannelRoleMapping[] = [{}]
+
+const hasCustomChannels = CUSTOM_CHANNEL_ROLE.some(
+  (item) => item.channelName !== undefined && item.roleName !== undefined,
+)
 
 async function autoJoinThread(
   thread: AnyThreadChannel<boolean>,
@@ -39,17 +49,21 @@ async function autoJoinThread(
   const placeholder = await thread.send("<placeholder>")
 
   // Use this to assign a specific role based on the mapping in CUSTOM_CHANNEL_ROLE, in order to map specific roles/channels
-  const matchingChannel = CUSTOM_CHANNEL_ROLE.find(
-    (channel) => containingChannel?.name.endsWith(channel.channelName),
-  )
-  if (matchingChannel) {
-    const channelMatchingRole = server.roles.cache.find(
-      (role) =>
-        role.name.toLowerCase() === matchingChannel.roleName.toLowerCase(),
+
+  if (hasCustomChannels) {
+    const matchingChannel = CUSTOM_CHANNEL_ROLE.find(
+      (channel) => containingChannel?.name.endsWith(channel.channelName ?? ""),
     )
-    if (channelMatchingRole) {
-      await placeholder.edit(channelMatchingRole.toString())
-      return
+    if (matchingChannel) {
+      const channelMatchingRole = server.roles.cache.find(
+        (role) =>
+          role.name.toLowerCase() ===
+          (matchingChannel.roleName ?? "").toLowerCase(),
+      )
+      if (channelMatchingRole) {
+        await placeholder.edit(channelMatchingRole.toString())
+        return
+      }
     }
   }
 
