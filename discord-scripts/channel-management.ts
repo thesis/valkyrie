@@ -3,6 +3,7 @@ import {
   Client,
   AttachmentBuilder,
   TextChannel,
+  ChannelType,
   Message,
   Collection,
 } from "discord.js"
@@ -39,7 +40,7 @@ export default async function archiveChannel(
   const { application } = discordClient
 
   if (application) {
-    // Dump all messages from a channel into an array after "!archive"
+    // Dump all messages into a text file and then move channel to it's own category "archived-messages"
     discordClient.on("messageCreate", async (message) => {
       if (
         message.content.toLowerCase() === "!archive" &&
@@ -71,6 +72,40 @@ export default async function archiveChannel(
             })
             .then(() => unlink(filePath))
             .catch(robot.logger.error)
+
+          if (!message.guild) {
+            robot.logger.error(
+              "This command cannot be executed outside of a guild.",
+            )
+            return
+          }
+
+          let archivedCategory = discordClient.channels.cache.find(
+            (c) =>
+              c.type === ChannelType.GuildCategory &&
+              c.name.toLowerCase() === "archived-channels",
+          )
+          if (!archivedCategory) {
+            if (message.guild && archivedCategory) {
+              archivedCategory = await message.guild.channels.create({
+                name: "archived-channels",
+                type: ChannelType.GuildCategory,
+              })
+              await message.channel.setParent(archivedCategory.id)
+              await message.channel.send("Channel archived")
+            }
+          }
+
+          if (archivedCategory) {
+            await message.channel.setParent(archivedCategory.id)
+            await message.channel.permissionOverwrites.edit(message.guild.id, {
+              SendMessages: false,
+            })
+            await message.channel.send(
+              "Channel archived, locked and moved to archived channel category",
+            )
+            robot.logger.info("Channel archived and locked successfully.")
+          }
         } catch (error) {
           robot.logger.error(`An error occurred: ${error}`)
         }
