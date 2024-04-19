@@ -1,6 +1,7 @@
 import { Robot } from "hubot"
 import {
   Client,
+  AuditLogEvent,
   AttachmentBuilder,
   TextChannel,
   ChannelType,
@@ -108,6 +109,37 @@ export default async function archiveChannel(
           }
         } catch (error) {
           robot.logger.error(`An error occurred: ${error}`)
+        }
+      }
+    })
+
+    // WIP, just for debugging in order to track auditlog events, update: it does not seem as though parent.id changes are stored
+    discordClient.on("messageCreate", async (message) => {
+      if (
+        message.content.toLowerCase() === "!unarchive" &&
+        message.channel instanceof TextChannel &&
+        message.guild
+      ) {
+        try {
+          const logs = await message.guild.fetchAuditLogs({
+            type: AuditLogEvent.ChannelUpdate,
+            limit: 100,
+          })
+          const latestEntries = Array.from(logs.entries.values()).slice(0, 50)
+          latestEntries.forEach((entry) => {
+            if (entry.changes) {
+              entry.changes.forEach((change) => {
+                robot.logger.info(
+                  `Change Key: ${change.key}, Old Value: ${change.old}, New Value: ${change.new}`,
+                )
+              })
+            }
+          })
+        } catch (error) {
+          robot.logger.error(
+            `An error occurred while trying to unarchive the channel: ${error}`,
+          )
+          message.channel.send("Failed to unarchive the channel.")
         }
       }
     })
