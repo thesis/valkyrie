@@ -23,7 +23,7 @@ import {
 // it to mention the right role. Discord's behavior in this scenario is not to
 // ping the role, but to add all its members to the thread.
 
-interface ChannelRoleMapping {
+type ChannelRoleMapping = {
   channelName?: string
   roleName?: string
 }
