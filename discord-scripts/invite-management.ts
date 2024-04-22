@@ -33,7 +33,7 @@ async function listInvites(discordClient: Client, robot: Robot): Promise<void> {
     try {
       const fetchInvites = await guild.invites.fetch()
       if (fetchInvites) {
-        guildInvites[guild.id] = guildInvites[guild.id] || {}
+        guildInvites[guild.id] ??= {}
 
         fetchInvites.forEach((invite) => {
           guildInvites[guild.id][invite.code] = invite.uses ?? 0
@@ -193,8 +193,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
           let internalChannel = interaction.guild.channels.cache.find(
             (channel) => channel.name === internalChannelName,
           ) as TextChannel
-          const internalChannelCreated = !internalChannel
-          if (internalChannelCreated) {
+          const internalChannelNeedsCreation = !internalChannel
+          if (internalChannelNeedsCreation) {
             internalChannel = await interaction.guild.channels.create({
               name: internalChannelName,
               type: ChannelType.GuildText,
@@ -213,22 +213,28 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             })
           }
 
+          const internalInvite = await createInvite(internalChannel)
+          const internalInviteExpiry = Math.floor(
+            Date.now() / 1000 + internalInvite.maxAge,
+          )
+
           if (internalChannel) {
             await internalChannel.permissionOverwrites.create(internalRole, {
               ViewChannel: true,
             })
             await internalChannel.send(
-              `@here **Welcome to the ${clientName.value} Internal Audit Channel!**`,
+              `@here **Welcome to the ${clientName.value} Internal Audit Channel!**\n` +
+                `You can use this invite to access <#${internalChannel.id}>: \`${internalInvite.url}\`\n` +
+                `This invite will expire **on <t:${internalInviteExpiry}:R>** and has **${internalInvite.maxUses} max uses**`,
             )
           }
-          const internalInvite = await createInvite(internalChannel)
 
           // External channel setup
           let externalChannel = interaction.guild.channels.cache.find(
             (channel) => channel.name === externalChannelName,
           ) as TextChannel
-          const externalChannelCreated = !externalChannel
-          if (externalChannelCreated) {
+          const externalChannelNeedsCreation = !externalChannel
+          if (externalChannelNeedsCreation) {
             externalChannel = await interaction.guild.channels.create({
               name: externalChannelName,
               type: ChannelType.GuildText,
@@ -247,6 +253,11 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             })
           }
 
+          const externalInvite = await createInvite(externalChannel)
+          const externalInviteExpiry = Math.floor(
+            Date.now() / 1000 + externalInvite.maxAge,
+          )
+
           if (externalChannel) {
             await externalChannel.permissionOverwrites.create(externalRole, {
               ViewChannel: true,
@@ -255,18 +266,20 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
               ViewChannel: true,
             })
             await externalChannel.send(
-              `@here **Welcome to the ${clientName.value} External Audit Channel!**`,
+              `@here **Welcome to the ${clientName.value} External Audit Channel!**\n` +
+                `You can use this invite to access <#${externalChannel.id}>: \`${externalInvite.url}\`\n` +
+                `This invite will expire **on <t:${externalInviteExpiry}:R>** and has **${externalInvite.maxUses} max uses**`,
             )
           }
-          const externalInvite = await createInvite(externalChannel)
 
           // Final interaction response
-          if (internalChannelCreated || externalChannelCreated) {
+          if (internalChannelNeedsCreation || externalChannelNeedsCreation) {
             await interaction.editReply({
               content:
                 `**Defense audit setup complete for: ${clientName.value}**\n\n` +
                 `Internal Channel: <#${internalChannel.id}> - Invite: \`${internalInvite.url}\`\n` +
-                `External Channel: <#${externalChannel.id}> - Invite: \`${externalInvite.url}\`\n\n` +
+                `External Channel: <#${externalChannel.id}> - Invite: \`${externalInvite.url}\`\n` +
+                `These invites will expire **on <t:${internalInviteExpiry}:R>** and have **${internalInvite.maxUses} max uses**\n\n` +
                 `Roles created: <@&${internalRole.id}>, <@&${externalRole.id}>`,
             })
           } else {
@@ -275,7 +288,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
                 `**Defense audit channels already set up for: ${clientName.value}**\n\n` +
                 "These channels were found here:\n" +
                 `- Internal Channel: <#${internalChannel.id}> - Invite: \`${internalInvite.url}\`\n` +
-                `- External Channel: <#${externalChannel.id}> - Invite: \`${externalInvite.url}\`\n\n` +
+                `- External Channel: <#${externalChannel.id}> - Invite: \`${externalInvite.url}\`\n` +
+                `These invites will expire **on <t:${internalInviteExpiry}:R>** and have **${internalInvite.maxUses} max uses**\n\n` +
                 "We've updated permissions to these roles:\n" +
                 `- Internal Role: <@&${internalRole.id}>\n` +
                 `- External Role: <@&${externalRole.id}>`,
