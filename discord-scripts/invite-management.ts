@@ -1,8 +1,78 @@
 import { Robot } from "hubot"
-import { Client, TextChannel } from "discord.js"
+import {
+  Client,
+  TextChannel,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+} from "discord.js"
 import { DAY, MILLISECOND, WEEK } from "../lib/globals.ts"
 
 const EXTERNAL_AUDIT_CHANNEL_REGEXP = /^ext-(?<client>.*)-audit$/
+
+const employeeQuestion = new ActionRowBuilder<ButtonBuilder>().addComponents(
+  new ButtonBuilder()
+    .setCustomId("employee-yes")
+    .setLabel("Yes")
+    .setStyle(ButtonStyle.Success),
+  new ButtonBuilder()
+    .setCustomId("employee-no")
+    .setLabel("No")
+    .setStyle(ButtonStyle.Danger),
+)
+
+const disciplineQuestion = new ActionRowBuilder<ButtonBuilder>().addComponents(
+  new ButtonBuilder()
+    .setCustomId("engineering")
+    .setLabel("Engineering")
+    .setStyle(ButtonStyle.Primary),
+  new ButtonBuilder()
+    .setCustomId("design")
+    .setLabel("Design")
+    .setStyle(ButtonStyle.Primary),
+  new ButtonBuilder()
+    .setCustomId("product")
+    .setLabel("Product")
+    .setStyle(ButtonStyle.Primary),
+  new ButtonBuilder()
+    .setCustomId("marketing")
+    .setLabel("Marketing")
+    .setStyle(ButtonStyle.Primary),
+  new ButtonBuilder()
+    .setCustomId("business")
+    .setLabel("Business Development")
+    .setStyle(ButtonStyle.Primary),
+)
+
+const projectQuestion = new ActionRowBuilder<ButtonBuilder>().addComponents(
+  new ButtonBuilder()
+    .setCustomId("mezo")
+    .setLabel("Mezo")
+    .setStyle(ButtonStyle.Primary),
+  new ButtonBuilder()
+    .setCustomId("acre")
+    .setLabel("Acre")
+    .setStyle(ButtonStyle.Primary),
+  new ButtonBuilder()
+    .setCustomId("embody")
+    .setLabel("Embody")
+    .setStyle(ButtonStyle.Primary),
+  new ButtonBuilder()
+    .setCustomId("tbtc")
+    .setLabel("tBTC")
+    .setStyle(ButtonStyle.Primary),
+  new ButtonBuilder()
+    .setCustomId("thesis")
+    .setLabel("Thesis*")
+    .setStyle(ButtonStyle.Primary),
+)
+
+interface Invitation {
+  project?: string
+  discipline?: string
+}
+
+const invitation: Invitation = {}
 
 async function createInvite(
   channel: TextChannel,
@@ -52,26 +122,116 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         return
       }
 
-      try {
-        const { channel } = interaction
-        if (channel instanceof TextChannel) {
-          const invite = await createInvite(channel)
-          if (invite) {
-            await interaction.reply(
-              `Here is your invite link: ${
-                invite.url
-              }\nThis invite expires in ${
-                (invite.maxAge / DAY) * MILLISECOND
-              } days and has a maximum of ${invite.maxUses} uses.`,
-            )
-          }
-        } else {
+      // Reply to the interaction asking if this is a thesis employee/contractor
+      await interaction.reply({
+        content: "**Is this a Thesis employee or contractor?**",
+        components: [employeeQuestion],
+        ephemeral: true,
+      })
+    })
+
+    discordClient.on("interactionCreate", async (interaction) => {
+      if (!interaction.isButton()) return
+
+      if (!interaction.guild) {
+        await interaction.reply(
+          "This interaction can only be used in a server.",
+        )
+        return
+      }
+
+      const { channel } = interaction
+      if (!(channel instanceof TextChannel)) {
+        await interaction.reply(
+          "Cannot create an invite for this type of channel.",
+        )
+        return
+      }
+      // generate an invite for base role
+      if (interaction.customId === "employee-no") {
+        try {
+          invitation.project = "Thesis Base"
+          const invite = await createInvite(
+            channel,
+            (1 * WEEK) / MILLISECOND,
+            1,
+          )
+          const internalInviteExpiry = Math.floor(
+            Date.now() / 1000 + invite.maxAge,
+          )
+          await interaction.update({
+            content: `**We've generated an invite code for @${invitation.project}} role**, : ${invite.url}\nThis invite expires <t:${internalInviteExpiry}:R> and has a maximum of ${invite.maxUses} uses.`,
+            components: [],
+          })
+        } catch (error) {
+          console.error(error)
           await interaction.reply(
-            "Cannot create an invite for this type of channel.",
+            "An error occurred while creating the invite.",
           )
         }
-      } catch (error) {
-        await interaction.reply("An error occurred while creating the invite.")
+      }
+      if (interaction.customId === "employee-yes") {
+        await interaction.update({
+          content:
+            "**For a Thesis employee: which discipline(s) will this person be working with?**",
+          components: [disciplineQuestion],
+        })
+        invitation.discipline = await interaction.customId
+      }
+
+      if (
+        interaction.customId === "engineering" ||
+        interaction.customId === "design" ||
+        interaction.customId === "product" ||
+        interaction.customId === "marketing" ||
+        interaction.customId === "business"
+      ) {
+        invitation.discipline = await interaction.customId
+        robot.logger.info(invitation.discipline)
+        await interaction.update({
+          content:
+            "**For a Thesis employee: which projects will this person be working on?**",
+          components: [projectQuestion],
+        })
+      }
+
+      if (
+        interaction.customId === "mezo" ||
+        interaction.customId === "acre" ||
+        interaction.customId === "embody" ||
+        interaction.customId === "tbtc" ||
+        interaction.customId === "thesis"
+      ) {
+        invitation.project = await interaction.customId
+        robot.logger.info(invitation.project)
+        robot.logger.info(invitation.project, invitation.discipline)
+        const targetChannelName = `🔒${invitation.project ?? ""}-${
+          invitation.discipline ?? ""
+        }`
+        robot.logger.info(targetChannelName)
+        const matchChannel = interaction.guild.channels.cache.find(
+          (c) => c.name === targetChannelName,
+        ) as TextChannel
+        robot.logger.info(matchChannel)
+        try {
+          const invite = await createInvite(
+            matchChannel,
+            (1 * WEEK) / MILLISECOND,
+            1,
+          )
+          const internalInviteExpiry = Math.floor(
+            Date.now() / 1000 + invite.maxAge,
+          )
+          await interaction.update({
+            content: `**We've generated an invite code for <@${interaction.customId}> role**, : ${invite.url}\nThis invite expires <t:${internalInviteExpiry}:R> and has a maximum of ${invite.maxUses} uses.`,
+            components: [],
+          })
+        } catch (error) {
+          console.error(error)
+          await interaction.reply(
+            "An error occurred while creating the invite.",
+          )
+        }
       }
     })
 
