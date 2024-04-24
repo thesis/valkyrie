@@ -319,6 +319,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         return (fetchedInvite.uses ?? 0) > oldUses
       })
 
+      robot.logger.info(oldInvites)
+      robot.logger.info(newInvites)
       if (usedInvite && usedInvite.channelId) {
         const channel = member.guild.channels.cache.get(
           usedInvite.channelId,
@@ -358,7 +360,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
           }
 
           if (!auditChannelMatch) {
-            const rolesToAssign = channel.name.split("-")
+            const cleanChannelName = channel.name.replace(/🔒/g, "").trim()
+            const rolesToAssign = cleanChannelName.split("-")
 
             if (rolesToAssign.length >= 2) {
               const role1Name = rolesToAssign[0].trim()
