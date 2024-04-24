@@ -1,5 +1,6 @@
 import { Robot } from "hubot"
 import {
+  GuildMember,
   Client,
   TextChannel,
   ButtonBuilder,
@@ -9,6 +10,8 @@ import {
 import { DAY, MILLISECOND, WEEK } from "../lib/globals.ts"
 
 const EXTERNAL_AUDIT_CHANNEL_REGEXP = /^ext-(?<client>.*)-audit$/
+
+const guildInvites: { [guildId: string]: { [inviteCode: string]: number } } = {}
 
 const employeeQuestion = new ActionRowBuilder<ButtonBuilder>().addComponents(
   new ButtonBuilder()
@@ -154,7 +157,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
           const invite = await createInvite(
             channel,
             (1 * WEEK) / MILLISECOND,
-            1,
+            2,
           )
           const internalInviteExpiry = Math.floor(
             Date.now() / 1000 + invite.maxAge,
@@ -164,7 +167,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             components: [],
           })
         } catch (error) {
-          console.error(error)
+          robot.logger.error(error)
           await interaction.reply(
             "An error occurred while creating the invite.",
           )
@@ -217,7 +220,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
           const invite = await createInvite(
             matchChannel,
             (1 * WEEK) / MILLISECOND,
-            1,
+            2,
           )
           const internalInviteExpiry = Math.floor(
             Date.now() / 1000 + invite.maxAge,
@@ -227,7 +230,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             components: [],
           })
         } catch (error) {
-          console.error(error)
+          robot.logger.error(error)
           await interaction.reply(
             "An error occurred while creating the invite.",
           )
@@ -296,6 +299,95 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             `An error occurred setting up the defense audit channel: ${error}`,
           )
         }
+      }
+    })
+
+    // Check list of invites and compare when a new user joins which invite code has been used, then assign role based on channel.name.match TO DO: Modify this to work with potentially all invites
+    discordClient.on("guildMemberAdd", async (member: GuildMember) => {
+      const oldInvites = guildInvites[member.guild.id] || {}
+      const fetchedInvites = await member.guild.invites.fetch()
+
+      const newInvites: { [code: string]: number } = {}
+      fetchedInvites.forEach((invite) => {
+        newInvites[invite.code] = invite.uses ?? 0
+      })
+
+      guildInvites[member.guild.id] = newInvites
+
+      const usedInvite = fetchedInvites.find((fetchedInvite) => {
+        const oldUses = oldInvites[fetchedInvite.code] || 0
+        return (fetchedInvite.uses ?? 0) > oldUses
+      })
+
+      if (usedInvite && usedInvite.channelId) {
+        const channel = member.guild.channels.cache.get(
+          usedInvite.channelId,
+        ) as TextChannel
+        if (channel) {
+          robot.logger.info(channel)
+          const auditChannelMatch = channel.name.match(/(ext|int)-(.*)-audit/)
+          if (auditChannelMatch) {
+            const clientName = auditChannelMatch
+              ? auditChannelMatch[2]
+                  .replace(/-/g, " ")
+                  .split(" ")
+                  .map(
+                    (word) =>
+                      word.charAt(0).toUpperCase() +
+                      word.slice(1).toLowerCase(),
+                  )
+                  .join(" ")
+              : ""
+            const auditType =
+              auditChannelMatch[1] === "ext" ? "External" : "Internal"
+            const roleName = `Defense ${auditType}: ${clientName}`
+
+            const role = member.guild.roles.cache.find(
+              (r) => r.name.toLowerCase() === roleName.toLowerCase(),
+            )
+            if (role) {
+              await member.roles.add(role)
+            }
+            robot.logger.info(
+              `Invite code used: ${
+                usedInvite ? usedInvite.code : "None"
+              }, Username joined: ${
+                member.displayName
+              }, Role assignments: ${roleName}`,
+            )
+          }
+
+          if (!auditChannelMatch) {
+            const rolesToAssign = channel.name.split("-")
+
+            if (rolesToAssign.length >= 2) {
+              const role1Name = rolesToAssign[0].trim()
+              const role2Name = rolesToAssign[1].trim()
+              const role1 = member.guild.roles.cache.find(
+                (r) => r.name.toLowerCase() === role1Name.toLowerCase(),
+              )
+              if (role1) {
+                await member.roles.add(role1)
+              }
+
+              const role2 = member.guild.roles.cache.find(
+                (r) => r.name.toLowerCase() === role2Name.toLowerCase(),
+              )
+              if (role2) {
+                await member.roles.add(role2)
+              }
+              robot.logger.info(
+                `Invite code used: ${
+                  usedInvite ? usedInvite.code : "None"
+                }, Username joined: ${
+                  member.displayName
+                }, Role assignments: ${role1} ${role2}`,
+              )
+            }
+          }
+        }
+      } else {
+        robot.logger.info("Could not find which invite was used.")
       }
     })
   }
