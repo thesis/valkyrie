@@ -95,10 +95,34 @@ async function createInvite(
   }
 }
 
+async function listInvites(discordClient: Client, robot: Robot): Promise<void> {
+  discordClient.guilds.cache.forEach(async (guild) => {
+    try {
+      const fetchInvites = await guild.invites.fetch()
+      if (fetchInvites) {
+        guildInvites[guild.id] ??= {}
+
+        fetchInvites.forEach((invite) => {
+          guildInvites[guild.id][invite.code] = invite.uses ?? 0
+        })
+      }
+    } catch (error) {
+      robot.logger.error(
+        `Failed to fetch invites for guild ${guild.name}: ${error}`,
+      )
+    }
+  })
+}
+
 export default async function sendInvite(discordClient: Client, robot: Robot) {
   const { application } = discordClient
 
   if (application) {
+    // Grab list of guild invites on runtime
+    setTimeout(async () => {
+      await listInvites(discordClient, robot)
+    }, 1000)
+
     // Check if create-invite command already exists, if not create it
     const existingInviteCommand = (await application.commands.fetch()).find(
       (command) => command.name === "create-invite",
@@ -159,6 +183,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             (1 * WEEK) / MILLISECOND,
             2,
           )
+          // Update list of invites after new invite is created
+          await listInvites(discordClient, robot)
           const internalInviteExpiry = Math.floor(
             Date.now() / 1000 + invite.maxAge,
           )
@@ -222,6 +248,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             (1 * WEEK) / MILLISECOND,
             2,
           )
+          // Update list of invites after new invite is created
+          await listInvites(discordClient, robot)
           const internalInviteExpiry = Math.floor(
             Date.now() / 1000 + invite.maxAge,
           )
@@ -248,6 +276,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
       ) {
         try {
           const defenseInvite = await createInvite(channel)
+          // Update list of invites after new invite is created
+          await listInvites(discordClient, robot)
           if (defenseInvite) {
             robot.logger.info(
               `New invite created for defense audit channel: ${channel.name}, URL: ${defenseInvite.url}`,
@@ -319,8 +349,8 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         return (fetchedInvite.uses ?? 0) > oldUses
       })
 
-      robot.logger.info(oldInvites)
-      robot.logger.info(newInvites)
+      robot.logger.info("Old invites:", oldInvites)
+      robot.logger.info("new invites:", newInvites)
       if (usedInvite && usedInvite.channelId) {
         const channel = member.guild.channels.cache.get(
           usedInvite.channelId,
@@ -362,6 +392,16 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
           if (!auditChannelMatch) {
             const cleanChannelName = channel.name.replace(/🔒/g, "").trim()
             const rolesToAssign = cleanChannelName.split("-")
+
+            if (rolesToAssign.includes("thesis base")) {
+              robot.logger.info("Thesis base role detected")
+              const baseRole = member.guild.roles.cache.find(
+                (r) => r.name === "thesis-base",
+              )
+              if (baseRole) {
+                await member.roles.add(baseRole)
+              }
+            }
 
             if (rolesToAssign.length >= 2) {
               const role1Name = rolesToAssign[0].trim()
