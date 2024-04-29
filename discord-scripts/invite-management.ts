@@ -178,8 +178,12 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
       if (interaction.customId === "employee-no") {
         try {
           invitation.project = "Thesis Base"
+          const matchChannel = interaction.guild.channels.cache.find(
+            (c) => c.name === "🔒thesis-base",
+          ) as TextChannel
+          robot.logger.info(matchChannel)
           const invite = await createInvite(
-            channel,
+            matchChannel,
             (1 * WEEK) / MILLISECOND,
             2,
           )
@@ -393,14 +397,21 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             const cleanChannelName = channel.name.replace(/🔒/g, "").trim()
             const rolesToAssign = cleanChannelName.split("-")
 
-            if (rolesToAssign.includes("thesis base")) {
+            if (rolesToAssign.includes("base")) {
               robot.logger.info("Thesis base role detected")
               const baseRole = member.guild.roles.cache.find(
-                (r) => r.name === "thesis-base",
+                (r) => r.name === "Thesis Base",
               )
               if (baseRole) {
                 await member.roles.add(baseRole)
               }
+              robot.logger.info(
+                `Invite code used: ${
+                  usedInvite ? usedInvite.code : "None"
+                }, Username joined: ${
+                  member.displayName
+                }, Role assignment: ${baseRole}`,
+              )
             }
 
             if (rolesToAssign.length >= 2) {
