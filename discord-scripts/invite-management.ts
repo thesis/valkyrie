@@ -414,7 +414,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
               )
             }
 
-            if (rolesToAssign.length >= 2) {
+            if (rolesToAssign.length >= 2 && !rolesToAssign.includes("base")) {
               const role1Name = rolesToAssign[0].trim()
               const role2Name = rolesToAssign[1].trim()
               const role1 = member.guild.roles.cache.find(
