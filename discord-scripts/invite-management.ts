@@ -77,24 +77,6 @@ interface Invitation {
 
 const invitation: Invitation = {}
 
-async function createInvite(
-  channel: TextChannel,
-  maxAge = (1 * WEEK) / MILLISECOND,
-  maxUses = 10,
-): Promise<{ url: string; maxAge: number; maxUses: number }> {
-  const invite = await channel.createInvite({
-    maxAge,
-    maxUses,
-    unique: true,
-  })
-
-  return {
-    url: invite.url,
-    maxAge,
-    maxUses,
-  }
-}
-
 async function listInvites(discordClient: Client, robot: Robot): Promise<void> {
   discordClient.guilds.cache.forEach(async (guild) => {
     try {
@@ -112,6 +94,27 @@ async function listInvites(discordClient: Client, robot: Robot): Promise<void> {
       )
     }
   })
+}
+
+async function createInvite(
+  channel: TextChannel,
+  maxAge = (1 * WEEK) / MILLISECOND,
+  maxUses = 10,
+): Promise<{ url: string; maxAge: number; maxUses: number }> {
+  const invite = await channel.createInvite({
+    maxAge,
+    maxUses,
+    unique: true,
+  })
+
+  // Update list of invites after new invite is created
+  await listInvites
+
+  return {
+    url: invite.url,
+    maxAge,
+    maxUses,
+  }
 }
 
 export default async function sendInvite(discordClient: Client, robot: Robot) {
@@ -187,8 +190,6 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             (1 * WEEK) / MILLISECOND,
             2,
           )
-          // Update list of invites after new invite is created
-          await listInvites(discordClient, robot)
           const internalInviteExpiry = Math.floor(
             Date.now() / 1000 + invite.maxAge,
           )
@@ -252,8 +253,6 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             (1 * WEEK) / MILLISECOND,
             2,
           )
-          // Update list of invites after new invite is created
-          await listInvites(discordClient, robot)
           const internalInviteExpiry = Math.floor(
             Date.now() / 1000 + invite.maxAge,
           )
@@ -280,8 +279,6 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
       ) {
         try {
           const defenseInvite = await createInvite(channel)
-          // Update list of invites after new invite is created
-          await listInvites(discordClient, robot)
           if (defenseInvite) {
             robot.logger.info(
               `New invite created for defense audit channel: ${channel.name}, URL: ${defenseInvite.url}`,
