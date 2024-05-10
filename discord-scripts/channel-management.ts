@@ -1,5 +1,38 @@
 import { Robot } from "hubot"
-import { Client, TextChannel, ChannelType } from "discord.js"
+import {
+  Client,
+  AuditLogEvent,
+  AttachmentBuilder,
+  TextChannel,
+  ChannelType,
+  Message,
+  Collection,
+} from "discord.js"
+import { writeFile, unlink } from "fs/promises"
+import dotenv from "dotenv"
+
+dotenv.config()
+
+async function fetchAllMessages(
+  channel: TextChannel,
+  before?: string,
+): Promise<Collection<string, Message<true>>> {
+  const limit = 100
+  const options = before ? { limit, before } : { limit }
+  const fetchedMessages = await channel.messages.fetch(options)
+
+  if (fetchedMessages.size === 0) {
+    return new Collection<string, Message<true>>()
+  }
+
+  const lastId = fetchedMessages.lastKey()
+  const olderMessages = await fetchAllMessages(channel, lastId)
+
+  return new Collection<string, Message<true>>().concat(
+    fetchedMessages,
+    olderMessages,
+  )
+}
 
 export default async function archiveChannel(
   discordClient: Client,
@@ -8,136 +41,106 @@ export default async function archiveChannel(
   const { application } = discordClient
 
   if (application) {
-    // Check if archive-channel command already exists, if not create it
-    const existingArchiveCommand = (await application.commands.fetch()).find(
-      (command) => command.name === "archive-channel",
-    )
-    if (existingArchiveCommand === undefined) {
-      robot.logger.info("No archive-channel command found, creating it!")
-      await application.commands.create({
-        name: "archive-channel",
-        description:
-          "Archives channel to archived channels category (Defense only)",
-      })
-      robot.logger.info("archive channel command set")
-    }
-
-    // Check if unarchive-channel command already exists, if not create it
-    const existingUnarchiveCommand = (await application.commands.fetch()).find(
-      (command) => command.name === "unarchive-channel",
-    )
-    if (existingUnarchiveCommand === undefined) {
-      robot.logger.info("No unarchive-channel command found, creating it!")
-      await application.commands.create({
-        name: "unarchive-channel",
-        description:
-          "unarchive channel back to defense category (Defense only)",
-      })
-      robot.logger.info("unarchive channel command set")
-    }
-
-    // Move channel to archived-channel category
-    discordClient.on("interactionCreate", async (interaction) => {
+    // Dump all messages into a text file and then move channel to it's own category "archived-messages"
+    discordClient.on("messageCreate", async (message) => {
       if (
-        !interaction.isCommand() ||
-        interaction.commandName !== "archive-channel"
+        message.content.toLowerCase() === "!archive" &&
+        message.channel instanceof TextChannel
       ) {
-        return
-      }
-      if (!interaction.guild) {
-        await interaction.reply("This command can only be used in a server.")
-        return
-      }
-      try {
-        if (interaction.channel instanceof TextChannel) {
-          let archivedCategory = interaction.guild.channels.cache.find(
+        try {
+          const allMessages = await fetchAllMessages(message.channel)
+
+          robot.logger.info(`Total messages fetched: ${allMessages.size}`)
+
+          const messagesArray = Array.from(allMessages.values()).reverse()
+          const messagesContent = messagesArray
+            .map(
+              (m) =>
+                `${m.createdAt.toLocaleString()}: ${m.author.username}: ${
+                  m.content
+                }`,
+            )
+            .join("\n")
+
+          const filePath = "./messages.txt"
+          await writeFile(filePath, messagesContent, "utf-8")
+
+          const fileAttachment = new AttachmentBuilder(filePath)
+          await message.channel
+            .send({
+              content: "Here are the archived messages:",
+              files: [fileAttachment],
+            })
+            .then(() => unlink(filePath))
+            .catch(robot.logger.error)
+
+          if (!message.guild) {
+            robot.logger.error(
+              "This command cannot be executed outside of a guild.",
+            )
+            return
+          }
+
+          let archivedCategory = discordClient.channels.cache.find(
             (c) =>
               c.type === ChannelType.GuildCategory &&
               c.name.toLowerCase() === "archived-channels",
           )
-
           if (!archivedCategory) {
-            archivedCategory = await interaction.guild.channels.create({
-              name: "archived-channels",
-              type: ChannelType.GuildCategory,
-            })
+            if (message.guild && archivedCategory) {
+              archivedCategory = await message.guild.channels.create({
+                name: "archived-channels",
+                type: ChannelType.GuildCategory,
+              })
+              await message.channel.setParent(archivedCategory.id)
+              await message.channel.send("Channel archived")
+            }
           }
 
           if (archivedCategory) {
-            ;(await interaction.channel.setParent(
-              archivedCategory.id,
-            )) as TextChannel
-            await interaction.channel.permissionOverwrites.edit(
-              interaction.guild.id,
-              {
-                SendMessages: false,
-              },
-            )
-            await interaction.channel.send(
+            await message.channel.setParent(archivedCategory.id)
+            await message.channel.permissionOverwrites.edit(message.guild.id, {
+              SendMessages: false,
+            })
+            await message.channel.send(
               "Channel archived, locked and moved to archived channel category",
             )
             robot.logger.info("Channel archived and locked successfully.")
           }
+        } catch (error) {
+          robot.logger.error(`An error occurred: ${error}`)
         }
-      } catch (error) {
-        robot.logger.error(`An error occurred: ${error}`)
-        await interaction.reply(
-          `An error occurred: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
-        )
       }
     })
 
-    // Move channel back to defense category on Unarchived
-    discordClient.on("interactionCreate", async (interaction) => {
+    // WIP, just for debugging in order to track auditlog events, update: it does not seem as though parent.id changes are stored
+    discordClient.on("messageCreate", async (message) => {
       if (
-        !interaction.isCommand() ||
-        interaction.commandName !== "unarchive-channel"
+        message.content.toLowerCase() === "!unarchive" &&
+        message.channel instanceof TextChannel &&
+        message.guild
       ) {
-        return
-      }
-      if (!interaction.guild) {
-        await interaction.reply("This command can only be used in a server.")
-        return
-      }
-      try {
-        if (interaction.channel instanceof TextChannel) {
-          const defenseCategory = interaction.guild.channels.cache.find(
-            (c) =>
-              c.type === ChannelType.GuildCategory &&
-              c.name.toLowerCase() === "defense",
+        try {
+          const logs = await message.guild.fetchAuditLogs({
+            type: AuditLogEvent.ChannelUpdate,
+            limit: 100,
+          })
+          const latestEntries = Array.from(logs.entries.values()).slice(0, 50)
+          latestEntries.forEach((entry) => {
+            if (entry.changes) {
+              entry.changes.forEach((change) => {
+                robot.logger.info(
+                  `Change Key: ${change.key}, Old Value: ${change.old}, New Value: ${change.new}`,
+                )
+              })
+            }
+          })
+        } catch (error) {
+          robot.logger.error(
+            `An error occurred while trying to unarchive the channel: ${error}`,
           )
-
-          if (!defenseCategory) {
-            await interaction.reply(
-              "No defense category found to move channel to",
-            )
-          }
-
-          if (defenseCategory) {
-            ;(await interaction.channel.setParent(
-              defenseCategory.id,
-            )) as TextChannel
-            await interaction.channel.permissionOverwrites.edit(
-              interaction.guild.id,
-              {
-                SendMessages: false,
-              },
-            )
-            await interaction.channel.send(
-              "Channel unarchived and move backed to defense category",
-            )
-            robot.logger.info("Channel uarchived and moved.")
-          }
+          message.channel.send("Failed to unarchive the channel.")
         }
-      } catch (error) {
-        robot.logger.error(`An error occurred: ${error}`)
-        await interaction.reply(
-          `An error occurred: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
-        )
       }
     })
   }
