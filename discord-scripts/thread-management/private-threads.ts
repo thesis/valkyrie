@@ -4,6 +4,7 @@ import { isPrivate } from "../../lib/discord/utils.ts"
 const PRIVATE_THREAD_CHANNELS = [
   { id: "1079520580228894771", name: "operations" },
   { id: "1202691029996675104", name: "hiring-and-peopleops" },
+  { id: "1218285168888909975", name: "onboarding" },
 ]
 
 async function privateThreadAdmonishment(
