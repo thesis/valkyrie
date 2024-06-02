@@ -1,8 +1,14 @@
 import { Robot } from "hubot"
-import { Client, TextChannel } from "discord.js"
+import {
+  ApplicationCommandOptionType,
+  Client,
+  ChannelType,
+  TextChannel,
+  GuildMember,
+} from "discord.js"
 import { DAY, MILLISECOND, WEEK } from "../lib/globals.ts"
 
-const EXTERNAL_AUDIT_CHANNEL_REGEXP = /^ext-(?<client>.*)-audit$/
+const guildInvites: { [guildId: string]: { [inviteCode: string]: number } } = {}
 
 async function createInvite(
   channel: TextChannel,
@@ -22,10 +28,34 @@ async function createInvite(
   }
 }
 
+async function listInvites(discordClient: Client, robot: Robot): Promise<void> {
+  discordClient.guilds.cache.forEach(async (guild) => {
+    try {
+      const fetchInvites = await guild.invites.fetch()
+      if (fetchInvites) {
+        guildInvites[guild.id] ??= {}
+
+        fetchInvites.forEach((invite) => {
+          guildInvites[guild.id][invite.code] = invite.uses ?? 0
+        })
+      }
+    } catch (error) {
+      robot.logger.error(
+        `Failed to fetch invites for guild ${guild.name}: ${error}`,
+      )
+    }
+  })
+}
+
 export default async function sendInvite(discordClient: Client, robot: Robot) {
   const { application } = discordClient
 
   if (application) {
+    // stores a list of all invites on runtime
+    setTimeout(async () => {
+      await listInvites(discordClient, robot)
+    }, 1000)
+
     // Check if create-invite command already exists, if not create it
     const existingInviteCommand = (await application.commands.fetch()).find(
       (command) => command.name === "create-invite",
@@ -38,6 +68,29 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
       })
       robot.logger.info("create invite command set")
     }
+
+    // Check if defense-audit command exists, if not create it
+    const existingDefenseCommand = (await application.commands.fetch()).find(
+      (command) => command.name === "defense-audit",
+    )
+    if (existingDefenseCommand === undefined) {
+      robot.logger.info("No defense-audit command found, creating it!")
+      await application.commands.create({
+        name: "defense-audit",
+        description: "Creates Defense audit channels",
+        options: [
+          {
+            name: "audit-name",
+            type: ApplicationCommandOptionType.String,
+            description:
+              "The name of the audit/client to create the channels for.",
+            required: true,
+          },
+        ],
+      })
+      robot.logger.info("Defense audit command set")
+    }
+
     // Create an invite based of the command and channel where the command has been run
     discordClient.on("interactionCreate", async (interaction) => {
       if (
@@ -75,67 +128,239 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
       }
     })
 
-    // Generates an invite if the channel name matches ext-*-audit format
-    discordClient.on("channelCreate", async (channel) => {
+    // Create the defense audit channels and roles based off the command
+    discordClient.on("interactionCreate", async (interaction) => {
       if (
-        channel.parent &&
-        channel.parent.name === "defense" &&
-        channel instanceof TextChannel &&
-        EXTERNAL_AUDIT_CHANNEL_REGEXP.test(channel.name)
+        !interaction.isCommand() ||
+        interaction.commandName !== "defense-audit"
       ) {
-        try {
-          const defenseInvite = await createInvite(channel)
-          if (defenseInvite) {
-            robot.logger.info(
-              `New invite created for defense audit channel: ${channel.name}, URL: ${defenseInvite.url}`,
-            )
-            channel.send(
-              `Here is your invite link: ${
-                defenseInvite.url
-              }\nThis invite expires in ${
-                (defenseInvite.maxAge / DAY) * MILLISECOND
-              } days and has a maximum of ${defenseInvite.maxUses} uses.`,
-            )
-          }
-          // Create a new role with the client name extracted and set permissions to that channel
-          const clientName = channel.name
-            .split("-")
-            .slice(1, -1)
-            .map(
-              (segment) =>
-                segment.substring(0, 1).toUpperCase() + segment.substring(1),
-            )
-            .join(" ")
+        return
+      }
 
-          if (clientName) {
-            const roleName = clientName
-              ? `Defense: ${clientName}`
-              : `Defense: ${channel.name}`
+      if (!interaction.guild) {
+        await interaction.reply({
+          content: "This command can only be used in a server.",
+          ephemeral: true,
+        })
+        return
+      }
 
-            const role = await channel.guild.roles.create({
-              name: roleName,
-              reason: `Role for ${channel.name} channel`,
+      if (
+        !interaction.guild ||
+        !(interaction.channel instanceof TextChannel) ||
+        (interaction.channel.parent &&
+          interaction.channel.parent.name !== "defense")
+      ) {
+        await interaction.reply({
+          content:
+            "This command can only be run in chat channels under the 'Defense' category.",
+          ephemeral: true,
+        })
+        return
+      }
+
+      const clientName = interaction.options.get("audit-name")
+      if (!clientName) {
+        await interaction.reply({
+          content: "Client name is required for the defense-audit command.",
+          ephemeral: true,
+        })
+        return
+      }
+
+      try {
+        if (typeof clientName.value === "string") {
+          await interaction.deferReply({ ephemeral: true })
+          const normalizedClientName = clientName.value
+            .replace(/[^a-zA-Z0-9]/g, "-")
+            .toLowerCase()
+          const internalChannelName = `🔒int-${normalizedClientName}-audit`
+          const externalChannelName = `🔒ext-${normalizedClientName}-audit`
+
+          const defenseCategory = interaction.guild.channels.cache.find(
+            (category) => category.name === "defense",
+          )
+
+          if (!defenseCategory) {
+            await interaction.reply({
+              content: "Defense category does not exist.",
+              ephemeral: true,
             })
+            return
+          }
 
-            await channel.permissionOverwrites.create(role, {
+          // Internal channel setup
+          let internalChannel = interaction.guild.channels.cache.find(
+            (channel) => channel.name === internalChannelName,
+          ) as TextChannel
+          const internalChannelNeedsCreation = !internalChannel
+          if (internalChannelNeedsCreation) {
+            internalChannel = await interaction.guild.channels.create({
+              name: internalChannelName,
+              type: ChannelType.GuildText,
+              parent: defenseCategory.id,
+            })
+          }
+
+          const internalRoleName = `Defense Internal: ${clientName.value}`
+          let internalRole = interaction.guild.roles.cache.find(
+            (r) => r.name === internalRoleName,
+          )
+          if (!internalRole) {
+            internalRole = await interaction.guild.roles.create({
+              name: internalRoleName,
+              reason: "Role for internal audit channel",
+            })
+          }
+
+          const internalInvite = await createInvite(internalChannel)
+          const internalInviteExpiry = Math.floor(
+            Date.now() / 1000 + internalInvite.maxAge,
+          )
+
+          if (internalChannel) {
+            await internalChannel.permissionOverwrites.create(internalRole, {
               ViewChannel: true,
             })
-            channel.send(
-              `**${role.name}** role created and permissions set for **${channel.name}**`,
-            )
-            robot.logger.info(
-              `${role.name} role created and permissions set for channel ${channel.name}`,
-            )
-          } else {
-            robot.logger.info(
-              `Skipping role creation due to empty client name for channel ${channel.name}`,
+            await internalChannel.send(
+              `@here **Welcome to the ${clientName.value} Internal Audit Channel!**\n` +
+                `You can use this invite to access <#${internalChannel.id}>: \`${internalInvite.url}\`\n` +
+                `This invite will expire **on <t:${internalInviteExpiry}:R>** and has **${internalInvite.maxUses} max uses**`,
             )
           }
-        } catch (error) {
-          robot.logger.error(
-            `An error occurred setting up the defense audit channel: ${error}`,
+
+          // External channel setup
+          let externalChannel = interaction.guild.channels.cache.find(
+            (channel) => channel.name === externalChannelName,
+          ) as TextChannel
+          const externalChannelNeedsCreation = !externalChannel
+          if (externalChannelNeedsCreation) {
+            externalChannel = await interaction.guild.channels.create({
+              name: externalChannelName,
+              type: ChannelType.GuildText,
+              parent: defenseCategory.id,
+            })
+          }
+
+          const externalRoleName = `Defense External: ${clientName.value}`
+          let externalRole = interaction.guild.roles.cache.find(
+            (r) => r.name === externalRoleName,
           )
+          if (!externalRole) {
+            externalRole = await interaction.guild.roles.create({
+              name: externalRoleName,
+              reason: "Role for external audit channel",
+            })
+          }
+
+          const externalInvite = await createInvite(externalChannel)
+          const externalInviteExpiry = Math.floor(
+            Date.now() / 1000 + externalInvite.maxAge,
+          )
+
+          if (externalChannel) {
+            await externalChannel.permissionOverwrites.create(externalRole, {
+              ViewChannel: true,
+            })
+            await externalChannel.permissionOverwrites.create(internalRole, {
+              ViewChannel: true,
+            })
+            await externalChannel.send(
+              `@here **Welcome to the ${clientName.value} External Audit Channel!**\n` +
+                `You can use this invite to access <#${externalChannel.id}>: \`${externalInvite.url}\`\n` +
+                `This invite will expire **on <t:${externalInviteExpiry}:R>** and has **${externalInvite.maxUses} max uses**`,
+            )
+          }
+
+          // Final interaction response
+          if (internalChannelNeedsCreation || externalChannelNeedsCreation) {
+            await interaction.editReply({
+              content:
+                `**Defense audit setup complete for: ${clientName.value}**\n\n` +
+                `Internal Channel: <#${internalChannel.id}> - Invite: \`${internalInvite.url}\`\n` +
+                `External Channel: <#${externalChannel.id}> - Invite: \`${externalInvite.url}\`\n` +
+                `These invites will expire **on <t:${internalInviteExpiry}:R>** and have **${internalInvite.maxUses} max uses**\n\n` +
+                `Roles created: <@&${internalRole.id}>, <@&${externalRole.id}>`,
+            })
+          } else {
+            await interaction.editReply({
+              content:
+                `**Defense audit channels already set up for: ${clientName.value}**\n\n` +
+                "These channels were found here:\n" +
+                `- Internal Channel: <#${internalChannel.id}> - Invite: \`${internalInvite.url}\`\n` +
+                `- External Channel: <#${externalChannel.id}> - Invite: \`${externalInvite.url}\`\n` +
+                `These invites will expire **on <t:${internalInviteExpiry}:R>** and have **${internalInvite.maxUses} max uses**\n\n` +
+                "We've updated permissions to these roles:\n" +
+                `- Internal Role: <@&${internalRole.id}>\n` +
+                `- External Role: <@&${externalRole.id}>`,
+            })
+          }
         }
+      } catch (error) {
+        robot.logger.error(error)
+        await interaction.reply({
+          content: "An error occurred while setting up the defense audit.",
+          ephemeral: true,
+        })
+      }
+    })
+
+    // Check list of invites and compare when a new user joins which invite code has been used, then assign role based on channel.name.match TO DO: Modify this to work with potentially all invites
+    discordClient.on("guildMemberAdd", async (member: GuildMember) => {
+      const oldInvites = guildInvites[member.guild.id] || {}
+      const fetchedInvites = await member.guild.invites.fetch()
+
+      const newInvites: { [code: string]: number } = {}
+      fetchedInvites.forEach((invite) => {
+        newInvites[invite.code] = invite.uses ?? 0
+      })
+
+      guildInvites[member.guild.id] = newInvites
+
+      const usedInvite = fetchedInvites.find((fetchedInvite) => {
+        const oldUses = oldInvites[fetchedInvite.code] || 0
+        return (fetchedInvite.uses ?? 0) > oldUses
+      })
+
+      if (usedInvite && usedInvite.channelId) {
+        const channel = member.guild.channels.cache.get(
+          usedInvite.channelId,
+        ) as TextChannel
+        if (channel) {
+          const channelTypeMatch = channel.name.match(/(ext|int)-(.*)-audit/)
+          const clientName = channelTypeMatch
+            ? channelTypeMatch[2]
+                .replace(/-/g, " ")
+                .split(" ")
+                .map(
+                  (word) =>
+                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+                )
+                .join(" ")
+            : ""
+
+          if (channelTypeMatch) {
+            const auditType =
+              channelTypeMatch[1] === "ext" ? "External" : "Internal"
+            const roleName = `Defense ${auditType}: ${clientName}`
+
+            const role = member.guild.roles.cache.find(
+              (r) => r.name.toLowerCase() === roleName.toLowerCase(),
+            )
+            if (role) {
+              await member.roles.add(role)
+            }
+            robot.logger.info(
+              `Invite code used: ${
+                usedInvite ? usedInvite.code : "None"
+              }, Username joined: ${
+                member.displayName
+              }, Role assignments: ${roleName}`,
+            )
+          }
+        }
+      } else {
+        robot.logger.info("Could not find which invite was used.")
       }
     })
   }
