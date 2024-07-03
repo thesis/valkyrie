@@ -9,6 +9,9 @@ import {
 } from "discord.js"
 import { writeFile, unlink } from "fs/promises"
 
+const defenseCategoryName = "defense"
+const defenseArchiveCategoryName = "Archive: Defense"
+
 // fetch messages in batch of 100 in-order to go past rate limit.
 async function fetchAllMessages(
   channel: TextChannel,
@@ -79,6 +82,16 @@ export default async function archiveChannel(
       }
 
       try {
+        const channelCategory = interaction.channel.parent
+
+        if (!channelCategory || channelCategory.name !== defenseCategoryName) {
+          await interaction.reply({
+            content: `**This command can only be run in channels under the ${defenseCategoryName} channel category**`,
+            ephemeral: true,
+          })
+          return
+        }
+
         const allMessages = await fetchAllMessages(interaction.channel)
         robot.logger.info(`Total messages fetched: ${allMessages}`)
 
@@ -99,11 +112,11 @@ export default async function archiveChannel(
         let archivedCategory = interaction.guild.channels.cache.find(
           (c) =>
             c.type === ChannelType.GuildCategory &&
-            c.name.toLowerCase() === "archived-channels",
+            c.name === defenseArchiveCategoryName,
         )
         if (!archivedCategory) {
           archivedCategory = await interaction.guild.channels.create({
-            name: "archived-channels",
+            name: defenseArchiveCategoryName,
             type: ChannelType.GuildCategory,
           })
         }
@@ -115,9 +128,10 @@ export default async function archiveChannel(
             interaction.guild.id,
             { SendMessages: false },
           )
-          await interaction.reply(
-            "**Channel archived, locked and moved to #archived-channel category**",
-          )
+          await interaction.reply({
+            content: `**Channel archived, locked and moved to ${defenseArchiveCategoryName} channel category**`,
+            ephemeral: true,
+          })
 
           // upload chat transcript to channel and then delete it
           const fileAttachment = new AttachmentBuilder(filePath)
@@ -153,6 +167,19 @@ export default async function archiveChannel(
       }
       try {
         if (interaction.channel instanceof TextChannel) {
+          const channelCategory = interaction.channel.parent
+
+          if (
+            !channelCategory ||
+            channelCategory.name !== defenseArchiveCategoryName
+          ) {
+            await interaction.reply({
+              content: `**This command can only be run in channels under the ${defenseArchiveCategoryName} channel category.**`,
+              ephemeral: true,
+            })
+            return
+          }
+
           const defenseCategory = interaction.guild.channels.cache.find(
             (c) =>
               c.type === ChannelType.GuildCategory &&
@@ -160,9 +187,10 @@ export default async function archiveChannel(
           )
 
           if (!defenseCategory) {
-            await interaction.reply(
-              "No defense category found to move channel to",
-            )
+            await interaction.reply({
+              content: "No defense category found to move channel to",
+              ephemeral: true,
+            })
           }
 
           if (defenseCategory) {
@@ -171,10 +199,11 @@ export default async function archiveChannel(
               interaction.guild.id,
               { SendMessages: false },
             )
-            await interaction.reply(
-              "**Channel unarchived and move backed to defense category**",
-            )
-            robot.logger.info("Channel unarchived and moved.")
+            await interaction.reply({
+              content:
+                "**Channel unarchived and move backed to defense category**",
+              ephemeral: true,
+            })
           }
         }
       } catch (error) {
