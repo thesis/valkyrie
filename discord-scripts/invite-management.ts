@@ -7,6 +7,7 @@ import {
   GuildMember,
 } from "discord.js"
 import { DAY, MILLISECOND, WEEK } from "../lib/globals.ts"
+import { defenseCategoryName } from "./channel-management.ts"
 
 const guildInvites: { [guildId: string]: { [inviteCode: string]: number } } = {}
 
@@ -149,7 +150,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
         !interaction.guild ||
         !(interaction.channel instanceof TextChannel) ||
         (interaction.channel.parent &&
-          interaction.channel.parent.name !== "defense")
+          interaction.channel.parent.name !== defenseCategoryName)
       ) {
         await interaction.reply({
           content:
@@ -178,7 +179,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
           const externalChannelName = `🔒ext-${normalizedClientName}-audit`
 
           const defenseCategory = interaction.guild.channels.cache.find(
-            (category) => category.name === "defense",
+            (category) => category.name === defenseCategoryName,
           )
 
           if (!defenseCategory) {
