@@ -9,7 +9,7 @@ import {
 } from "discord.js"
 import { writeFile, unlink } from "fs/promises"
 
-export const defenseCategoryName = "Defense"
+export const defenseCategoryName = "defense"
 export const defenseArchiveCategoryName = "Archive: Defense"
 
 // fetch messages in batch of 100 in-order to go past rate limit.
