@@ -226,7 +226,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             await internalChannel.send(
               `@here **Welcome to the ${clientName.value} Internal Audit Channel!**\n` +
                 `You can use this invite to access <#${internalChannel.id}>: \`${internalInvite.url}\`\n` +
-                `This invite will expire **on <t:${internalInviteExpiry}:R>** and has **${internalInvite.maxUses} max uses**`,
+                `This invite will expire <t:${internalInviteExpiry}:R> and has **${internalInvite.maxUses} max uses**`,
             )
           }
 
@@ -269,7 +269,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
             await externalChannel.send(
               `@here **Welcome to the ${clientName.value} External Audit Channel!**\n` +
                 `You can use this invite to access <#${externalChannel.id}>: \`${externalInvite.url}\`\n` +
-                `This invite will expire **on <t:${externalInviteExpiry}:R>** and has **${externalInvite.maxUses} max uses**`,
+                `This invite will expire <t:${externalInviteExpiry}:R> and has **${externalInvite.maxUses} max uses**`,
             )
           }
 
@@ -280,7 +280,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
                 `**Defense audit setup complete for: ${clientName.value}**\n\n` +
                 `Internal Channel: <#${internalChannel.id}> - Invite: \`${internalInvite.url}\`\n` +
                 `External Channel: <#${externalChannel.id}> - Invite: \`${externalInvite.url}\`\n` +
-                `These invites will expire **on <t:${internalInviteExpiry}:R>** and have **${internalInvite.maxUses} max uses**\n\n` +
+                `These invites will expire <t:${internalInviteExpiry}:R> and have **${internalInvite.maxUses} max uses**\n\n` +
                 `Roles created: <@&${internalRole.id}>, <@&${externalRole.id}>`,
             })
           } else {
@@ -290,7 +290,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
                 "These channels were found here:\n" +
                 `- Internal Channel: <#${internalChannel.id}> - Invite: \`${internalInvite.url}\`\n` +
                 `- External Channel: <#${externalChannel.id}> - Invite: \`${externalInvite.url}\`\n` +
-                `These invites will expire **on <t:${internalInviteExpiry}:R>** and have **${internalInvite.maxUses} max uses**\n\n` +
+                `These invites will expire <t:${internalInviteExpiry}:R> and have **${internalInvite.maxUses} max uses**\n\n` +
                 "We've updated permissions to these roles:\n" +
                 `- Internal Role: <@&${internalRole.id}>\n` +
                 `- External Role: <@&${externalRole.id}>`,
