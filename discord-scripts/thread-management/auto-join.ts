@@ -66,7 +66,7 @@ async function autoJoinThread(
     .reduce(
       (allPrefixes, nameSegment) => [
         ...allPrefixes,
-        `${allPrefixes.at(-1) ?? []} ${nameSegment}`,
+        `${allPrefixes.at(-1) ?? []} ${nameSegment}`.trim(),
       ],
       [] as string[],
     )
