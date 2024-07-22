@@ -57,8 +57,28 @@ async function autoJoinThread(
     }
   }
 
+  // All prefixes of the containing channel name, with dashes converted to
+  // spaces, ordered longest to shortest. For example, #mezo-engineering-musd
+  // would produce ["mezo engineering musd", "mezo engineering", "mezo"].
+  const roleMatchPrefixes = containingChannel?.name
+    .toLowerCase()
+    .split("-")
+    .reduce(
+      (allPrefixes, nameSegment) => [
+        ...allPrefixes,
+        `${allPrefixes.at(-1) ?? []} ${nameSegment}`,
+      ],
+      [] as string[],
+    )
+    .reverse()
+
   const matchingRole = server.roles.cache.find(
-    (role) => role.name.toLowerCase() === containingChannel?.name.toLowerCase(),
+    (role) =>
+      roleMatchPrefixes?.some(
+        (channelPrefixRole) =>
+          role.name.toLowerCase() ===
+          channelPrefixRole /* already lowercased above */,
+      ),
   )
 
   if (matchingRole !== undefined) {
