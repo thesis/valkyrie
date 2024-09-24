@@ -26,7 +26,7 @@ import {
 const CUSTOM_CHANNEL_ROLE: Record<string, string> = {
   // hiring: "PeopleOps",
   "biz-dev-investor": "BD",
-  "press-relations": "Marketing",
+  "press-relations": "M Group",
 }
 
 const hasCustomChannels = Object.keys(CUSTOM_CHANNEL_ROLE).length > 0
