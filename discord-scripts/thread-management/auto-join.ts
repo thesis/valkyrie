@@ -26,7 +26,7 @@ import {
 const CUSTOM_CHANNEL_ROLE: Record<string, string> = {
   // hiring: "PeopleOps",
   "biz-dev-investor": "BD",
-  "press-relations": "M Group",
+  "press-relations": "M Group, Marketing",
 }
 
 const hasCustomChannels = Object.keys(CUSTOM_CHANNEL_ROLE).length > 0
@@ -46,13 +46,22 @@ async function autoJoinThread(
 
   // Use this to assign a specific role based on the mapping in CUSTOM_CHANNEL_ROLE, in order to map specific roles/channels
   if (hasCustomChannels && containingChannel) {
-    const roleName = CUSTOM_CHANNEL_ROLE[containingChannel.name]
-    if (roleName) {
-      const channelMatchingRole = server.roles.cache.find(
-        (role) => role.name.toLowerCase() === roleName.toLowerCase(),
-      )
-      if (channelMatchingRole) {
-        await placeholder.edit(channelMatchingRole.toString())
+    const roleNames = CUSTOM_CHANNEL_ROLE[containingChannel.name]
+      ?.split(",")
+      .map((role) => role.trim())
+
+    if (roleNames && roleNames.length > 0) {
+      const rolesToTag = roleNames
+        .map((roleName) =>
+          server.roles.cache.find(
+            (role) => role.name.toLowerCase() === roleName.toLowerCase(),
+          ),
+        )
+        .filter((role): role is NonNullable<typeof role> => role !== undefined)
+
+      if (rolesToTag.length > 0) {
+        const roleMentions = rolesToTag.map((role) => role.toString()).join(" ")
+        await placeholder.edit(roleMentions)
         return
       }
     }
