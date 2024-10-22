@@ -32,6 +32,7 @@ const teamIdsByName: { [name: string]: string } = {
   keep: "953697796065703632",
   taho: "953697445071473329",
   thesis: "597157463033100784",
+  mezo: "1326283008375098385",
 }
 
 const eventHandlers: {
