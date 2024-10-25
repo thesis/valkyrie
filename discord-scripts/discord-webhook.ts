@@ -55,7 +55,7 @@ export default async function webhookDiscord(
     userId: string,
     guildId: string,
     addSuffix: boolean,
-    nicknameSuffix: string = "(OOO)"
+    nicknameSuffix: string = "(OOO)",
   ) {
     const guild = discordClient.guilds.cache.get(guildId)
     if (!guild) throw new Error("Guild not found")
@@ -68,11 +68,17 @@ export default async function webhookDiscord(
 
     if (addSuffix && !hasSuffix) {
       await member.setNickname(`${originalNickname} ${nicknameSuffix}`)
-      robot.logger.info(`Added ${nicknameSuffix} to ${member.user.username} in ${guild.name}`)
+      robot.logger.info(
+        `Added ${nicknameSuffix} to ${member.user.username} in ${guild.name}`,
+      )
     } else if (!addSuffix && hasSuffix) {
-      const updatedNickname = originalNickname.replace(nicknameSuffix, "").trim()
+      const updatedNickname = originalNickname
+        .replace(nicknameSuffix, "")
+        .trim()
       await member.setNickname(updatedNickname)
-      robot.logger.info(`Removed ${nicknameSuffix} from ${member.user.username} in ${guild.name}`)
+      robot.logger.info(
+        `Removed ${nicknameSuffix} from ${member.user.username} in ${guild.name}`,
+      )
     }
   }
 
@@ -82,7 +88,11 @@ export default async function webhookDiscord(
     robot.logger.info("Webhook URL has been set: ", webhookUrl)
     robot.logger.info("Webhook Auth has been set: ", requiredAuth)
 
-    const handleAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const handleAuth = (
+      req: express.Request,
+      res: express.Response,
+      next: express.NextFunction,
+    ) => {
       const authHeader = req.headers.authorization
       if (!authHeader || authHeader !== requiredAuth) {
         res.status(401).send("Unauthorized")
@@ -122,24 +132,20 @@ export default async function webhookDiscord(
     )
     robot.logger.info("Webhook is now enabled")
 
-    robot.router.post(
-      `/start-date`,
-      handleAuth,
-      async (req, res) => {
-        try {
-          const { userId, guildId } = req.body
-          if (!userId || !guildId) {
-            return res.status(400).send("Missing userId or guildId")
-          }
-    
-          await updateServerNickname(userId, guildId, true)
-          res.status(200).send("Nickname updated to add (OOO)")
-        } catch (error) {
-          console.error("Error in start-date route:", error)
-          res.status(500).send("Internal Server Error")
+    robot.router.post(`/start-date`, handleAuth, async (req, res) => {
+      try {
+        const { userId, guildId } = req.body
+        if (!userId || !guildId) {
+          return res.status(400).send("Missing userId or guildId")
         }
+
+        await updateServerNickname(userId, guildId, true)
+        res.status(200).send("Nickname updated to add (OOO)")
+      } catch (error) {
+        console.error("Error in start-date route:", error)
+        res.status(500).send("Internal Server Error")
       }
-    )
+    })
 
     robot.router.post(
       `/end-date`,
@@ -155,6 +161,8 @@ export default async function webhookDiscord(
       },
     )
 
-    robot.logger.info("Webhook is now enabled with OOO routes /start-date and /end-date")
+    robot.logger.info(
+      "Webhook is now enabled with OOO routes /start-date and /end-date",
+    )
   }
 }
