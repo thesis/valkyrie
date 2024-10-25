@@ -1,4 +1,4 @@
-import { AnyThreadChannel } from "discord.js"
+import { AnyThreadChannel, Role } from "discord.js"
 import {
   DiscordEventHandlers,
   isInRecreationalCategory,
@@ -57,7 +57,7 @@ async function autoJoinThread(
             (role) => role.name.toLowerCase() === roleName.toLowerCase(),
           ),
         )
-        .filter((role): role is NonNullable<typeof role> => role !== undefined)
+        .filter((role): role is Role => role !== undefined)
 
       if (rolesToTag.length > 0) {
         const roleMentions = rolesToTag.map((role) => role.toString()).join(" ")
