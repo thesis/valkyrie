@@ -51,8 +51,28 @@ export default async function webhookDiscord(
     }
   }
 
+  async function getUserIdByName(
+    guildId: string,
+    username: string,
+  ): Promise<string | null> {
+    const guild = discordClient.guilds.cache.get(guildId)
+    if (!guild) throw new Error("Guild not found")
+
+    await guild.members.fetch()
+    // WIP, output list of all members for matching
+    guild.members.cache.forEach((member) => {
+      robot.logger.info(`Username: ${member.user.username}`)
+    })
+
+    const member = guild.members.cache.find((member) =>
+      member.user.username.includes(username),
+    )
+
+    return member ? member.user.id : null
+  }
+
   async function updateServerNickname(
-    userId: string,
+    username: string,
     guildId: string,
     addSuffix: boolean,
     nicknameSuffix: string = "(OOO)",
@@ -60,9 +80,10 @@ export default async function webhookDiscord(
     const guild = discordClient.guilds.cache.get(guildId)
     if (!guild) throw new Error("Guild not found")
 
-    const member = await guild.members.fetch(userId)
-    if (!member) throw new Error("User not found in this guild")
+    const userId = await getUserIdByName(guildId, username)
+    if (!userId) throw new Error("User not found with the specified name")
 
+    const member = await guild.members.fetch(userId)
     const originalNickname = member.nickname || member.user.username
     const hasSuffix = originalNickname.endsWith(nicknameSuffix)
 
@@ -134,12 +155,12 @@ export default async function webhookDiscord(
 
     robot.router.post(`/start-date`, handleAuth, async (req, res) => {
       try {
-        const { userId, guildId } = req.body
-        if (!userId || !guildId) {
-          return res.status(400).send("Missing userId or guildId")
+        const { username, guildId } = req.body
+        if (!username || !guildId) {
+          return res.status(400).send("Missing username or guildId")
         }
 
-        await updateServerNickname(userId, guildId, true)
+        await updateServerNickname(username, guildId, true)
         res.status(200).send("Nickname updated to add (OOO)")
       } catch (error) {
         console.error("Error in start-date route:", error)
@@ -151,12 +172,12 @@ export default async function webhookDiscord(
       `/end-date`,
       handleAuth,
       async (req: express.Request, res: express.Response) => {
-        const { userId, guildId } = req.body
-        if (!userId || !guildId) {
-          return res.status(400).send("Missing userId or guildId")
+        const { username, guildId } = req.body
+        if (!username || !guildId) {
+          return res.status(400).send("Missing username or guildId")
         }
 
-        await updateServerNickname(userId, guildId, false)
+        await updateServerNickname(username, guildId, false)
         res.status(200).send("Nickname updated to remove (OOO)")
       },
     )
