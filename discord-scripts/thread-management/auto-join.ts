@@ -84,10 +84,11 @@ async function autoJoinThread(
     )
     .reverse()
 
-  const matchingRole = server.roles.cache.find((role) =>
-    roleMatchPrefixes?.some(
-      (channelPrefixRole) => role.name.toLowerCase() === channelPrefixRole,
-    ),
+  const matchingRole = server.roles.cache.find(
+    (role) =>
+      roleMatchPrefixes?.some(
+        (channelPrefixRole) => role.name.toLowerCase() === channelPrefixRole,
+      ),
   )
 
   if (matchingRole !== undefined) {
