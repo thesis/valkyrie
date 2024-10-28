@@ -23,13 +23,15 @@ import {
 // it to mention the right role. Discord's behavior in this scenario is not to
 // ping the role, but to add all its members to the thread.
 
-const CUSTOM_CHANNEL_ROLE: Record<string, string> = {
-  // hiring: "PeopleOps",
-  "biz-dev-investor": "BD",
-  "press-relations": "M Group, Marketing",
+interface ChannelRoleMapping {
+  channelName: string
+  roles: string[]
 }
 
-const hasCustomChannels = Object.keys(CUSTOM_CHANNEL_ROLE).length > 0
+const CUSTOM_CHANNEL_ROLE: ChannelRoleMapping[] = [
+  { channelName: "biz-dev-investor", roles: ["BD"] },
+  { channelName: "press-relations", roles: ["M Group", "Marketing"] },
+]
 
 async function autoJoinThread(
   thread: AnyThreadChannel<boolean>,
@@ -41,16 +43,16 @@ async function autoJoinThread(
   }
 
   const { guild: server, parent: containingChannel } = thread
-
   const placeholder = await thread.send("<placeholder>")
-
   // Use this to assign a specific role based on the mapping in CUSTOM_CHANNEL_ROLE, in order to map specific roles/channels
-  if (hasCustomChannels && containingChannel) {
-    const roleNames = CUSTOM_CHANNEL_ROLE[containingChannel.name]
-      ?.split(",")
-      .map((role) => role.trim())
+  if (containingChannel) {
+    const channelMapping = CUSTOM_CHANNEL_ROLE.find(
+      (mapping) => mapping.channelName === containingChannel.name,
+    )
 
-    if (roleNames && roleNames.length > 0) {
+    if (channelMapping && channelMapping.roles.length > 0) {
+      const roleNames = channelMapping.roles
+
       const rolesToTag = roleNames
         .map((roleName) =>
           server.roles.cache.find(
@@ -82,13 +84,12 @@ async function autoJoinThread(
     )
     .reverse()
 
-  const matchingRole = server.roles.cache.find(
-    (role) =>
-      roleMatchPrefixes?.some(
-        (channelPrefixRole) =>
-          role.name.toLowerCase() ===
-          channelPrefixRole /* already lowercased above */,
-      ),
+  const matchingRole = server.roles.cache.find((role) =>
+    roleMatchPrefixes?.some(
+      (channelPrefixRole) =>
+        role.name.toLowerCase() ===
+        channelPrefixRole
+    ),
   )
 
   if (matchingRole !== undefined) {
