@@ -86,9 +86,7 @@ async function autoJoinThread(
 
   const matchingRole = server.roles.cache.find((role) =>
     roleMatchPrefixes?.some(
-      (channelPrefixRole) =>
-        role.name.toLowerCase() ===
-        channelPrefixRole
+      (channelPrefixRole) => role.name.toLowerCase() === channelPrefixRole,
     ),
   )
 
