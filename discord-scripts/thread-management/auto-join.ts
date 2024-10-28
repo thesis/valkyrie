@@ -1,4 +1,4 @@
-import { AnyThreadChannel } from "discord.js"
+import { AnyThreadChannel, Role } from "discord.js"
 import {
   DiscordEventHandlers,
   isInRecreationalCategory,
@@ -23,13 +23,15 @@ import {
 // it to mention the right role. Discord's behavior in this scenario is not to
 // ping the role, but to add all its members to the thread.
 
-const CUSTOM_CHANNEL_ROLE: Record<string, string> = {
-  // hiring: "PeopleOps",
-  "biz-dev-investor": "BD",
-  "press-relations": "M Group",
+interface ChannelRoleMapping {
+  channelName: string
+  roles: string[]
 }
 
-const hasCustomChannels = Object.keys(CUSTOM_CHANNEL_ROLE).length > 0
+const CUSTOM_CHANNEL_ROLE: ChannelRoleMapping[] = [
+  { channelName: "biz-dev-investor", roles: ["BD"] },
+  { channelName: "press-relations", roles: ["M Group", "Marketing"] },
+]
 
 async function autoJoinThread(
   thread: AnyThreadChannel<boolean>,
@@ -41,18 +43,27 @@ async function autoJoinThread(
   }
 
   const { guild: server, parent: containingChannel } = thread
-
   const placeholder = await thread.send("<placeholder>")
-
   // Use this to assign a specific role based on the mapping in CUSTOM_CHANNEL_ROLE, in order to map specific roles/channels
-  if (hasCustomChannels && containingChannel) {
-    const roleName = CUSTOM_CHANNEL_ROLE[containingChannel.name]
-    if (roleName) {
-      const channelMatchingRole = server.roles.cache.find(
-        (role) => role.name.toLowerCase() === roleName.toLowerCase(),
-      )
-      if (channelMatchingRole) {
-        await placeholder.edit(channelMatchingRole.toString())
+  if (containingChannel) {
+    const channelMapping = CUSTOM_CHANNEL_ROLE.find(
+      (mapping) => mapping.channelName === containingChannel.name,
+    )
+
+    if (channelMapping && channelMapping.roles.length > 0) {
+      const roleNames = channelMapping.roles
+
+      const rolesToTag = roleNames
+        .map((roleName) =>
+          server.roles.cache.find(
+            (role) => role.name.toLowerCase() === roleName.toLowerCase(),
+          ),
+        )
+        .filter((role): role is Role => role !== undefined)
+
+      if (rolesToTag.length > 0) {
+        const roleMentions = rolesToTag.map((role) => role.toString()).join(" ")
+        await placeholder.edit(roleMentions)
         return
       }
     }
@@ -76,9 +87,7 @@ async function autoJoinThread(
   const matchingRole = server.roles.cache.find(
     (role) =>
       roleMatchPrefixes?.some(
-        (channelPrefixRole) =>
-          role.name.toLowerCase() ===
-          channelPrefixRole /* already lowercased above */,
+        (channelPrefixRole) => role.name.toLowerCase() === channelPrefixRole,
       ),
   )
 
