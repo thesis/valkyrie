@@ -9,7 +9,6 @@ import {
   ComponentType,
   GuildMember,
   Interaction,
-  InteractionResponse,
   Message,
   PublicThreadChannel,
   ThreadAutoArchiveDuration,
@@ -18,7 +17,7 @@ import {
   userMention,
 } from "discord.js"
 import { Robot } from "hubot"
-import { MINUTE, SECOND } from "../../lib/globals.ts"
+import { MINUTE, HOUR } from "../../lib/globals.ts"
 import {
   DiscordEventHandlers,
   isInRecreationalCategory,
@@ -27,15 +26,14 @@ import {
 import {
   getAllThreadMetadata,
   getThreadMetadata,
-  isInPermittedCategoryOrChannel,
   updateThreadMetadata,
 } from "../../lib/discord/channel-metadata.ts"
 
 // The maximum time between any two messages after which a thread is considered
 // async.
-const MAX_HEURISTIC_SYNC_THREAD_DURATION = 0 // 60 * MINUTE
+const MAX_HEURISTIC_SYNC_THREAD_DURATION = 60 * MINUTE // 60 * MINUTE
 // How frequently threads are checked for archive requirements.
-const THREAD_CHECK_CADENCE = 5 * SECOND // 12 * HOUR
+const THREAD_CHECK_CADENCE = 12 * HOUR // 12 * HOUR
 // Use a ThreadAutoArchiveDuration as we'll still lean on Discord to
 // auto-archive after issuing the warning, so we want the value to be
 // one that we can update auto-archiving to.
@@ -48,7 +46,7 @@ const AUTO_ARCHIVE_WARNING_LEAD_MINUTES: ThreadAutoArchiveDuration =
  */
 function requestFollowUpAction(
   thread: ThreadChannel<boolean>,
-  botMessage: InteractionResponse<boolean>,
+  interaction: ButtonInteraction,
   followUpRequester: GuildMember | APIInteractionGuildMember | null,
   requestedAction: string,
   followUpUserId: string,
@@ -56,23 +54,32 @@ function requestFollowUpAction(
   const requestingUserId = followUpRequester?.user.id
 
   if (followUpUserId === requestingUserId) {
-    // If the user designates themselves to follow up, thank them without
-    // additional message noise.
-    botMessage.edit({
-      content:
-        `Thanks ${followUpRequester}, please ${requestedAction} ` +
-        "this thread or it will be archived in 24 hours ❤️",
-    })
-  } else {
-    // If another user is designated to follow up, ping them and clear the
-    // initial bot reply.
-    thread.send({
-      content:
-        `${userMention(followUpUserId)} please ${requestedAction} ` +
-        "this thread or it will be archived in 24 hours ❤️",
+    // If the user designates themselves, delete the initial bot message to remove the dropdown
+    interaction.deleteReply().catch((error) => {
+      console.error("Failed to delete dropdown message:", error)
     })
 
-    botMessage.delete()
+    interaction
+      .followUp({
+        content: `Thanks ${userMention(requestingUserId)}, please ${requestedAction} this thread or it will be archived in 24 hours ❤️`,
+        ephemeral: true,
+      })
+      .catch((error) => {
+        console.error("Failed to send ephemeral follow-up message:", error)
+      })
+  } else {
+    // If another user is designated, send a message in the thread tagging them
+    thread
+      .send({
+        content: `${userMention(followUpUserId)} please ${requestedAction} this thread or it will be archived in 24 hours ❤️`,
+      })
+      .catch((error) => {
+        console.error("Failed to send message in thread:", error)
+      })
+
+    interaction.deleteReply().catch((error) => {
+      console.error("Failed to delete initial bot message:", error)
+    })
   }
 }
 
@@ -101,11 +108,10 @@ const threadActions: {
     handler: async (thread, interaction) => {
       const posterSelectId = `task-poster-select-${interaction.id}`
 
-      const initialReply = await interaction.reply({
+      await interaction.reply({
         ephemeral: true,
         content:
-          "Who needs to capture the task? This thread will still auto-archive " +
-          "in ~24 hours.",
+          "Who needs to capture the task? This thread will still auto-archive in ~24 hours.",
         components: [
           {
             type: ComponentType.ActionRow,
@@ -132,7 +138,7 @@ const threadActions: {
 
       requestFollowUpAction(
         thread,
-        initialReply,
+        interaction,
         interaction.member,
         "capture the task(s) associated with",
         userIdToTag,
@@ -146,7 +152,7 @@ const threadActions: {
     handler: async (thread, interaction) => {
       const posterSelectId = `status-poster-select-${interaction.id}`
 
-      const initialReply = await interaction.reply({
+      await interaction.reply({
         ephemeral: true,
         content:
           "Who needs to post the status? This thread will still auto-archive " +
@@ -177,9 +183,9 @@ const threadActions: {
 
       requestFollowUpAction(
         thread,
-        initialReply,
+        interaction,
         interaction.member,
-        "post your latest status on",
+        "capture the task(s) associated with",
         userIdToTag,
       )
     },
@@ -191,7 +197,7 @@ const threadActions: {
     handler: async (thread, interaction) => {
       const posterSelectId = `decision-poster-select-${interaction.id}`
 
-      const initialReply = await interaction.reply({
+      await interaction.reply({
         ephemeral: true,
         content:
           "Who needs to post the decision? This thread will still auto-archive " +
@@ -222,9 +228,9 @@ const threadActions: {
 
       requestFollowUpAction(
         thread,
-        initialReply,
+        interaction,
         interaction.member,
-        "post and capture the decision for",
+        "capture the task(s) associated with",
         userIdToTag,
       )
     },
@@ -246,14 +252,14 @@ async function updateThreadStatusFromMessage(
   const { channel: thread, createdTimestamp: messageTimestamp } = message
   if (
     !thread.isThread() ||
-    isInRecreationalCategory(thread) ||
-    !isInPermittedCategoryOrChannel(robot.brain, thread, "archive-checking") ||
+    // isInRecreationalCategory(thread) ||
+    // !isInPermittedCategoryOrChannel(robot.brain, thread, "archive-checking") ||
     !isInTestingChannel(thread) // FIXME drop once tested
   ) {
     return
   }
 
-  robot.logger.info("OHAI I am about to do this")
+  robot.logger.info("New thread being monitored")
 
   const channelMetadata = getThreadMetadata(robot.brain, thread) ?? {
     sync: true,
@@ -277,10 +283,7 @@ async function updateThreadStatusFromAction(
   if (interaction.isButton() && interaction.customId in threadActions) {
     const { channel: thread, customId: interactionId } = interaction
 
-    robot.logger.info(
-      "Got an interaction that feels right, and it is",
-      interactionId,
-    )
+    robot.logger.info("New channel decision interaction", interactionId)
 
     if (thread?.isThread()) {
       threadActions[interactionId as keyof typeof threadActions].handler(
