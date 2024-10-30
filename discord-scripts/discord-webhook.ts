@@ -64,18 +64,18 @@ export default async function webhookDiscord(
       robot.logger.info(`Username: ${member.user.username}`)
     })
 
-    const member = guild.members.cache.find((member) =>
+    const matchedMember = guild.members.cache.find((member) =>
       member.user.username.includes(username),
     )
 
-    return member ? member.user.id : null
+    return matchedMember ? matchedMember.user.id : null
   }
 
   async function updateServerNickname(
     username: string,
     guildId: string,
     addSuffix: boolean,
-    nicknameSuffix: string = "(OOO)",
+    date?: string,
   ) {
     const guild = discordClient.guilds.cache.get(guildId)
     if (!guild) throw new Error("Guild not found")
@@ -84,21 +84,23 @@ export default async function webhookDiscord(
     if (!userId) throw new Error("User not found with the specified name")
 
     const member = await guild.members.fetch(userId)
-    const originalNickname = member.nickname || member.user.username
-    const hasSuffix = originalNickname.endsWith(nicknameSuffix)
+    const currentNickname = member.nickname || member.user.username
 
-    if (addSuffix && !hasSuffix) {
-      await member.setNickname(`${originalNickname} ${nicknameSuffix}`)
+    const suffixWithDate = date ? `(OOO ${date})` : "(OOO)"
+    const suffixRegex = /\s*\(OOO.*$/
+
+    const newNickname = addSuffix
+      ? `${currentNickname
+          .replace(suffixRegex, "")
+          .trim()} ${suffixWithDate}`.trim()
+      : currentNickname.replace(suffixRegex, "").trim()
+
+    if (newNickname !== currentNickname) {
+      await member.setNickname(newNickname)
       robot.logger.info(
-        `Added ${nicknameSuffix} to ${member.user.username} in ${guild.name}`,
-      )
-    } else if (!addSuffix && hasSuffix) {
-      const updatedNickname = originalNickname
-        .replace(nicknameSuffix, "")
-        .trim()
-      await member.setNickname(updatedNickname)
-      robot.logger.info(
-        `Removed ${nicknameSuffix} from ${member.user.username} in ${guild.name}`,
+        `${addSuffix ? "Added" : "Removed"} '${suffixWithDate}' for ${
+          member.user.username
+        } in ${guild.name}`,
       )
     }
   }
@@ -155,16 +157,15 @@ export default async function webhookDiscord(
 
     robot.router.post("/start-date", handleAuth, async (req, res) => {
       try {
-        const { username, guildId } = req.body
+        const { username, guildId, date } = req.body
         if (!username || !guildId) {
           return res.status(400).send("Missing username or guildId")
         }
-
-        await updateServerNickname(username, guildId, true)
-        res.status(200).send("Nickname updated to add (OOO)")
+        await updateServerNickname(username, guildId, true, date)
+        return res.status(200).send("Nickname updated to add (OOO)")
       } catch (error) {
-        console.error("Error in start-date route:", error)
-        res.status(500).send("Internal Server Error")
+        robot.logger.error("Error in start-date route:", error)
+        return res.status(500).send("Internal Server Error")
       }
     })
 
@@ -178,7 +179,7 @@ export default async function webhookDiscord(
         }
 
         await updateServerNickname(username, guildId, false)
-        res.status(200).send("Nickname updated to remove (OOO)")
+        return res.status(200).send("Nickname updated to remove (OOO)")
       },
     )
 
