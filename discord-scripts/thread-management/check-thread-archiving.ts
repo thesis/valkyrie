@@ -61,7 +61,9 @@ function requestFollowUpAction(
 
     interaction
       .followUp({
-        content: `Thanks ${userMention(requestingUserId)}, please ${requestedAction} this thread or it will be archived in 24 hours ❤️`,
+        content: `Thanks ${userMention(
+          requestingUserId,
+        )}, please ${requestedAction} this thread or it will be archived in 24 hours ❤️`,
         ephemeral: true,
       })
       .catch((error) => {
@@ -71,7 +73,9 @@ function requestFollowUpAction(
     // If another user is designated, send a message in the thread tagging them
     thread
       .send({
-        content: `${userMention(followUpUserId)} please ${requestedAction} this thread or it will be archived in 24 hours ❤️`,
+        content: `${userMention(
+          followUpUserId,
+        )} please ${requestedAction} this thread or it will be archived in 24 hours ❤️`,
       })
       .catch((error) => {
         console.error("Failed to send message in thread:", error)
