@@ -153,7 +153,7 @@ export default async function webhookDiscord(
     )
     robot.logger.info("Webhook is now enabled")
 
-    robot.router.post(`/start-date`, handleAuth, async (req, res) => {
+    robot.router.post("/start-date", handleAuth, async (req, res) => {
       try {
         const { username, guildId } = req.body
         if (!username || !guildId) {
@@ -169,7 +169,7 @@ export default async function webhookDiscord(
     })
 
     robot.router.post(
-      `/end-date`,
+      "/end-date",
       handleAuth,
       async (req: express.Request, res: express.Response) => {
         const { username, guildId } = req.body
