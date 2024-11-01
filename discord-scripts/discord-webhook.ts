@@ -51,25 +51,82 @@ export default async function webhookDiscord(
     }
   }
 
+  async function getUserIdByName(
+    guildId: string,
+    username: string,
+  ): Promise<string | null> {
+    const guild = discordClient.guilds.cache.get(guildId)
+    if (!guild) throw new Error("Guild not found")
+
+    await guild.members.fetch()
+    // WIP, output list of all members for matching
+    guild.members.cache.forEach((member) => {
+      robot.logger.info(`Username: ${member.user.username}`)
+    })
+
+    const matchedMember = guild.members.cache.find((member) =>
+      member.user.username.includes(username),
+    )
+
+    return matchedMember ? matchedMember.user.id : null
+  }
+
+  async function updateServerNickname(
+    username: string,
+    guildId: string,
+    addSuffix: boolean,
+    date?: string,
+  ) {
+    const guild = discordClient.guilds.cache.get(guildId)
+    if (!guild) throw new Error("Guild not found")
+
+    const userId = await getUserIdByName(guildId, username)
+    if (!userId) throw new Error("User not found with the specified name")
+
+    const member = await guild.members.fetch(userId)
+    const currentNickname = member.nickname || member.user.username
+
+    const suffixWithDate = date ? `(OOO ${date})` : "(OOO)"
+    const suffixRegex = /\s*\(OOO.*$/
+
+    const newNickname = addSuffix
+      ? `${currentNickname
+          .replace(suffixRegex, "")
+          .trim()} ${suffixWithDate}`.trim()
+      : currentNickname.replace(suffixRegex, "").trim()
+
+    if (newNickname !== currentNickname) {
+      await member.setNickname(newNickname)
+      robot.logger.info(
+        `${addSuffix ? "Added" : "Removed"} '${suffixWithDate}' for ${
+          member.user.username
+        } in ${guild.name}`,
+      )
+    }
+  }
+
   if (process.env.HUBOT_WEBHOOK_URL) {
     const webhookUrl = process.env.HUBOT_WEBHOOK_URL
     const requiredAuth = process.env.HUBOT_WEBHOOK_AUTH
     robot.logger.info("Webhook URL has been set: ", webhookUrl)
     robot.logger.info("Webhook Auth has been set: ", requiredAuth)
+
+    const handleAuth = (
+      req: express.Request,
+      res: express.Response,
+      next: express.NextFunction,
+    ) => {
+      const authHeader = req.headers.authorization
+      if (!authHeader || authHeader !== requiredAuth) {
+        res.status(401).send("Unauthorized")
+      } else {
+        next()
+      }
+    }
+
     robot.router.post(
       `${webhookUrl}`,
-      (
-        req: express.Request,
-        res: express.Response,
-        next: express.NextFunction,
-      ) => {
-        const authHeader = req.headers.authorization
-        if (!authHeader || authHeader !== requiredAuth) {
-          res.status(401).send("Unauthorized")
-        } else {
-          next()
-        }
-      },
+      handleAuth,
       async (req: express.Request, res: express.Response) => {
         const isBodyInvalid = ["channelName", "title", "message"].some(
           (field) => {
@@ -97,5 +154,37 @@ export default async function webhookDiscord(
       },
     )
     robot.logger.info("Webhook is now enabled")
+
+    robot.router.post("/start-date", handleAuth, async (req, res) => {
+      try {
+        const { username, guildId, date } = req.body
+        if (!username || !guildId) {
+          return res.status(400).send("Missing username or guildId")
+        }
+        await updateServerNickname(username, guildId, true, date)
+        return res.status(200).send("Nickname updated to add (OOO)")
+      } catch (error) {
+        robot.logger.error("Error in start-date route:", error)
+        return res.status(500).send("Internal Server Error")
+      }
+    })
+
+    robot.router.post(
+      "/end-date",
+      handleAuth,
+      async (req: express.Request, res: express.Response) => {
+        const { username, guildId } = req.body
+        if (!username || !guildId) {
+          return res.status(400).send("Missing username or guildId")
+        }
+
+        await updateServerNickname(username, guildId, false)
+        return res.status(200).send("Nickname updated to remove (OOO)")
+      },
+    )
+
+    robot.logger.info(
+      "Webhook is now enabled with OOO routes /start-date and /end-date",
+    )
   }
 }
