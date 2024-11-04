@@ -13,7 +13,8 @@ import { DiscordBot } from "hubot-discord"
 const BASE_ROLE_ID = "1158333090494689290"
 
 // Channels that are used for testing, may be treated differently.
-const TESTING_CHANNEL_NAMES = ["playground", "bifrost"]
+const TESTING_CHANNEL_NAMES =
+  process.env.TESTING_CHANNEL_NAMES?.split(",") ?? []
 
 /**
  * Hubot Robot type with Discord adapter.
