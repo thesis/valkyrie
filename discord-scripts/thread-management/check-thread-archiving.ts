@@ -25,6 +25,7 @@ import {
 } from "../../lib/discord/utils.ts"
 import {
   getAllThreadMetadata,
+  isInPermittedCategoryOrChannel,
   getThreadMetadata,
   updateThreadMetadata,
 } from "../../lib/discord/channel-metadata.ts"
@@ -50,13 +51,14 @@ function requestFollowUpAction(
   followUpRequester: GuildMember | APIInteractionGuildMember | null,
   requestedAction: string,
   followUpUserId: string,
+  robot: any
 ) {
   const requestingUserId = followUpRequester?.user.id
 
   if (followUpUserId === requestingUserId) {
     // If the user designates themselves, delete the initial bot message to remove the dropdown
     interaction.deleteReply().catch((error) => {
-      console.error("Failed to delete dropdown message:", error)
+      robot.logger.info("Failed to delete dropdown message:", error)
     })
 
     interaction
@@ -67,7 +69,7 @@ function requestFollowUpAction(
         ephemeral: true,
       })
       .catch((error) => {
-        console.error("Failed to send ephemeral follow-up message:", error)
+        robot.logger.info("Failed to send ephemeral follow-up message:", error)
       })
   } else {
     // If another user is designated, send a message in the thread tagging them
@@ -78,11 +80,11 @@ function requestFollowUpAction(
         )} please ${requestedAction} this thread or it will be archived in 24 hours ❤️`,
       })
       .catch((error) => {
-        console.error("Failed to send message in thread:", error)
+        robot.logger.info("Failed to send message in thread:", error)
       })
 
     interaction.deleteReply().catch((error) => {
-      console.error("Failed to delete initial bot message:", error)
+      robot.logger.info("Failed to delete initial bot message:", error)
     })
   }
 }
@@ -146,6 +148,7 @@ const threadActions: {
         interaction.member,
         "capture the task(s) associated with",
         userIdToTag,
+        Robot
       )
     },
   },
@@ -191,6 +194,7 @@ const threadActions: {
         interaction.member,
         "capture the task(s) associated with",
         userIdToTag,
+        Robot
       )
     },
   },
@@ -236,6 +240,7 @@ const threadActions: {
         interaction.member,
         "capture the task(s) associated with",
         userIdToTag,
+        Robot
       )
     },
   },
@@ -256,7 +261,7 @@ async function updateThreadStatusFromMessage(
   const { channel: thread, createdTimestamp: messageTimestamp } = message
   if (
     !thread.isThread() ||
-    // isInRecreationalCategory(thread) ||
+    isInRecreationalCategory(thread) ||
     // !isInPermittedCategoryOrChannel(robot.brain, thread, "archive-checking") ||
     !isInTestingChannel(thread) // FIXME drop once tested
   ) {
