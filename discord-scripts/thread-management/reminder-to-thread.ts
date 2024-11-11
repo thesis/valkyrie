@@ -1,4 +1,4 @@
-import { Message } from "discord.js"
+import { Message, ChannelType } from "discord.js"
 import {
   DiscordEventHandlers,
   isInRecreationalCategory,
@@ -18,7 +18,12 @@ async function reminderToThread(message: Message<boolean>) {
   }
 
   // If this message is not in reply to anything, do nothing.
-  if (message.reference === null || message.reference.messageId === undefined) {
+  if (
+    channel.isThread() ||
+    isInRecreationalCategory(channel) ||
+    channel.type === ChannelType.GuildVoice ||
+    channel.type === ChannelType.GuildStageVoice
+  ) {
     return
   }
 
