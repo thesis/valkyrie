@@ -368,9 +368,7 @@ async function checkThreadStatus(
       if (
         lastActiveTimestamp - (firstActiveTimestamp ?? 0) >
         (thread.autoArchiveDuration ?? 0) * MINUTE -
-          /* AUTO_ARCHIVE_WARNING_LEAD_MINUTES */ (thread.autoArchiveDuration ??
-            0) *
-            MINUTE
+          AUTO_ARCHIVE_WARNING_LEAD_MINUTES * MINUTE
       ) {
         await thread.send({
           content:
