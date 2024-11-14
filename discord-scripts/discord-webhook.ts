@@ -59,10 +59,6 @@ export default async function webhookDiscord(
     if (!guild) throw new Error("Guild not found")
 
     await guild.members.fetch()
-    // WIP, output list of all members for matching
-    guild.members.cache.forEach((member) => {
-      robot.logger.info(`Username: ${member.user.username}`)
-    })
 
     const matchedMember = guild.members.cache.find((member) =>
       member.user.username.includes(username),
@@ -84,7 +80,7 @@ export default async function webhookDiscord(
     if (!userId) throw new Error("User not found with the specified name")
 
     const member = await guild.members.fetch(userId)
-    const currentNickname = member.nickname || member.user.username
+    const currentNickname = member.nickname ?? member.displayName
 
     const suffixWithDate = date ? `(OOO ${date})` : "(OOO)"
     const suffixRegex = /\s*\(OOO.*$/
