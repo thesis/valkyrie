@@ -389,10 +389,26 @@ async function checkThreadStatus(
 
       // We can then archive the thread if the expiry time has been reached or passed
       if (autoArchiveTime - currentTime <= 0) {
+        const warningKey = `thread-warning:${threadId}`
+        const warningMessageId = robot.brain.get(warningKey)
+
+        if (warningMessageId) {
+          try {
+            const warningMessage = await thread.messages.fetch(warningMessageId)
+            // this will edit the original message to indicate the thread has been archived
+            await warningMessage.edit({
+              content:
+                "This thread is now archived as the auto-archive duration has been reached.",
+              components: [],
+            })
+          } catch (error) {
+            robot.logger.error(
+              `Failed to edit the warning message for thread ${threadId}: ${error}`,
+            )
+          }
+        }
+
         await thread.setArchived(true)
-        await thread.send(
-          "This thread is now archived as the auto-archive duration has been reached.",
-        )
         robot.logger.info(
           `Archived thread ${threadId} as the auto-archive time has been reached.`,
         )
