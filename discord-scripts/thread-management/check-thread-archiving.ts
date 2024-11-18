@@ -387,6 +387,18 @@ async function checkThreadStatus(
 
       const currentTime = Date.now()
 
+      // We can then archive the thread if the expiry time has been reached or passed
+      if (autoArchiveTime - currentTime <= 0) {
+        await thread.setArchived(true)
+        await thread.send(
+          "This thread is now archived as the auto-archive duration has been reached.",
+        )
+        robot.logger.info(
+          `Archived thread ${threadId} as the auto-archive time has been reached.`,
+        )
+        return
+      }
+
       // Then check if the thread is within the warning window
       if (
         autoArchiveTime - currentTime <= 24 * HOUR &&
