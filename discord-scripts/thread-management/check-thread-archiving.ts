@@ -31,7 +31,7 @@ import {
 
 // The maximum time between any two messages after which a thread is considered
 // async.
-const MAX_HEURISTIC_SYNC_THREAD_DURATION = 60 * MINUTE // 60 * MINUTE
+const MAX_HEURISTIC_SYNC_THREAD_DURATION = 12 * HOUR // 60 * MINUTE
 // How frequently threads are checked for archive requirements.
 const THREAD_CHECK_CADENCE = 12 * HOUR // 12 * HOUR
 // Use a ThreadAutoArchiveDuration as we'll still lean on Discord to
@@ -368,9 +368,7 @@ async function checkThreadStatus(
       if (
         lastActiveTimestamp - (firstActiveTimestamp ?? 0) >
         (thread.autoArchiveDuration ?? 0) * MINUTE -
-          /* AUTO_ARCHIVE_WARNING_LEAD_MINUTES */ (thread.autoArchiveDuration ??
-            0) *
-            MINUTE
+          AUTO_ARCHIVE_WARNING_LEAD_MINUTES * MINUTE
       ) {
         await thread.send({
           content:
