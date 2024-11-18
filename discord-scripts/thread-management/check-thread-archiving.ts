@@ -263,10 +263,10 @@ async function updateThreadStatusFromMessage(
     return
   }
 
-  const autoArchiveDuration = thread.autoArchiveDuration
+  const { autoArchiveDuration, id: threadId } = thread
 
   robot.logger.info(
-    `New thread being monitored. ID: ${thread.id}, AutoArchiveDuration: ${
+    `New thread being monitored. ID: ${threadId}, AutoArchiveDuration: ${
       autoArchiveDuration ?? "Unknown"
     }`,
   )
@@ -280,7 +280,7 @@ async function updateThreadStatusFromMessage(
     messageTimestamp - (thread.createdTimestamp ?? 0) >
       MAX_HEURISTIC_SYNC_THREAD_DURATION
   ) {
-    robot.logger.info("Marking thread", thread.id, "as async")
+    robot.logger.info("Marking thread", threadId, "as async")
     channelMetadata.sync = false
     updateThreadMetadata(robot.brain, thread, channelMetadata)
   }
@@ -424,7 +424,6 @@ async function checkThreadStatus(
 
         // Use robot brain to store the warning event data
         robot.brain.set(warningKey, warningMessage.id)
-
         robot.logger.info(
           `Sent auto-archive warning for thread ${threadId}. Message ID: ${warningMessage.id}, Auto-archive time: ${new Date(
             autoArchiveTime,
