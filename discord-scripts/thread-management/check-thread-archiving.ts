@@ -425,9 +425,9 @@ async function checkThreadStatus(
         // Use robot brain to store the warning event data
         robot.brain.set(warningKey, warningMessage.id)
         robot.logger.info(
-          `Sent auto-archive warning for thread ${threadId}. Message ID: ${warningMessage.id}, Auto-archive time: ${new Date(
-            autoArchiveTime,
-          ).toISOString()}`,
+          `Sent auto-archive warning for thread ${threadId}. Message ID: ${
+            warningMessage.id
+          }, Auto-archive time: ${new Date(autoArchiveTime).toISOString()}`,
         )
       } else {
         robot.logger.info(
