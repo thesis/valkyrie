@@ -31,14 +31,13 @@ import {
 
 // The maximum time between any two messages after which a thread is considered
 // async.
-const MAX_HEURISTIC_SYNC_THREAD_DURATION = 12 * HOUR // 60 * MINUTE
+const MAX_HEURISTIC_SYNC_THREAD_DURATION = 60 * MINUTE // 60 * MINUTE
 // How frequently threads are checked for archive requirements.
 const THREAD_CHECK_CADENCE = 12 * HOUR // 12 * HOUR
 // Use a ThreadAutoArchiveDuration as we'll still lean on Discord to
 // auto-archive after issuing the warning, so we want the value to be
 // one that we can update auto-archiving to.
-const AUTO_ARCHIVE_WARNING_LEAD_MINUTES: ThreadAutoArchiveDuration =
-  ThreadAutoArchiveDuration.OneDay
+// const AUTO_ARCHIVE_WARNING_LEAD_MINUTES: ThreadAutoArchiveDuration = ThreadAutoArchiveDuration.OneDay
 
 /**
  * A helper to request follow-up action on a thread based on the id of the user
@@ -264,7 +263,13 @@ async function updateThreadStatusFromMessage(
     return
   }
 
-  robot.logger.info("New thread being monitored")
+  const autoArchiveDuration = thread.autoArchiveDuration
+
+  robot.logger.info(
+    `New thread being monitored. ID: ${thread.id}, AutoArchiveDuration: ${
+      autoArchiveDuration ?? "Unknown"
+    }`,
+  )
 
   const channelMetadata = getThreadMetadata(robot.brain, thread) ?? {
     sync: true,
@@ -340,15 +345,15 @@ async function checkThreadStatus(
   discordClient: Client,
 ): Promise<void> {
   const threadMetadataByThreadId = getAllThreadMetadata(robot.brain)
+
   Object.entries(threadMetadataByThreadId)
     .filter(([, metadata]) => metadata?.sync === false)
     .forEach(async ([threadId]) => {
       const thread = discordClient.channels.cache.get(threadId)
 
-      if (thread === undefined || !thread.isThread()) {
+      if (!thread?.isThread()) {
         robot.logger.error(
-          `Error looking up thread with id ${threadId} in the client cache; ` +
-            "skipping archive status check.",
+          `Error looking up thread with id ${threadId} in the client cache; skipping archive status check.`,
         )
         return
       }
@@ -358,21 +363,49 @@ async function checkThreadStatus(
         (thread.lastMessageId !== null
           ? await thread.messages.fetch(thread.lastMessageId)
           : undefined)
-      const firstActiveTimestamp = thread.createdTimestamp ?? 0
-      const lastActiveTimestamp =
-        lastMessage?.createdTimestamp ?? firstActiveTimestamp
-
       // About a day before the thread auto-archives, issue a warning that it will
       // be archived and ask for follow up, then set the thread to auto-archive
       // after a day.
+      // Calculate the last activity timestamp (use thread creation as fallback)
+      const lastActivityTimestamp =
+        lastMessage?.createdTimestamp ?? thread.createdTimestamp ?? 0
+
+      const autoArchiveDuration = thread.autoArchiveDuration as
+        | ThreadAutoArchiveDuration
+        | undefined
+
+      if (!autoArchiveDuration) {
+        robot.logger.info(
+          `Thread ${threadId} has no valid autoArchiveDuration; skipping archive check.`,
+        )
+        return
+      }
+
+      // Let's be sure to calculate the exact archive time based on last activity
+      const autoArchiveTime =
+        lastActivityTimestamp + autoArchiveDuration * MINUTE
+
+      const currentTime = Date.now()
+
+      // Then check if the thread is within the warning window
       if (
-        lastActiveTimestamp - (firstActiveTimestamp ?? 0) >
-        (thread.autoArchiveDuration ?? 0) * MINUTE -
-          AUTO_ARCHIVE_WARNING_LEAD_MINUTES * MINUTE
+        autoArchiveTime - currentTime <= 24 * HOUR &&
+        autoArchiveTime - currentTime > 0
       ) {
-        await thread.send({
-          content:
-            "This thread will be auto-archived in 24 hours without further updates; what's next?",
+        const autoArchiveTimestamp = Math.floor(autoArchiveTime / 1000)
+
+        // + thread metadata for an existing warning message ID
+        const warningKey = `thread-warning:${threadId}`
+        if (robot.brain.get(warningKey)) {
+          robot.logger.info(
+            `Thread ${threadId} already has a warning message. Skipping warning.`,
+          )
+          return
+        }
+
+        // Send warning message to the thread with actions
+        const warningMessage = await thread.send({
+          content: `This thread will be auto-archived on <t:${autoArchiveTimestamp}:F> (<t:${autoArchiveTimestamp}:R>) without further updates; what's next?`,
           components: [
             {
               type: ComponentType.ActionRow,
@@ -389,9 +422,24 @@ async function checkThreadStatus(
           ],
         })
 
-        // Set to auto-archive to the lead time so Discord handles
-        // auto-archiving for us.
-        await thread.setAutoArchiveDuration(AUTO_ARCHIVE_WARNING_LEAD_MINUTES)
+        // Use robot brain to store the warning event data
+        robot.brain.set(warningKey, warningMessage.id)
+
+        robot.logger.info(
+          `Sent auto-archive warning for thread ${threadId}. Message ID: ${warningMessage.id}, Auto-archive time: ${new Date(
+            autoArchiveTime,
+          ).toISOString()}`,
+        )
+      } else {
+        robot.logger.info(
+          `Thread ${threadId} is not within the warning window. Current time: ${new Date(
+            currentTime,
+          ).toISOString()}, Auto-archive time: ${new Date(
+            autoArchiveTime,
+          ).toISOString()}, Time remaining: ${
+            (autoArchiveTime - currentTime) / (60 * 60 * 1000)
+          } hours`,
+        )
       }
       // FIXME Force thread archiving once we hit the auto-archive threshold,
       // FIXME as Discord no longer _actually_ auto-archives, instead
