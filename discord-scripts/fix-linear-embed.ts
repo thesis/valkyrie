@@ -2,7 +2,7 @@ import { Client, EmbedBuilder, TextChannel } from "discord.js"
 import { Log, Robot } from "hubot"
 import { LinearClient } from "@linear/sdk"
 
-const LINEAR_API_TOKEN = process.env.LINEAR_API_TOKEN
+const { LINEAR_API_TOKEN } = process.env
 
 async function createLinearEmbed(
   linearClient: LinearClient,
@@ -105,7 +105,7 @@ async function processLinearEmbeds(
     return
   }
 
-  for (const match of matches) {
+  const embedPromises = matches.map(async (match) => {
     const teamName = match[1]
     const issueId = match[2]
     const commentId = match[3] || undefined
@@ -120,12 +120,25 @@ async function processLinearEmbeds(
       commentId,
       teamName,
     )
+
+    return { embed, issueId }
+  })
+
+  const results = await Promise.all(embedPromises)
+
+  results.forEach(({ embed, issueId }) => {
     if (embed) {
-      await channel.send({ embeds: [embed] })
+      channel
+        .send({ embeds: [embed] })
+        .catch((error) =>
+          logger.error(
+            `Failed to send embed for issue ID: ${issueId}: ${error}`,
+          ),
+        )
     } else {
       logger.error(`Failed to create embed for issue ID: ${issueId}`)
     }
-  }
+  })
 }
 
 export default function linearEmbeds(discordClient: Client, robot: Robot) {
