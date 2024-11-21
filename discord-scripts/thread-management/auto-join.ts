@@ -84,10 +84,14 @@ async function autoJoinThread(
     )
     .reverse()
 
+  const normalize = (str: string) =>
+    str.toLowerCase().replace(/\s+/g, " ").trim()
+
   const matchingRole = server.roles.cache.find(
     (role) =>
       roleMatchPrefixes?.some(
-        (channelPrefixRole) => role.name.toLowerCase() === channelPrefixRole,
+        (channelPrefixRole) =>
+          normalize(role.name) === normalize(channelPrefixRole),
       ),
   )
 
@@ -98,7 +102,7 @@ async function autoJoinThread(
 
   const categoryChannel = containingChannel?.parent
   const categoryMatchingRole = server.roles.cache.find(
-    (role) => role.name.toLowerCase() === categoryChannel?.name.toLowerCase(),
+    (role) => normalize(role.name) === normalize(categoryChannel?.name || ""),
   )
 
   if (categoryMatchingRole !== undefined) {
