@@ -45,6 +45,11 @@ spec:
                 secretKeyRef:
                   name: valkyrie-hubot
                   key: hubot_n8n_webhook
+            - name: LINEAR_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: linear_api_token
             - name: RELEASE_NOTIFICATION_ROOM
               valueFrom:
                 secretKeyRef:
