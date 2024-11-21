@@ -1,4 +1,10 @@
-import { Client, EmbedBuilder, TextChannel } from "discord.js"
+import {
+  Client,
+  EmbedBuilder,
+  TextChannel,
+  ThreadChannel,
+  Message,
+} from "discord.js"
 import { Log, Robot } from "hubot"
 import { LinearClient } from "@linear/sdk"
 
@@ -91,7 +97,7 @@ async function createLinearEmbed(
 
 async function processLinearEmbeds(
   message: string,
-  channel: TextChannel,
+  channel: TextChannel | ThreadChannel,
   logger: Log,
   linearClient: LinearClient,
 ) {
@@ -101,7 +107,6 @@ async function processLinearEmbeds(
   const matches = Array.from(message.matchAll(issueUrlRegex))
 
   if (matches.length === 0) {
-    logger.info("No Linear issue links found in message.")
     return
   }
 
@@ -144,8 +149,14 @@ async function processLinearEmbeds(
 export default function linearEmbeds(discordClient: Client, robot: Robot) {
   const linearClient = new LinearClient({ apiKey: LINEAR_API_TOKEN })
 
-  discordClient.on("messageCreate", async (message) => {
-    if (message.author.bot || !(message.channel instanceof TextChannel)) {
+  discordClient.on("messageCreate", async (message: Message) => {
+    if (
+      message.author.bot ||
+      !(
+        message.channel instanceof TextChannel ||
+        message.channel instanceof ThreadChannel
+      )
+    ) {
       return
     }
 
@@ -161,9 +172,11 @@ export default function linearEmbeds(discordClient: Client, robot: Robot) {
   discordClient.on("messageUpdate", async (oldMessage, newMessage) => {
     if (
       !newMessage.content ||
-      !newMessage.channel ||
-      newMessage.author?.bot ||
-      !(newMessage.channel instanceof TextChannel)
+      !(
+        newMessage.channel instanceof TextChannel ||
+        newMessage.channel instanceof ThreadChannel
+      ) ||
+      newMessage.author?.bot
     ) {
       return
     }
