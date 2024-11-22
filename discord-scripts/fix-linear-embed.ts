@@ -3,6 +3,7 @@ import {
   EmbedBuilder,
   TextChannel,
   ThreadChannel,
+  VoiceChannel,
   Message,
 } from "discord.js"
 import { Log, Robot } from "hubot"
@@ -123,7 +124,7 @@ async function createLinearEmbed(
 
 async function processLinearEmbeds(
   message: string,
-  channel: TextChannel | ThreadChannel,
+  channel: TextChannel | ThreadChannel | VoiceChannel,
   logger: Log,
   linearClient: LinearClient,
 ) {
@@ -180,7 +181,8 @@ export default function linearEmbeds(discordClient: Client, robot: Robot) {
       message.author.bot ||
       !(
         message.channel instanceof TextChannel ||
-        message.channel instanceof ThreadChannel
+        message.channel instanceof ThreadChannel ||
+        message.channel instanceof VoiceChannel
       )
     ) {
       return
@@ -200,7 +202,8 @@ export default function linearEmbeds(discordClient: Client, robot: Robot) {
       !newMessage.content ||
       !(
         newMessage.channel instanceof TextChannel ||
-        newMessage.channel instanceof ThreadChannel
+        newMessage.channel instanceof ThreadChannel ||
+        newMessage.channel instanceof VoiceChannel
       ) ||
       newMessage.author?.bot
     ) {
