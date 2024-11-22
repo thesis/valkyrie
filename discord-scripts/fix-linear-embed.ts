@@ -36,7 +36,12 @@ async function createLinearEmbed(
         .setURL(
           `https://linear.app/${teamName}/issue/${issue.identifier}#comment-${commentId}`,
         )
-        .setDescription(comment.body || "No comment body available.")
+        .setDescription(
+          `${(comment.body || "No comment body available.")
+            .split(" ")
+            .slice(0, 50)
+            .join(" ")}...`,
+        )
         .addFields(
           {
             name: "Issue",
@@ -60,7 +65,12 @@ async function createLinearEmbed(
       embed
         .setTitle(`Issue: ${issue.title}`)
         .setURL(`https://linear.app/${teamName}/issue/${issue.identifier}`)
-        .setDescription(issue.description || "No description available.")
+        .setDescription(
+          `${(issue.description || "No description available.")
+            .split(" ")
+            .slice(0, 50)
+            .join(" ")}...`,
+        )
         .addFields(
           { name: "Status", value: state?.name || "No status", inline: true },
           {
@@ -79,7 +89,10 @@ async function createLinearEmbed(
       if (comments.nodes.length > 0) {
         embed.addFields({
           name: "Recent Comment",
-          value: comments.nodes[0].body,
+          value: `${comments.nodes[0].body
+            .split(" ")
+            .slice(0, 25)
+            .join(" ")}...`,
         })
       }
     }
