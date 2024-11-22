@@ -10,6 +10,24 @@ import { LinearClient } from "@linear/sdk"
 
 const { LINEAR_API_TOKEN } = process.env
 
+function truncateToWords(
+  content: string | undefined,
+  ifBlank: string,
+  maxWords = 50,
+): string {
+  if (content === undefined || content.trim() === "") {
+    return ifBlank
+  }
+
+  const truncatedContent = content.split(" ").slice(0, maxWords).join(" ")
+
+  if (truncatedContent !== content) {
+    return `${truncatedContent}...`
+  }
+
+  return content
+}
+
 async function createLinearEmbed(
   linearClient: LinearClient,
   issueId: string,
@@ -37,10 +55,7 @@ async function createLinearEmbed(
           `https://linear.app/${teamName}/issue/${issue.identifier}#comment-${commentId}`,
         )
         .setDescription(
-          `${(comment.body || "No comment body available.")
-            .split(" ")
-            .slice(0, 50)
-            .join(" ")}...`,
+          truncateToWords(comment.body, "No comment body available.", 50),
         )
         .addFields(
           {
@@ -66,10 +81,7 @@ async function createLinearEmbed(
         .setTitle(`Issue: ${issue.title}`)
         .setURL(`https://linear.app/${teamName}/issue/${issue.identifier}`)
         .setDescription(
-          `${(issue.description || "No description available.")
-            .split(" ")
-            .slice(0, 50)
-            .join(" ")}...`,
+          truncateToWords(issue.description, "No description available.", 50),
         )
         .addFields(
           { name: "Status", value: state?.name || "No status", inline: true },
@@ -89,10 +101,11 @@ async function createLinearEmbed(
       if (comments.nodes.length > 0) {
         embed.addFields({
           name: "Recent Comment",
-          value: `${comments.nodes[0].body
-            .split(" ")
-            .slice(0, 25)
-            .join(" ")}...`,
+          value: truncateToWords(
+            comments.nodes[0].body,
+            "No recent comment.",
+            25,
+          ),
         })
       }
     }
