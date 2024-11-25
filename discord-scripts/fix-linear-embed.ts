@@ -11,6 +11,9 @@ import { LinearClient } from "@linear/sdk"
 
 const { LINEAR_API_TOKEN } = process.env
 
+// track processed message to avoid duplicates if original message is edited
+const processedMessages = new Map<string, Set<string>>()
+
 function truncateToWords(
   content: string | undefined,
   ifBlank: string,
@@ -124,6 +127,7 @@ async function createLinearEmbed(
 
 async function processLinearEmbeds(
   message: string,
+  messageId: string,
   channel: TextChannel | ThreadChannel | VoiceChannel,
   logger: Log,
   linearClient: LinearClient,
@@ -137,10 +141,20 @@ async function processLinearEmbeds(
     return
   }
 
+  const processedIssues = processedMessages.get(messageId) || new Set<string>()
+  processedMessages.set(messageId, processedIssues)
+
   const embedPromises = matches.map(async (match) => {
     const teamName = match[1]
     const issueId = match[2]
     const commentId = match[3] || undefined
+    const uniqueKey = `${issueId}-${commentId}`
+
+    if (processedIssues.has(uniqueKey)) {
+      return null
+    }
+
+    processedIssues.add(uniqueKey)
 
     logger.info(
       `Processing team: ${teamName}, issue: ${issueId}, comment: ${commentId}`,
@@ -155,22 +169,26 @@ async function processLinearEmbeds(
 
     return { embed, issueId }
   })
-
   const results = await Promise.all(embedPromises)
 
-  results.forEach(({ embed, issueId }) => {
-    if (embed) {
-      channel
-        .send({ embeds: [embed] })
-        .catch((error) =>
-          logger.error(
-            `Failed to send embed for issue ID: ${issueId}: ${error}`,
-          ),
-        )
-    } else {
-      logger.error(`Failed to create embed for issue ID: ${issueId}`)
-    }
-  })
+  results
+    .filter(
+      (result): result is { embed: EmbedBuilder; issueId: string } =>
+        result !== null,
+    )
+    .forEach(({ embed, issueId }) => {
+      if (embed) {
+        channel
+          .send({ embeds: [embed] })
+          .catch((error) =>
+            logger.error(
+              `Failed to send embed for issue ID: ${issueId}: ${error}`,
+            ),
+          )
+      } else {
+        logger.error(`Failed to create embed for issue ID: ${issueId}`)
+      }
+    })
 }
 
 export default function linearEmbeds(discordClient: Client, robot: Robot) {
@@ -191,6 +209,7 @@ export default function linearEmbeds(discordClient: Client, robot: Robot) {
     robot.logger.info(`Processing message: ${message.content}`)
     await processLinearEmbeds(
       message.content,
+      message.id,
       message.channel,
       robot.logger,
       linearClient,
@@ -215,6 +234,7 @@ export default function linearEmbeds(discordClient: Client, robot: Robot) {
     )
     await processLinearEmbeds(
       newMessage.content,
+      newMessage.id,
       newMessage.channel,
       robot.logger,
       linearClient,
