@@ -45,13 +45,18 @@ async function workingTwitterEmbeds(
       (url) => !existingUrls.includes(url),
     )
 
+    if (latestUrls.length === 0) {
+      return
+    }
+
     logger.info(`workingTwitterEmbeds: extracted [${latestUrls.length}] URLs`)
 
-    if (latestUrls.length > 0) {
+    try {
       // Kill default embeds in favor of ours <_<
       await message.suppressEmbeds()
-
       await message.channel.send(latestUrls.join(", "))
+    } catch (err) {
+      logger.error(`Error suppressing embeds or sending new links: ${err}`)
     }
   }
 }
@@ -62,27 +67,37 @@ async function workingTwitterEmbeds(
 //
 // See https://github.com/FixTweet/FxTwitter for more.
 export default function fixTwitterEmbeds(discordClient: Client, robot: Robot) {
+  // Process only messages that match the Twitter URL pattern
   discordClient.on("messageCreate", (message) => {
-    robot.logger.info(
-      `fixTwitterEmbeds: processing new message ${message.content}`,
-    )
-
-    workingTwitterEmbeds(message, robot.logger).catch((err) => {
-      robot.logger.error(
-        `fixTwitterEmbeds: failed to process new message ${message.content}: ${err}`,
+    if (message.content?.match(twitterUrlRegExp)) {
+      robot.logger.info(
+        `fixTwitterEmbeds: processing new message ${message.content}`,
       )
-    })
+
+      workingTwitterEmbeds(message, robot.logger).catch((err) => {
+        robot.logger.error(
+          `fixTwitterEmbeds: failed to process new message ${message.content}: ${err}`,
+        )
+      })
+    }
   })
 
   discordClient.on("messageUpdate", (oldMessage, newMessage) => {
-    robot.logger.info(
-      `fixTwitterEmbeds: processing updated message ${newMessage.content}, ${oldMessage.content}`,
-    )
-
-    workingTwitterEmbeds(newMessage, robot.logger, oldMessage).catch((err) => {
-      robot.logger.error(
-        `fixTwitterEmbeds: failed to process new message ${newMessage.content}: ${err}`,
+    if (
+      newMessage.content?.match(twitterUrlRegExp) ||
+      oldMessage?.content?.match(twitterUrlRegExp)
+    ) {
+      robot.logger.info(
+        `fixTwitterEmbeds: processing updated message ${newMessage.content}`,
       )
-    })
+
+      workingTwitterEmbeds(newMessage, robot.logger, oldMessage).catch(
+        (err) => {
+          robot.logger.error(
+            `fixTwitterEmbeds: failed to process updated message ${newMessage.content}: ${err}`,
+          )
+        },
+      )
+    }
   })
 }
