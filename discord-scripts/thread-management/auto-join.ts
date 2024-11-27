@@ -31,6 +31,7 @@ interface ChannelRoleMapping {
 const CUSTOM_CHANNEL_ROLE: ChannelRoleMapping[] = [
   { channelName: "biz-dev-investor", roles: ["BD"] },
   { channelName: "press-relations", roles: ["M Group", "Marketing"] },
+  { channelName: "mezo-marketing", roles: ["Mezo Marketing"] },
 ]
 
 async function autoJoinThread(
