@@ -18,7 +18,9 @@ const sentEmbeds = new Map<string, Message>()
 
 let issueTagRegex: RegExp | null = null
 
-async function fetchIssuePrefixes(linearClient: LinearClient): Promise<string[]> {
+async function fetchIssuePrefixes(
+  linearClient: LinearClient,
+): Promise<string[]> {
   try {
     const teams = await linearClient.teams()
     return teams.nodes.map((team) => team.key)
@@ -249,7 +251,10 @@ async function processLinearEmbeds(
     })
 }
 
-export default async function linearEmbeds(discordClient: Client, robot: Robot) {
+export default async function linearEmbeds(
+  discordClient: Client,
+  robot: Robot,
+) {
   const linearClient = new LinearClient({ apiKey: LINEAR_API_TOKEN })
 
   await initializeIssueTagRegex(linearClient)
@@ -290,8 +295,8 @@ export default async function linearEmbeds(discordClient: Client, robot: Robot) 
     }
 
     const matches =
-      Array.from(newMessage.content.matchAll(issueTagRegex || /./)).length > 0 ||
-      Array.from(newMessage.content.matchAll(issueUrlRegex)).length > 0
+      Array.from(newMessage.content.matchAll(issueTagRegex || /./)).length >
+        0 || Array.from(newMessage.content.matchAll(issueUrlRegex)).length > 0
 
     if (!matches) {
       const embedMessage = sentEmbeds.get(newMessage.id)
