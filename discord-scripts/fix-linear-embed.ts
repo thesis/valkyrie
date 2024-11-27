@@ -16,11 +16,27 @@ const processedMessages = new Map<string, Set<string>>()
 // let us also track sent embeds to delete them if the original message is deleted or edited WIP
 const sentEmbeds = new Map<string, Message>()
 
-const ISSUE_PREFIXES = ["THESIS", "MEZO", "ENG"]
-const issueTagRegex = new RegExp(
-  `\\b(${ISSUE_PREFIXES.join("|")})-\\d+\\b`,
-  "g",
-)
+let issueTagRegex: RegExp | null = null
+
+async function fetchIssuePrefixes(linearClient: LinearClient): Promise<string[]> {
+  try {
+    const teams = await linearClient.teams()
+    return teams.nodes.map((team) => team.key)
+  } catch (error) {
+    console.error("Failed to fetch issue prefixes:", error)
+    return []
+  }
+}
+
+function updateIssueTagRegex(prefixes: string[]) {
+  issueTagRegex = new RegExp(`\\b(${prefixes.join("|")})-\\d+\\b`, "g")
+}
+
+async function initializeIssueTagRegex(linearClient: LinearClient) {
+  const prefixes = await fetchIssuePrefixes(linearClient)
+  updateIssueTagRegex(prefixes)
+}
+
 const issueUrlRegex =
   /https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/issue\/([a-zA-Z0-9-]+)(?:.*#comment-([a-zA-Z0-9]+))?/g
 
@@ -142,6 +158,11 @@ async function processLinearEmbeds(
   logger: Log,
   linearClient: LinearClient,
 ) {
+  if (!issueTagRegex) {
+    logger.error("IssueTagRegex is not initialized.")
+    return
+  }
+
   const urlMatches = Array.from(message.matchAll(issueUrlRegex))
   const issueMatches = Array.from(message.matchAll(issueTagRegex))
 
@@ -228,8 +249,10 @@ async function processLinearEmbeds(
     })
 }
 
-export default function linearEmbeds(discordClient: Client, robot: Robot) {
+export default async function linearEmbeds(discordClient: Client, robot: Robot) {
   const linearClient = new LinearClient({ apiKey: LINEAR_API_TOKEN })
+
+  await initializeIssueTagRegex(linearClient)
 
   discordClient.on("messageCreate", async (message: Message) => {
     if (
@@ -267,7 +290,7 @@ export default function linearEmbeds(discordClient: Client, robot: Robot) {
     }
 
     const matches =
-      Array.from(newMessage.content.matchAll(issueTagRegex)).length > 0 ||
+      Array.from(newMessage.content.matchAll(issueTagRegex || /./)).length > 0 ||
       Array.from(newMessage.content.matchAll(issueUrlRegex)).length > 0
 
     if (!matches) {
