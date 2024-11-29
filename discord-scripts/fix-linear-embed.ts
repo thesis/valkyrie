@@ -212,7 +212,7 @@ async function processLinearEmbeds(
   const embedPromises = Array.from(uniqueMatches).map(async (matchString) => {
     const { issueId, commentId, teamName } = JSON.parse(matchString)
 
-    logger.info(
+    logger.debug(
       `Processing issue: ${issueId}, comment: ${commentId}, team: ${teamName}`,
     )
 
@@ -271,7 +271,7 @@ export default async function linearEmbeds(
       return
     }
 
-    robot.logger.info(`Processing message: ${message.content}`)
+    robot.logger.debug(`Processing message: ${message.content}`)
     await processLinearEmbeds(
       message.content,
       message.id,
@@ -311,7 +311,7 @@ export default async function linearEmbeds(
       return
     }
 
-    robot.logger.info(
+    robot.logger.debug(
       `Processing updated message: ${newMessage.content} (was: ${oldMessage?.content})`,
     )
     await processLinearEmbeds(
