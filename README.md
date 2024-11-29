@@ -302,3 +302,7 @@ can then run hubot with the adapter.
 Where `<adapter>` is the name of your adapter without the `hubot-` prefix.
 
 [hubot-adapters]: https://github.com/github/hubot/blob/master/docs/adapters.md
+
+## Debugging
+
+If you'd like to test certain aspects of Valkyrie with a debugger, use `robot.logger.debug` and in your environment variables the flag `export HUBOT_LOG_LEVEL="debug"` which will enable those messages to appear in terminal output. 

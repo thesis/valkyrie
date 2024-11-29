@@ -69,11 +69,13 @@ async function workingTwitterEmbeds(
 export default function fixTwitterEmbeds(discordClient: Client, robot: Robot) {
   // Process only messages that match the Twitter URL pattern
   discordClient.on("messageCreate", (message) => {
+    robot.logger.debug(
+      `fixTwitterEmbeds: processing new message ${message.content}`,
+    )
     if (message.content?.match(twitterUrlRegExp)) {
       robot.logger.info(
         `fixTwitterEmbeds: processing new message ${message.content}`,
       )
-
       workingTwitterEmbeds(message, robot.logger).catch((err) => {
         robot.logger.error(
           `fixTwitterEmbeds: failed to process new message ${message.content}: ${err}`,
@@ -83,6 +85,9 @@ export default function fixTwitterEmbeds(discordClient: Client, robot: Robot) {
   })
 
   discordClient.on("messageUpdate", (oldMessage, newMessage) => {
+    robot.logger.debug(
+      `fixTwitterEmbeds: processing updated message ${newMessage.content}`,
+    )
     if (
       newMessage.content?.match(twitterUrlRegExp) ||
       oldMessage?.content?.match(twitterUrlRegExp)
