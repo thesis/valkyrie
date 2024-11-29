@@ -31,7 +31,7 @@ async function fetchIssuePrefixes(
 }
 
 function updateIssueTagRegex(prefixes: string[]) {
-  issueTagRegex = new RegExp(`\\b(${prefixes.join("|")})-\\d+\\b`, "g")
+  issueTagRegex = new RegExp(`\\b(${prefixes.join("|")})-\\d+\\b`, "gi")
 }
 
 async function initializeIssueTagRegex(linearClient: LinearClient) {
@@ -294,12 +294,13 @@ export default async function linearEmbeds(
       return
     }
 
-    const matches =
-      Array.from(newMessage.content.matchAll(issueTagRegex || /./)).length >
-        0 || Array.from(newMessage.content.matchAll(issueUrlRegex)).length > 0
+    const embedMessage = sentEmbeds.get(newMessage.id)
+    const urlMatches = Array.from(newMessage.content.matchAll(issueUrlRegex))
+    const issueMatches = issueTagRegex
+      ? Array.from(newMessage.content.matchAll(issueTagRegex))
+      : []
 
-    if (!matches) {
-      const embedMessage = sentEmbeds.get(newMessage.id)
+    if (urlMatches.length === 0 && issueMatches.length === 0) {
       if (embedMessage) {
         await embedMessage.delete().catch((error) => {
           robot.logger.error(
@@ -311,16 +312,42 @@ export default async function linearEmbeds(
       return
     }
 
-    robot.logger.debug(
-      `Processing updated message: ${newMessage.content} (was: ${oldMessage?.content})`,
-    )
-    await processLinearEmbeds(
-      newMessage.content,
-      newMessage.id,
-      newMessage.channel,
-      robot.logger,
-      linearClient,
-    )
+    const match = urlMatches[0] || issueMatches[0]
+    const teamName = match[1] || undefined
+    const issueId = match[2] || match[0]
+    const commentId = urlMatches.length > 0 ? match[3] || undefined : undefined
+
+    if (embedMessage) {
+      // we will then update the existing embed
+      try {
+        const embed = await createLinearEmbed(
+          linearClient,
+          issueId,
+          commentId,
+          teamName,
+        )
+        if (embed) {
+          await embedMessage.edit({ embeds: [embed] })
+          robot.logger.debug(`Updated embed for message ID: ${newMessage.id}`)
+        } else {
+          robot.logger.error(
+            `Failed to create embed for updated message ID: ${newMessage.id}`,
+          )
+        }
+      } catch (error) {
+        robot.logger.error(
+          `Failed to edit embed for message ID: ${newMessage.id}: ${error}`,
+        )
+      }
+    } else {
+      await processLinearEmbeds(
+        newMessage.content,
+        newMessage.id,
+        newMessage.channel as TextChannel | ThreadChannel,
+        robot.logger,
+        linearClient,
+      )
+    }
   })
 
   discordClient.on("messageDelete", async (message) => {
