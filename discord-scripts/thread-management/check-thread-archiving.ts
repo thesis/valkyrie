@@ -99,10 +99,19 @@ const threadActions: {
     emoji: "☑️",
     extendAutoArchive: false,
     handler: async (thread, interaction) => {
+      const user = interaction.user
       await interaction.reply({
         content: "Sounds like this thread is ready to archive, doing that now!",
+        ephemeral: true,
       })
-      thread.setArchived(true)
+      await thread.setArchived(true)
+
+      await interaction.message.edit({
+        content: `${interaction.message.content}\n\n☑️ **Archived** by ${userMention(
+          user.id,
+        )}`,
+        components: [],
+      })
     },
   },
   "check-thread-archiving-task-button": {
@@ -147,6 +156,13 @@ const threadActions: {
         "capture the task(s) associated with",
         userIdToTag,
       )
+
+      await interaction.message.edit({
+        content: `${interaction.message.content}\n\n🔲 **Task capture requested** by ${userMention(
+          interaction.user.id,
+        )}`,
+        components: [],
+      })
     },
   },
   "check-thread-archiving-status-button": {
@@ -189,9 +205,16 @@ const threadActions: {
         thread,
         interaction,
         interaction.member,
-        "capture the task(s) associated with",
+        "post a status associated with",
         userIdToTag,
       )
+
+      await interaction.message.edit({
+        content: `${interaction.message.content}\n\n✍️ **Status requested** by ${userMention(
+          interaction.user.id,
+        )}`,
+        components: [],
+      })
     },
   },
   "check-thread-archiving-pending-decision-button": {
@@ -234,9 +257,16 @@ const threadActions: {
         thread,
         interaction,
         interaction.member,
-        "capture the task(s) associated with",
+        "make a decision for",
         userIdToTag,
       )
+
+      await interaction.message.edit({
+        content: `${interaction.message.content}\n\n🫵 **Decision requested** by ${userMention(
+          interaction.user.id,
+        )}`,
+        components: [],
+      })
     },
   },
 }
