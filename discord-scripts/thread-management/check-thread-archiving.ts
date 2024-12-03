@@ -52,6 +52,8 @@ function requestFollowUpAction(
   robot?: Robot,
 ) {
   const requestingUserId = followUpRequester?.user.id
+  const currentTime = Date.now()
+  const followUpDeadline = Math.floor((currentTime + 24 * HOUR) / 1000)
 
   if (followUpUserId === requestingUserId) {
     // If the user designates themselves, delete the initial bot message to remove the dropdown
@@ -63,7 +65,7 @@ function requestFollowUpAction(
       .followUp({
         content: `Thanks ${userMention(
           requestingUserId,
-        )}, please ${requestedAction} this thread or it will be archived in 24 hours ❤️`,
+        )}, please ${requestedAction} this thread or it will be archived in <t:${followUpDeadline}:F> (<t:${followUpDeadline}:R> ❤️`,
         ephemeral: true,
       })
       .catch((error) => {
@@ -75,7 +77,7 @@ function requestFollowUpAction(
       .send({
         content: `${userMention(
           followUpUserId,
-        )} please ${requestedAction} this thread or it will be archived in 24 hours ❤️`,
+        )} please ${requestedAction} this thread or it will be archived in <t:${followUpDeadline}:F> (<t:${followUpDeadline}:R> ❤️`,
       })
       .catch((error) => {
         robot?.logger.info("Failed to send message in thread:", error)
@@ -85,6 +87,16 @@ function requestFollowUpAction(
       robot?.logger.info("Failed to delete initial bot message:", error)
     })
   }
+}
+
+const getNickname = async (interaction: ButtonInteraction): Promise<string> => {
+  const { user, guild } = interaction
+
+  if (!guild) {
+    return user.username
+  }
+  const member = await guild.members.fetch(user.id)
+  return member.nickname || user.username
 }
 
 const threadActions: {
@@ -99,7 +111,7 @@ const threadActions: {
     emoji: "☑️",
     extendAutoArchive: false,
     handler: async (thread, interaction) => {
-      const { user } = interaction
+      const nickname = await getNickname(interaction)
       await interaction.reply({
         content: "Sounds like this thread is ready to archive, doing that now!",
         ephemeral: true,
@@ -109,7 +121,7 @@ const threadActions: {
       await interaction.message.edit({
         content: `${
           interaction.message.content
-        }\n\n☑️ **Archived** by ${userMention(user.id)}`,
+        }\n\n☑️ **Archived** by ${nickname}`,
         components: [],
       })
     },
@@ -120,7 +132,7 @@ const threadActions: {
     extendAutoArchive: true,
     handler: async (thread, interaction) => {
       const posterSelectId = `task-poster-select-${interaction.id}`
-
+      const nickname = await getNickname(interaction)
       await interaction.reply({
         ephemeral: true,
         content:
@@ -160,9 +172,7 @@ const threadActions: {
       await interaction.message.edit({
         content: `${
           interaction.message.content
-        }\n\n🔲 **Task capture requested** by ${userMention(
-          interaction.user.id,
-        )}`,
+        }\n\n🔲 **Task capture requested** by ${nickname}`,
         components: [],
       })
     },
@@ -173,7 +183,7 @@ const threadActions: {
     extendAutoArchive: false,
     handler: async (thread, interaction) => {
       const posterSelectId = `status-poster-select-${interaction.id}`
-
+      const nickname = await getNickname(interaction)
       await interaction.reply({
         ephemeral: true,
         content:
@@ -214,7 +224,7 @@ const threadActions: {
       await interaction.message.edit({
         content: `${
           interaction.message.content
-        }\n\n✍️ **Status requested** by ${userMention(interaction.user.id)}`,
+        }\n\n✍️ **Status requested** by ${nickname}`,
         components: [],
       })
     },
@@ -225,7 +235,7 @@ const threadActions: {
     extendAutoArchive: true,
     handler: async (thread, interaction) => {
       const posterSelectId = `decision-poster-select-${interaction.id}`
-
+      const nickname = await getNickname(interaction)
       await interaction.reply({
         ephemeral: true,
         content:
@@ -266,7 +276,7 @@ const threadActions: {
       await interaction.message.edit({
         content: `${
           interaction.message.content
-        }\n\n🫵 **Decision requested** by ${userMention(interaction.user.id)}`,
+        }\n\n🫵 **Decision requested** by ${nickname}`,
         components: [],
       })
     },
