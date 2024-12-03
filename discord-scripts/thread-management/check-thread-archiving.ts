@@ -99,7 +99,7 @@ const threadActions: {
     emoji: "☑️",
     extendAutoArchive: false,
     handler: async (thread, interaction) => {
-      const user = interaction.user
+      const { user } = interaction
       await interaction.reply({
         content: "Sounds like this thread is ready to archive, doing that now!",
         ephemeral: true,
@@ -107,9 +107,9 @@ const threadActions: {
       await thread.setArchived(true)
 
       await interaction.message.edit({
-        content: `${interaction.message.content}\n\n☑️ **Archived** by ${userMention(
-          user.id,
-        )}`,
+        content: `${
+          interaction.message.content
+        }\n\n☑️ **Archived** by ${userMention(user.id)}`,
         components: [],
       })
     },
@@ -158,7 +158,9 @@ const threadActions: {
       )
 
       await interaction.message.edit({
-        content: `${interaction.message.content}\n\n🔲 **Task capture requested** by ${userMention(
+        content: `${
+          interaction.message.content
+        }\n\n🔲 **Task capture requested** by ${userMention(
           interaction.user.id,
         )}`,
         components: [],
@@ -210,9 +212,9 @@ const threadActions: {
       )
 
       await interaction.message.edit({
-        content: `${interaction.message.content}\n\n✍️ **Status requested** by ${userMention(
-          interaction.user.id,
-        )}`,
+        content: `${
+          interaction.message.content
+        }\n\n✍️ **Status requested** by ${userMention(interaction.user.id)}`,
         components: [],
       })
     },
@@ -262,9 +264,9 @@ const threadActions: {
       )
 
       await interaction.message.edit({
-        content: `${interaction.message.content}\n\n🫵 **Decision requested** by ${userMention(
-          interaction.user.id,
-        )}`,
+        content: `${
+          interaction.message.content
+        }\n\n🫵 **Decision requested** by ${userMention(interaction.user.id)}`,
         components: [],
       })
     },
