@@ -119,9 +119,7 @@ const threadActions: {
       await thread.setArchived(true)
 
       await interaction.message.edit({
-        content: `${
-          interaction.message.content
-        }\n\n☑️ **Archived** by ${nickname}`,
+        content: `${interaction.message.content}\n\n☑️ **Archived** by ${nickname}`,
         components: [],
       })
     },
@@ -170,9 +168,7 @@ const threadActions: {
       )
 
       await interaction.message.edit({
-        content: `${
-          interaction.message.content
-        }\n\n🔲 **Task capture requested** by ${nickname}`,
+        content: `${interaction.message.content}\n\n🔲 **Task capture requested** by ${nickname}`,
         components: [],
       })
     },
@@ -222,9 +218,7 @@ const threadActions: {
       )
 
       await interaction.message.edit({
-        content: `${
-          interaction.message.content
-        }\n\n✍️ **Status requested** by ${nickname}`,
+        content: `${interaction.message.content}\n\n✍️ **Status requested** by ${nickname}`,
         components: [],
       })
     },
@@ -274,9 +268,7 @@ const threadActions: {
       )
 
       await interaction.message.edit({
-        content: `${
-          interaction.message.content
-        }\n\n🫵 **Decision requested** by ${nickname}`,
+        content: `${interaction.message.content}\n\n🫵 **Decision requested** by ${nickname}`,
         components: [],
       })
     },
