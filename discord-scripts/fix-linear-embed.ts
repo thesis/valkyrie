@@ -12,31 +12,19 @@ import { LinearClient } from "@linear/sdk"
 const { LINEAR_API_TOKEN } = process.env
 
 // track processed message to avoid duplicates if original message is edited
-const processedMessages = new Map<string, Set<string>>()
+const processedMessages = new Map<
+  string,
+  Map<string, { issueId: string; commentId?: string; teamName?: string }>
+>()
+
 // let us also track sent embeds to delete them if the original message is deleted or edited WIP
 const sentEmbeds = new Map<string, Message>()
 
 let issueTagRegex: RegExp | null = null
 
-async function fetchIssuePrefixes(
-  linearClient: LinearClient,
-): Promise<string[]> {
-  try {
-    const teams = await linearClient.teams()
-    return teams.nodes.map((team) => team.key)
-  } catch (error) {
-    console.error("Failed to fetch issue prefixes:", error)
-    return []
-  }
-}
-
-function updateIssueTagRegex(prefixes: string[]) {
-  issueTagRegex = new RegExp(`\\b(${prefixes.join("|")})-\\d+\\b`, "gi")
-}
-
-async function initializeIssueTagRegex(linearClient: LinearClient) {
-  const prefixes = await fetchIssuePrefixes(linearClient)
-  updateIssueTagRegex(prefixes)
+function initializeIssueTagRegex() {
+  issueTagRegex =
+    /(?<!https:\/\/linear\.app\/[a-zA-Z0-9-]+\/issue\/)[A-Z]{3,}-\d+\b/gi
 }
 
 const issueUrlRegex =
@@ -172,10 +160,13 @@ async function processLinearEmbeds(
     return
   }
 
-  const processedIssues = processedMessages.get(messageId) || new Set<string>()
+  const processedIssues =
+    processedMessages.get(messageId) ??
+    new Map<
+      string,
+      { issueId: string; commentId?: string; teamName?: string }
+    >()
   processedMessages.set(messageId, processedIssues)
-
-  const uniqueMatches = new Set<string>()
 
   urlMatches.forEach((match) => {
     const teamName = match[1]
@@ -184,54 +175,43 @@ async function processLinearEmbeds(
     const uniqueKey = `${issueId}-${commentId || ""}`
 
     if (!processedIssues.has(uniqueKey)) {
-      processedIssues.add(uniqueKey)
-      uniqueMatches.add(JSON.stringify({ issueId, commentId, teamName }))
+      processedIssues.set(uniqueKey, { issueId, commentId, teamName })
     }
   })
 
   issueMatches.forEach((match) => {
     const issueId = match[0]
-
-    if (
-      Array.from(uniqueMatches).some(
-        (uniqueMatch) => JSON.parse(uniqueMatch).issueId === issueId,
-      )
-    ) {
-      return
-    }
-
     const uniqueKey = `${issueId}`
+
     if (!processedIssues.has(uniqueKey)) {
-      processedIssues.add(uniqueKey)
-      uniqueMatches.add(
-        JSON.stringify({ issueId, commentId: undefined, teamName: undefined }),
-      )
+      processedIssues.set(uniqueKey, { issueId })
     }
   })
 
-  const embedPromises = Array.from(uniqueMatches).map(async (matchString) => {
-    const { issueId, commentId, teamName } = JSON.parse(matchString)
+  const embedPromises = Array.from(processedIssues.values()).map(
+    async ({ issueId, commentId, teamName }) => {
+      logger.debug(
+        `Processing issue: ${issueId}, comment: ${commentId ?? "N/A"}, team: ${
+          teamName ?? "N/A"
+        }`,
+      )
 
-    logger.debug(
-      `Processing issue: ${issueId}, comment: ${commentId}, team: ${teamName}`,
-    )
-
-    const embed = await createLinearEmbed(
-      linearClient,
-      issueId,
-      commentId,
-      teamName,
-    )
-
-    return { embed, issueId }
-  })
+      const embed = await createLinearEmbed(
+        linearClient,
+        issueId,
+        commentId,
+        teamName,
+      )
+      return { embed, issueId }
+    },
+  )
 
   const results = await Promise.all(embedPromises)
 
   results
     .filter(
       (result): result is { embed: EmbedBuilder; issueId: string } =>
-        result !== null,
+        result.embed !== null,
     )
     .forEach(({ embed, issueId }) => {
       if (embed) {
@@ -256,8 +236,7 @@ export default async function linearEmbeds(
   robot: Robot,
 ) {
   const linearClient = new LinearClient({ apiKey: LINEAR_API_TOKEN })
-
-  await initializeIssueTagRegex(linearClient)
+  initializeIssueTagRegex()
 
   discordClient.on("messageCreate", async (message: Message) => {
     if (
