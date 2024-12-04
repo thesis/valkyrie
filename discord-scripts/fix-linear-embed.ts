@@ -12,7 +12,23 @@ import { LinearClient } from "@linear/sdk"
 const { LINEAR_API_TOKEN } = process.env
 
 // track processed message to avoid duplicates if original message is edited
-const processedMessages = new Map<string, Set<string>>()
+const processedMessages = new Map<
+  string,
+  Map<string, { issueId: string; commentId?: string; teamName?: string }>
+>()
+
+// let us also track sent embeds to delete them if the original message is deleted or edited WIP
+const sentEmbeds = new Map<string, Message>()
+
+let issueTagRegex: RegExp | null = null
+
+function initializeIssueTagRegex() {
+  issueTagRegex =
+    /(?<!https:\/\/linear\.app\/[a-zA-Z0-9-]+\/issue\/)[A-Z]{3,}-\d+\b/gi
+}
+
+const issueUrlRegex =
+  /https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/issue\/([a-zA-Z0-9-]+)(?:.*#comment-([a-zA-Z0-9]+))?/g
 
 function truncateToWords(
   content: string | undefined,
@@ -132,54 +148,78 @@ async function processLinearEmbeds(
   logger: Log,
   linearClient: LinearClient,
 ) {
-  const issueUrlRegex =
-    /https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/issue\/([a-zA-Z0-9-]+)(?:.*#comment-([a-zA-Z0-9]+))?/g
-
-  const matches = Array.from(message.matchAll(issueUrlRegex))
-
-  if (matches.length === 0) {
+  if (!issueTagRegex) {
+    logger.error("IssueTagRegex is not initialized.")
     return
   }
 
-  const processedIssues = processedMessages.get(messageId) || new Set<string>()
+  const urlMatches = Array.from(message.matchAll(issueUrlRegex))
+  const issueMatches = Array.from(message.matchAll(issueTagRegex))
+
+  if (urlMatches.length === 0 && issueMatches.length === 0) {
+    return
+  }
+
+  const processedIssues =
+    processedMessages.get(messageId) ??
+    new Map<
+      string,
+      { issueId: string; commentId?: string; teamName?: string }
+    >()
   processedMessages.set(messageId, processedIssues)
 
-  const embedPromises = matches.map(async (match) => {
+  urlMatches.forEach((match) => {
     const teamName = match[1]
     const issueId = match[2]
     const commentId = match[3] || undefined
-    const uniqueKey = `${issueId}-${commentId}`
+    const uniqueKey = `${issueId}-${commentId || ""}`
 
-    if (processedIssues.has(uniqueKey)) {
-      return null
+    if (!processedIssues.has(uniqueKey)) {
+      processedIssues.set(uniqueKey, { issueId, commentId, teamName })
     }
-
-    processedIssues.add(uniqueKey)
-
-    logger.info(
-      `Processing team: ${teamName}, issue: ${issueId}, comment: ${commentId}`,
-    )
-
-    const embed = await createLinearEmbed(
-      linearClient,
-      issueId,
-      commentId,
-      teamName,
-    )
-
-    return { embed, issueId }
   })
+
+  issueMatches.forEach((match) => {
+    const issueId = match[0]
+    const uniqueKey = `${issueId}`
+
+    if (!processedIssues.has(uniqueKey)) {
+      processedIssues.set(uniqueKey, { issueId })
+    }
+  })
+
+  const embedPromises = Array.from(processedIssues.values()).map(
+    async ({ issueId, commentId, teamName }) => {
+      logger.debug(
+        `Processing issue: ${issueId}, comment: ${commentId ?? "N/A"}, team: ${
+          teamName ?? "N/A"
+        }`,
+      )
+
+      const embed = await createLinearEmbed(
+        linearClient,
+        issueId,
+        commentId,
+        teamName,
+      )
+      return { embed, issueId }
+    },
+  )
+
   const results = await Promise.all(embedPromises)
 
   results
     .filter(
       (result): result is { embed: EmbedBuilder; issueId: string } =>
-        result !== null,
+        result.embed !== null,
     )
     .forEach(({ embed, issueId }) => {
       if (embed) {
         channel
           .send({ embeds: [embed] })
+          .then((sentMessage) => {
+            sentEmbeds.set(messageId, sentMessage)
+          })
           .catch((error) =>
             logger.error(
               `Failed to send embed for issue ID: ${issueId}: ${error}`,
@@ -191,8 +231,12 @@ async function processLinearEmbeds(
     })
 }
 
-export default function linearEmbeds(discordClient: Client, robot: Robot) {
+export default async function linearEmbeds(
+  discordClient: Client,
+  robot: Robot,
+) {
   const linearClient = new LinearClient({ apiKey: LINEAR_API_TOKEN })
+  initializeIssueTagRegex()
 
   discordClient.on("messageCreate", async (message: Message) => {
     if (
@@ -206,7 +250,7 @@ export default function linearEmbeds(discordClient: Client, robot: Robot) {
       return
     }
 
-    robot.logger.info(`Processing message: ${message.content}`)
+    robot.logger.debug(`Processing message: ${message.content}`)
     await processLinearEmbeds(
       message.content,
       message.id,
@@ -229,15 +273,71 @@ export default function linearEmbeds(discordClient: Client, robot: Robot) {
       return
     }
 
-    robot.logger.info(
-      `Processing updated message: ${newMessage.content} (was: ${oldMessage?.content})`,
-    )
-    await processLinearEmbeds(
-      newMessage.content,
-      newMessage.id,
-      newMessage.channel,
-      robot.logger,
-      linearClient,
-    )
+    const embedMessage = sentEmbeds.get(newMessage.id)
+    const urlMatches = Array.from(newMessage.content.matchAll(issueUrlRegex))
+    const issueMatches = issueTagRegex
+      ? Array.from(newMessage.content.matchAll(issueTagRegex))
+      : []
+
+    if (urlMatches.length === 0 && issueMatches.length === 0) {
+      if (embedMessage) {
+        await embedMessage.delete().catch((error) => {
+          robot.logger.error(
+            `Failed to delete embed for message ID: ${newMessage.id}: ${error}`,
+          )
+        })
+        sentEmbeds.delete(newMessage.id)
+      }
+      return
+    }
+
+    const match = urlMatches[0] || issueMatches[0]
+    const teamName = match[1] || undefined
+    const issueId = match[2] || match[0]
+    const commentId = urlMatches.length > 0 ? match[3] || undefined : undefined
+
+    if (embedMessage) {
+      // we will then update the existing embed
+      try {
+        const embed = await createLinearEmbed(
+          linearClient,
+          issueId,
+          commentId,
+          teamName,
+        )
+        if (embed) {
+          await embedMessage.edit({ embeds: [embed] })
+          robot.logger.debug(`Updated embed for message ID: ${newMessage.id}`)
+        } else {
+          robot.logger.error(
+            `Failed to create embed for updated message ID: ${newMessage.id}`,
+          )
+        }
+      } catch (error) {
+        robot.logger.error(
+          `Failed to edit embed for message ID: ${newMessage.id}: ${error}`,
+        )
+      }
+    } else {
+      await processLinearEmbeds(
+        newMessage.content,
+        newMessage.id,
+        newMessage.channel as TextChannel | ThreadChannel,
+        robot.logger,
+        linearClient,
+      )
+    }
+  })
+
+  discordClient.on("messageDelete", async (message) => {
+    const embedMessage = sentEmbeds.get(message.id)
+    if (embedMessage) {
+      await embedMessage.delete().catch((error) => {
+        robot.logger.error(
+          `Failed to delete embed for message ID: ${message.id}: ${error}`,
+        )
+      })
+      sentEmbeds.delete(message.id)
+    }
   })
 }
