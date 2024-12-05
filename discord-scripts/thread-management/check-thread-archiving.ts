@@ -43,7 +43,18 @@ const THREAD_CHECK_CADENCE = 12 * HOUR // 12 * HOUR
  * A helper to request follow-up action on a thread based on the id of the user
  * who will follow up and the initial requester of follow-up action.
  */
-function requestFollowUpAction(
+
+const getNickname = async (interaction: ButtonInteraction): Promise<string> => {
+  const { user, guild } = interaction
+
+  if (!guild) {
+    return user.username
+  }
+  const member = await guild.members.fetch(user.id)
+  return member.nickname || user.username
+}
+
+async function requestFollowUpAction(
   thread: ThreadChannel<boolean>,
   interaction: ButtonInteraction,
   followUpRequester: GuildMember | APIInteractionGuildMember | null,
@@ -55,6 +66,8 @@ function requestFollowUpAction(
   const currentTime = Date.now()
   const followUpDeadline = Math.floor((currentTime + 24 * HOUR) / 1000)
 
+  const nickname = await getNickname(interaction)
+
   if (followUpUserId === requestingUserId) {
     // If the user designates themselves, delete the initial bot message to remove the dropdown
     interaction.deleteReply().catch((error) => {
@@ -65,7 +78,7 @@ function requestFollowUpAction(
       .followUp({
         content: `Thanks ${userMention(
           requestingUserId,
-        )}, please ${requestedAction} this thread or it will be archived in <t:${followUpDeadline}:F> (<t:${followUpDeadline}:R> ❤️`,
+        )}, please ${requestedAction} this thread or it will be archived in <t:${followUpDeadline}:F> (<t:${followUpDeadline}:R> ❤️)`,
         ephemeral: true,
       })
       .catch((error) => {
@@ -77,7 +90,7 @@ function requestFollowUpAction(
       .send({
         content: `${userMention(
           followUpUserId,
-        )} please ${requestedAction} this thread or it will be archived in <t:${followUpDeadline}:F> (<t:${followUpDeadline}:R> ❤️`,
+        )} please ${requestedAction} this thread or it will be archived in <t:${followUpDeadline}:F> (<t:${followUpDeadline}:R>) - ❤️ Love, ${nickname}`,
       })
       .catch((error) => {
         robot?.logger.info("Failed to send message in thread:", error)
@@ -87,16 +100,6 @@ function requestFollowUpAction(
       robot?.logger.info("Failed to delete initial bot message:", error)
     })
   }
-}
-
-const getNickname = async (interaction: ButtonInteraction): Promise<string> => {
-  const { user, guild } = interaction
-
-  if (!guild) {
-    return user.username
-  }
-  const member = await guild.members.fetch(user.id)
-  return member.nickname || user.username
 }
 
 const threadActions: {
@@ -130,7 +133,6 @@ const threadActions: {
     extendAutoArchive: true,
     handler: async (thread, interaction) => {
       const posterSelectId = `task-poster-select-${interaction.id}`
-      const nickname = await getNickname(interaction)
       await interaction.reply({
         ephemeral: true,
         content:
@@ -167,10 +169,7 @@ const threadActions: {
         userIdToTag,
       )
 
-      await interaction.message.edit({
-        content: `${interaction.message.content}\n\n🔲 **Task capture requested** by ${nickname}`,
-        components: [],
-      })
+      await interaction.message.delete()
     },
   },
   "check-thread-archiving-status-button": {
@@ -179,7 +178,6 @@ const threadActions: {
     extendAutoArchive: false,
     handler: async (thread, interaction) => {
       const posterSelectId = `status-poster-select-${interaction.id}`
-      const nickname = await getNickname(interaction)
       await interaction.reply({
         ephemeral: true,
         content:
@@ -217,10 +215,7 @@ const threadActions: {
         userIdToTag,
       )
 
-      await interaction.message.edit({
-        content: `${interaction.message.content}\n\n✍️ **Status requested** by ${nickname}`,
-        components: [],
-      })
+      await interaction.message.delete()
     },
   },
   "check-thread-archiving-pending-decision-button": {
@@ -229,7 +224,6 @@ const threadActions: {
     extendAutoArchive: true,
     handler: async (thread, interaction) => {
       const posterSelectId = `decision-poster-select-${interaction.id}`
-      const nickname = await getNickname(interaction)
       await interaction.reply({
         ephemeral: true,
         content:
@@ -267,10 +261,7 @@ const threadActions: {
         userIdToTag,
       )
 
-      await interaction.message.edit({
-        content: `${interaction.message.content}\n\n🫵 **Decision requested** by ${nickname}`,
-        components: [],
-      })
+      await interaction.message.delete()
     },
   },
 }
