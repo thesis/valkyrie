@@ -43,7 +43,18 @@ const THREAD_CHECK_CADENCE = 12 * HOUR // 12 * HOUR
  * A helper to request follow-up action on a thread based on the id of the user
  * who will follow up and the initial requester of follow-up action.
  */
-function requestFollowUpAction(
+
+const getNickname = async (interaction: ButtonInteraction): Promise<string> => {
+  const { user, guild } = interaction
+
+  if (!guild) {
+    return user.username
+  }
+  const member = await guild.members.fetch(user.id)
+  return member.nickname || user.username
+}
+
+async function requestFollowUpAction(
   thread: ThreadChannel<boolean>,
   interaction: ButtonInteraction,
   followUpRequester: GuildMember | APIInteractionGuildMember | null,
@@ -52,6 +63,10 @@ function requestFollowUpAction(
   robot?: Robot,
 ) {
   const requestingUserId = followUpRequester?.user.id
+  const currentTime = Date.now()
+  const followUpDeadline = Math.floor((currentTime + 24 * HOUR) / 1000)
+
+  const nickname = await getNickname(interaction)
 
   if (followUpUserId === requestingUserId) {
     // If the user designates themselves, delete the initial bot message to remove the dropdown
@@ -63,7 +78,7 @@ function requestFollowUpAction(
       .followUp({
         content: `Thanks ${userMention(
           requestingUserId,
-        )}, please ${requestedAction} this thread or it will be archived in 24 hours ❤️`,
+        )}, please ${requestedAction} this thread or it will be archived in <t:${followUpDeadline}:F> (<t:${followUpDeadline}:R> ❤️)`,
         ephemeral: true,
       })
       .catch((error) => {
@@ -75,7 +90,7 @@ function requestFollowUpAction(
       .send({
         content: `${userMention(
           followUpUserId,
-        )} please ${requestedAction} this thread or it will be archived in 24 hours ❤️`,
+        )} please ${requestedAction} this thread or it will be archived in <t:${followUpDeadline}:F> (<t:${followUpDeadline}:R>) - ❤️ Love, ${nickname}`,
       })
       .catch((error) => {
         robot?.logger.info("Failed to send message in thread:", error)
@@ -99,10 +114,17 @@ const threadActions: {
     emoji: "☑️",
     extendAutoArchive: false,
     handler: async (thread, interaction) => {
+      const nickname = await getNickname(interaction)
       await interaction.reply({
         content: "Sounds like this thread is ready to archive, doing that now!",
+        ephemeral: true,
       })
-      thread.setArchived(true)
+      await thread.setArchived(true)
+
+      await interaction.message.edit({
+        content: `${interaction.message.content}\n\n☑️ **Archived** by ${nickname}`,
+        components: [],
+      })
     },
   },
   "check-thread-archiving-task-button": {
@@ -111,7 +133,6 @@ const threadActions: {
     extendAutoArchive: true,
     handler: async (thread, interaction) => {
       const posterSelectId = `task-poster-select-${interaction.id}`
-
       await interaction.reply({
         ephemeral: true,
         content:
@@ -147,6 +168,8 @@ const threadActions: {
         "capture the task(s) associated with",
         userIdToTag,
       )
+
+      await interaction.message.delete()
     },
   },
   "check-thread-archiving-status-button": {
@@ -155,7 +178,6 @@ const threadActions: {
     extendAutoArchive: false,
     handler: async (thread, interaction) => {
       const posterSelectId = `status-poster-select-${interaction.id}`
-
       await interaction.reply({
         ephemeral: true,
         content:
@@ -189,9 +211,11 @@ const threadActions: {
         thread,
         interaction,
         interaction.member,
-        "capture the task(s) associated with",
+        "post a status associated with",
         userIdToTag,
       )
+
+      await interaction.message.delete()
     },
   },
   "check-thread-archiving-pending-decision-button": {
@@ -200,7 +224,6 @@ const threadActions: {
     extendAutoArchive: true,
     handler: async (thread, interaction) => {
       const posterSelectId = `decision-poster-select-${interaction.id}`
-
       await interaction.reply({
         ephemeral: true,
         content:
@@ -234,9 +257,11 @@ const threadActions: {
         thread,
         interaction,
         interaction.member,
-        "capture the task(s) associated with",
+        "make a decision for",
         userIdToTag,
       )
+
+      await interaction.message.delete()
     },
   },
 }
