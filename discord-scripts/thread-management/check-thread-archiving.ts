@@ -37,7 +37,7 @@ const THREAD_CHECK_CADENCE = 12 * HOUR // 12 * HOUR
 // Use a ThreadAutoArchiveDuration as we'll still lean on Discord to
 // auto-archive after issuing the warning, so we want the value to be
 // one that we can update auto-archiving to.
-// const AUTO_ARCHIVE_WARNING_LEAD_MINUTES: ThreadAutoArchiveDuration = ThreadAutoArchiveDuration.OneDay
+const AUTO_ARCHIVE_WARNING_LEAD_MINUTES: ThreadAutoArchiveDuration = ThreadAutoArchiveDuration.OneDay
 
 /**
  * A helper to request follow-up action on a thread based on the id of the user
@@ -474,7 +474,8 @@ async function checkThreadStatus(
             },
           ],
         })
-
+        // Let's add back setting the thread autoArchive to 24hr after the message is sent
+        await thread.setAutoArchiveDuration(AUTO_ARCHIVE_WARNING_LEAD_MINUTES)
         // Use robot brain to store the warning event data
         robot.brain.set(warningKey, warningMessage.id)
         robot.logger.info(
