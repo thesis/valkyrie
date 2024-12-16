@@ -40,6 +40,9 @@ const THREAD_CHECK_CADENCE = 12 * HOUR // 12 * HOUR
 const AUTO_ARCHIVE_WARNING_LEAD_MINUTES: ThreadAutoArchiveDuration =
   ThreadAutoArchiveDuration.OneDay
 
+// Let's grab if it's the weekend, 0 = sunday, 6 = saturday
+const isWeekend = (): boolean => [0, 6].includes(new Date().getDay())
+
 /**
  * A helper to request follow-up action on a thread based on the id of the user
  * who will follow up and the initial requester of follow-up action.
@@ -370,6 +373,11 @@ async function checkThreadStatus(
   robot: Robot,
   discordClient: Client,
 ): Promise<void> {
+  if (isWeekend()) {
+    robot.logger.info("Skipping thread status checks on the weekend.")
+    return
+  }
+
   const threadMetadataByThreadId = getAllThreadMetadata(robot.brain)
 
   Object.entries(threadMetadataByThreadId)
