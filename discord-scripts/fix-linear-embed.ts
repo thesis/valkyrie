@@ -21,6 +21,7 @@ const processedMessages = new Map<
       commentId?: string
       teamName?: string
       projectId?: string
+      projectUpdateId?: string
     }
   >
 >()
@@ -36,7 +37,7 @@ function initializeIssueTagRegex() {
 }
 
 const projectRegex =
-  /https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/project\/([a-zA-Z0-9-]+-[a-zA-Z0-9]+)(?:\/overview)?/g
+  /https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/project\/([a-zA-Z0-9-]+)(?:#projectUpdate-([a-zA-Z0-9]+))?/g
 
 const issueUrlRegex =
   /https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/issue\/([a-zA-Z0-9-]+)(?:.*#comment-([a-zA-Z0-9]+))?/g
@@ -65,6 +66,7 @@ async function createLinearEmbed(
   commentId?: string,
   teamName?: string,
   projectId?: string,
+  projectUpdateId?: string,
 ) {
   try {
     const embed = new EmbedBuilder()
@@ -74,6 +76,10 @@ async function createLinearEmbed(
       const cleanProjectId = projectId.split("-").pop()
       const project = cleanProjectId
         ? await linearClient.project(cleanProjectId)
+        : null
+      const updates = await project?.projectUpdates()
+      const update = projectUpdateId
+        ? updates?.nodes.find((u) => u.id.startsWith(projectUpdateId))
         : null
 
       if (project) {
@@ -89,12 +95,21 @@ async function createLinearEmbed(
               50,
             ),
           )
-          .addFields({
-            name: "Status",
-            value: project.state || "No status",
-            inline: true,
-          })
           .setTimestamp(new Date(project.updatedAt))
+        if (update) {
+          embed
+            .setTitle(
+              `Project Update: ${project.name} - ${new Date(
+                project.updatedAt,
+              ).toLocaleString()}`,
+            )
+            .setURL(
+              `https://linear.app/${teamName}/project/${projectId}#projectUpdate-${projectUpdateId}`,
+            )
+            .setDescription(
+              truncateToWords(update?.body, "No description available.", 50),
+            )
+        }
       }
 
       return embed
@@ -200,6 +215,7 @@ async function processLinearEmbeds(
         commentId?: string
         teamName?: string
         projectId?: string
+        projectUpdateId?: string
       }
     >()
   processedMessages.set(messageId, processedIssues)
@@ -227,15 +243,16 @@ async function processLinearEmbeds(
   projectMatches.forEach((match) => {
     const teamName = match[1]
     const projectId = match[2]
+    const projectUpdateId = match[3]
     const uniqueKey = `project-${projectId}`
 
     if (!processedIssues.has(uniqueKey)) {
-      processedIssues.set(uniqueKey, { projectId, teamName })
+      processedIssues.set(uniqueKey, { projectId, teamName, projectUpdateId })
     }
   })
 
   const embedPromises = Array.from(processedIssues.values()).map(
-    async ({ issueId, commentId, teamName, projectId }) => {
+    async ({ issueId, commentId, teamName, projectId, projectUpdateId }) => {
       logger.debug(
         `Processing issue: ${issueId}, comment: ${commentId ?? "N/A"}, team: ${
           teamName ?? "N/A"
@@ -248,6 +265,7 @@ async function processLinearEmbeds(
         commentId,
         teamName,
         projectId,
+        projectUpdateId,
       )
       return { embed, issueId }
     },
