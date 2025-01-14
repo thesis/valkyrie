@@ -14,7 +14,16 @@ const { LINEAR_API_TOKEN } = process.env
 // track processed message to avoid duplicates if original message is edited
 const processedMessages = new Map<
   string,
-  Map<string, { issueId: string; commentId?: string; teamName?: string }>
+  Map<
+    string,
+    {
+      issueId?: string
+      commentId?: string
+      teamName?: string
+      projectId?: string
+      projectUpdateId?: string
+    }
+  >
 >()
 
 // let us also track sent embeds to delete them if the original message is deleted or edited WIP
@@ -26,6 +35,9 @@ function initializeIssueTagRegex() {
   issueTagRegex =
     /(?<!https:\/\/linear\.app\/[a-zA-Z0-9-]+\/issue\/)[A-Z]{3,}-\d+\b/gi
 }
+
+const projectRegex =
+  /https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/project\/([a-zA-Z0-9-]+)(?:#projectUpdate-([a-zA-Z0-9]+))?/g
 
 const issueUrlRegex =
   /https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/issue\/([a-zA-Z0-9-]+)(?:.*#comment-([a-zA-Z0-9]+))?/g
@@ -50,91 +62,120 @@ function truncateToWords(
 
 async function createLinearEmbed(
   linearClient: LinearClient,
-  issueId: string,
+  issueId?: string,
   commentId?: string,
   teamName?: string,
+  projectId?: string,
+  projectUpdateId?: string,
 ) {
   try {
-    const issue = await linearClient.issue(issueId)
-
-    const project = issue.project ? await issue.project : null
-    const state = issue.state ? await issue.state : null
-    const assignee = issue.assignee ? await issue.assignee : null
-    const comments = await issue.comments()
-    const comment = commentId
-      ? comments.nodes.find((c) => c.id.startsWith(commentId))
-      : null
-
     const embed = new EmbedBuilder()
 
-    if (comment) {
-      // Comment-focused embed
-      embed
-        .setTitle(`Comment on Issue: ${issue.title}`)
-        .setURL(
-          `https://linear.app/${teamName}/issue/${issue.identifier}#comment-${commentId}`,
-        )
-        .setDescription(
-          truncateToWords(comment.body, "No comment body available.", 50),
-        )
-        .addFields(
-          {
-            name: "Issue",
-            value: `${issue.title} (${state?.name || "No status"})`,
-            inline: false,
-          },
-          {
-            name: "Assignee",
-            value: assignee?.name.toString() || "Unassigned",
-            inline: true,
-          },
-          {
-            name: "Priority",
-            value: issue.priority?.toString() || "None",
-            inline: true,
-          },
-        )
-        .setFooter({ text: `Project: ${project?.name || "No project"}` })
-    } else {
-      // Issue-focused embed
-      embed
-        .setTitle(`Issue: ${issue.title}`)
-        .setURL(`https://linear.app/${teamName}/issue/${issue.identifier}`)
-        .setDescription(
-          truncateToWords(issue.description, "No description available.", 50),
-        )
-        .addFields(
-          { name: "Status", value: state?.name || "No status", inline: true },
-          {
-            name: "Assignee",
-            value: assignee?.name.toString() || "Unassigned",
-            inline: true,
-          },
-          {
-            name: "Priority",
-            value: issue.priority?.toString() || "None",
-            inline: true,
-          },
-        )
-        .setFooter({ text: `Project: ${project?.name || "No project"}` })
+    // project embed handling
+    if (projectId) {
+      const cleanProjectId = projectId.split("-").pop()
+      const project = cleanProjectId
+        ? await linearClient.project(cleanProjectId)
+        : null
+      const updates = await project?.projectUpdates()
+      const update = projectUpdateId
+        ? updates?.nodes.find((u) => u.id.startsWith(projectUpdateId))
+        : null
 
-      if (comments.nodes.length > 0) {
-        embed.addFields({
-          name: "Recent Comment",
-          value: truncateToWords(
-            comments.nodes[0].body,
-            "No recent comment.",
-            25,
-          ),
-        })
+      if (project) {
+        embed
+          .setTitle(`Project: ${project.name}`)
+          .setURL(
+            `https://linear.app/${teamName}/project/${projectId}/overview`,
+          )
+          .setDescription(
+            truncateToWords(
+              project.description,
+              "No description available.",
+              50,
+            ),
+          )
+          .setTimestamp(new Date(project.updatedAt))
+        if (update) {
+          embed
+            .setTitle(
+              `Project Update: ${project.name} - ${new Date(
+                project.updatedAt,
+              ).toLocaleString()}`,
+            )
+            .setURL(
+              `https://linear.app/${teamName}/project/${projectId}#projectUpdate-${projectUpdateId}`,
+            )
+            .setDescription(
+              truncateToWords(update?.body, "No description available.", 50),
+            )
+        }
       }
+
+      return embed
     }
 
-    if (issue.updatedAt) {
-      embed.setTimestamp(new Date(issue.updatedAt))
+    // issue + comment embed handling
+    if (issueId) {
+      const issue = await linearClient.issue(issueId)
+      const state = issue.state ? await issue.state : null
+      const assignee = issue.assignee ? await issue.assignee : null
+      const comments = await issue.comments()
+      const comment = commentId
+        ? comments.nodes.find((c) => c.id.startsWith(commentId))
+        : null
+
+      if (comment) {
+        embed
+          .setTitle(`Comment on Issue: ${issue.title}`)
+          .setURL(
+            `https://linear.app/${teamName}/issue/${issue.identifier}#comment-${commentId}`,
+          )
+          .setDescription(
+            truncateToWords(comment.body, "No comment body available.", 50),
+          )
+          .addFields(
+            {
+              name: "Issue",
+              value: `${issue.title} (${state?.name || "No status"})`,
+            },
+            {
+              name: "Assignee",
+              value: assignee?.name || "Unassigned",
+              inline: true,
+            },
+            {
+              name: "Priority",
+              value: issue.priority?.toString() || "None",
+              inline: true,
+            },
+          )
+      } else {
+        embed
+          .setTitle(`Issue: ${issue.title}`)
+          .setURL(`https://linear.app/${teamName}/issue/${issue.identifier}`)
+          .setDescription(
+            truncateToWords(issue.description, "No description available.", 50),
+          )
+          .addFields(
+            { name: "Status", value: state?.name || "No status", inline: true },
+            {
+              name: "Assignee",
+              value: assignee?.name || "Unassigned",
+              inline: true,
+            },
+            {
+              name: "Priority",
+              value: issue.priority?.toString() || "None",
+              inline: true,
+            },
+          )
+      }
+
+      return embed
     }
 
-    return embed
+    return null
   } catch (error) {
     console.error("Error creating Linear embed:", error)
     return null
@@ -155,8 +196,13 @@ async function processLinearEmbeds(
 
   const urlMatches = Array.from(message.matchAll(issueUrlRegex))
   const issueMatches = Array.from(message.matchAll(issueTagRegex))
+  const projectMatches = Array.from(message.matchAll(projectRegex))
 
-  if (urlMatches.length === 0 && issueMatches.length === 0) {
+  if (
+    urlMatches.length === 0 &&
+    issueMatches.length === 0 &&
+    projectMatches.length === 0
+  ) {
     return
   }
 
@@ -164,7 +210,13 @@ async function processLinearEmbeds(
     processedMessages.get(messageId) ??
     new Map<
       string,
-      { issueId: string; commentId?: string; teamName?: string }
+      {
+        issueId?: string
+        commentId?: string
+        teamName?: string
+        projectId?: string
+        projectUpdateId?: string
+      }
     >()
   processedMessages.set(messageId, processedIssues)
 
@@ -188,8 +240,19 @@ async function processLinearEmbeds(
     }
   })
 
+  projectMatches.forEach((match) => {
+    const teamName = match[1]
+    const projectId = match[2]
+    const projectUpdateId = match[3]
+    const uniqueKey = `project-${projectId}`
+
+    if (!processedIssues.has(uniqueKey)) {
+      processedIssues.set(uniqueKey, { projectId, teamName, projectUpdateId })
+    }
+  })
+
   const embedPromises = Array.from(processedIssues.values()).map(
-    async ({ issueId, commentId, teamName }) => {
+    async ({ issueId, commentId, teamName, projectId, projectUpdateId }) => {
       logger.debug(
         `Processing issue: ${issueId}, comment: ${commentId ?? "N/A"}, team: ${
           teamName ?? "N/A"
@@ -201,6 +264,8 @@ async function processLinearEmbeds(
         issueId,
         commentId,
         teamName,
+        projectId,
+        projectUpdateId,
       )
       return { embed, issueId }
     },
@@ -278,8 +343,15 @@ export default async function linearEmbeds(
     const issueMatches = issueTagRegex
       ? Array.from(newMessage.content.matchAll(issueTagRegex))
       : []
+    const projectMatches = projectRegex
+      ? Array.from(newMessage.content.matchAll(projectRegex))
+      : []
 
-    if (urlMatches.length === 0 && issueMatches.length === 0) {
+    if (
+      urlMatches.length === 0 &&
+      issueMatches.length === 0 &&
+      projectMatches.length === 0
+    ) {
       if (embedMessage) {
         await embedMessage.delete().catch((error) => {
           robot.logger.error(
@@ -291,7 +363,7 @@ export default async function linearEmbeds(
       return
     }
 
-    const match = urlMatches[0] || issueMatches[0]
+    const match = urlMatches[0] || issueMatches[0] || projectMatches[0]
     const teamName = match[1] || undefined
     const issueId = match[2] || match[0]
     const commentId = urlMatches.length > 0 ? match[3] || undefined : undefined
