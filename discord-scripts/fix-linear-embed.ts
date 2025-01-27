@@ -149,11 +149,6 @@ async function createLinearEmbed(
               value: issue.priority?.toString() || "None",
               inline: true,
             },
-            {
-              name: "ID",
-              value: issue.identifier?.toString() || "None",
-              inline: true,
-            },
           )
       } else {
         embed
@@ -172,11 +167,6 @@ async function createLinearEmbed(
             {
               name: "Priority",
               value: issue.priority?.toString() || "None",
-              inline: true,
-            },
-            {
-              name: "ID",
-              value: issue.identifier?.toString() || "None",
               inline: true,
             },
           )
