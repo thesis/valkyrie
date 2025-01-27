@@ -127,7 +127,7 @@ async function createLinearEmbed(
 
       if (comment) {
         embed
-          .setTitle(`Comment on Issue: ${issue.title}`)
+          .setTitle(`Comment on Issue: [${issue.identifier}]${issue.title}`)
           .setURL(
             `https://linear.app/${teamName}/issue/${issue.identifier}#comment-${commentId}`,
           )
@@ -149,10 +149,15 @@ async function createLinearEmbed(
               value: issue.priority?.toString() || "None",
               inline: true,
             },
+            {
+              name: "ID",
+              value: issue.identifier?.toString() || "None",
+              inline: true,
+            },
           )
       } else {
         embed
-          .setTitle(`Issue: ${issue.title}`)
+          .setTitle(`Issue: [${issue.identifier}] ${issue.title}`)
           .setURL(`https://linear.app/${teamName}/issue/${issue.identifier}`)
           .setDescription(
             truncateToWords(issue.description, "No description available.", 50),
@@ -167,6 +172,11 @@ async function createLinearEmbed(
             {
               name: "Priority",
               value: issue.priority?.toString() || "None",
+              inline: true,
+            },
+            {
+              name: "ID",
+              value: issue.identifier?.toString() || "None",
               inline: true,
             },
           )
