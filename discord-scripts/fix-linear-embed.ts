@@ -127,7 +127,7 @@ async function createLinearEmbed(
 
       if (comment) {
         embed
-          .setTitle(`Comment on [${issue.identifier}]${issue.title}`)
+          .setTitle(`Comment on [${issue.identifier}] ${issue.title}`)
           .setURL(
             `https://linear.app/${teamName}/issue/${issue.identifier}#comment-${commentId}`,
           )
