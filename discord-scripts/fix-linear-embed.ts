@@ -127,7 +127,7 @@ async function createLinearEmbed(
 
       if (comment) {
         embed
-          .setTitle(`Comment on Issue: ${issue.title}`)
+          .setTitle(`Comment on [${issue.identifier}] ${issue.title}`)
           .setURL(
             `https://linear.app/${teamName}/issue/${issue.identifier}#comment-${commentId}`,
           )
@@ -152,7 +152,7 @@ async function createLinearEmbed(
           )
       } else {
         embed
-          .setTitle(`Issue: ${issue.title}`)
+          .setTitle(`[${issue.identifier}] ${issue.title}`)
           .setURL(`https://linear.app/${teamName}/issue/${issue.identifier}`)
           .setDescription(
             truncateToWords(issue.description, "No description available.", 50),
