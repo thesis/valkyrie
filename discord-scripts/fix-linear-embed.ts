@@ -64,9 +64,9 @@ async function createLinearEmbed(
   linearClient: LinearClient,
   issueId?: string,
   commentId?: string,
-  teamName?: string,
   projectId?: string,
   projectUpdateId?: string,
+  compact: boolean = false,
 ) {
   try {
     const embed = new EmbedBuilder()
@@ -85,9 +85,7 @@ async function createLinearEmbed(
       if (project) {
         embed
           .setTitle(`Project: ${project.name}`)
-          .setURL(
-            `https://linear.app/${teamName}/project/${projectId}/overview`,
-          )
+          .setURL(project.url)
           .setDescription(
             truncateToWords(
               project.description,
@@ -103,9 +101,7 @@ async function createLinearEmbed(
                 project.updatedAt,
               ).toLocaleString()}`,
             )
-            .setURL(
-              `https://linear.app/${teamName}/project/${projectId}#projectUpdate-${projectUpdateId}`,
-            )
+            .setURL(`${project.url}#projectUpdate-${projectUpdateId}`)
             .setDescription(
               truncateToWords(update?.body, "No description available.", 50),
             )
@@ -125,12 +121,22 @@ async function createLinearEmbed(
         ? comments.nodes.find((c) => c.id.startsWith(commentId))
         : null
 
+      if (compact) {
+        embed.setTitle(`[${issue.identifier}] ${issue.title}`).setURL(issue.url)
+        return embed
+      }
+
+      if (comment && compact) {
+        embed
+          .setTitle(`Comment on [${issue.identifier}] ${issue.title}`)
+          .setURL(`${issue.url}#comment-${commentId}`)
+        return embed
+      }
+
       if (comment) {
         embed
           .setTitle(`Comment on [${issue.identifier}] ${issue.title}`)
-          .setURL(
-            `https://linear.app/${teamName}/issue/${issue.identifier}#comment-${commentId}`,
-          )
+          .setURL(`${issue.url}#comment-${commentId}`)
           .setDescription(
             truncateToWords(comment.body, "No comment body available.", 50),
           )
@@ -153,7 +159,7 @@ async function createLinearEmbed(
       } else {
         embed
           .setTitle(`[${issue.identifier}] ${issue.title}`)
-          .setURL(`https://linear.app/${teamName}/issue/${issue.identifier}`)
+          .setURL(issue.url)
           .setDescription(
             truncateToWords(issue.description, "No description available.", 50),
           )
@@ -258,14 +264,15 @@ async function processLinearEmbeds(
           teamName ?? "N/A"
         }`,
       )
+      const compactMode = processedIssues.size > 2
 
       const embed = await createLinearEmbed(
         linearClient,
         issueId,
         commentId,
-        teamName,
         projectId,
         projectUpdateId,
+        compactMode,
       )
       return { embed, issueId }
     },
