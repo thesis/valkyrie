@@ -11,7 +11,7 @@ import { LinearClient } from "@linear/sdk"
 
 const { LINEAR_API_TOKEN } = process.env
 
-// track processed message to avoid duplicates if original message is edited
+// track processed message to avoid duplicates if original message is edit
 const processedMessages = new Map<
   string,
   Map<
