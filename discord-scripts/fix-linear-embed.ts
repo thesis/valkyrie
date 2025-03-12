@@ -12,9 +12,8 @@ import { LinearClient } from "@linear/sdk"
 const { LINEAR_API_TOKEN } = process.env
 
 // Add channelIDs which should ignore the embed processing entirely
-const IGNORED_CHANNELS = new Set([
-  "1187783048427741296", //#mezo-standup
-])
+// #mezo-standup
+const IGNORED_CHANNELS = new Set(["1187783048427741296"])
 
 // track processed message to avoid duplicates if original message is edited
 const processedMessages = new Map<
@@ -38,14 +37,14 @@ let issueTagRegex: RegExp | null = null
 
 function initializeIssueTagRegex() {
   issueTagRegex =
-    /(?<!https:\/\/linear\.app\/[a-zA-Z0-9-]+\/issue\/)(?<![\[\<])[A-Z]{3,}-\d+(?![\]\>])\b/gi
+    /(?<!https:\/\/linear\.app\/[a-zA-Z0-9-]+\/issue\/)(?<![<[])[A-Z]{3,}-\d+(?![>\]])\b/gi
 }
 
 const projectRegex =
   /https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/project\/([a-zA-Z0-9-]+)(?:#projectUpdate-([a-zA-Z0-9]+))?/g
 
 const issueUrlRegex =
-  /(?<![\[\<])https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/issue\/([a-zA-Z0-9-]+)(?:.*#comment-([a-zA-Z0-9]+))?(?![\]\>])/g
+  /(?<![<[]])https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/issue\/([a-zA-Z0-9-]+)(?:.*#comment-([a-zA-Z0-9]+))?(?![>\]])/g
 
 function truncateToWords(
   content: string | undefined,
@@ -378,13 +377,13 @@ export default async function linearEmbeds(
     const newIssues = new Set<string>()
 
     if (oldMessage.content) {
-      [
+      ;[
         ...oldMessage.content.matchAll(issueUrlRegex),
         ...oldMessage.content.matchAll(issueTagRegex ?? /$^/),
       ].forEach((match) => oldIssues.add(match[2] ?? match[0]))
     }
 
-    [
+    ;[
       ...newMessage.content.matchAll(issueUrlRegex),
       ...newMessage.content.matchAll(issueTagRegex ?? /$^/),
     ].forEach((match) => newIssues.add(match[2] ?? match[0]))
