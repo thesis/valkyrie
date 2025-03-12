@@ -13,7 +13,7 @@ const { LINEAR_API_TOKEN } = process.env
 
 // Add channelIDs which should ignore the embed processing entirely
 // #mezo-standup
-const IGNORED_CHANNELS = new Set(["1187783048427741296"])
+// const IGNORED_CHANNELS = new Set(["1187783048427741296"])
 
 // track processed message to avoid duplicates if original message is edited
 const processedMessages = new Map<
@@ -199,10 +199,10 @@ async function processLinearEmbeds(
   logger: Log,
   linearClient: LinearClient,
 ) {
-  if (IGNORED_CHANNELS.has(channel.id)) {
-    logger.debug(`Ignoring embeds in channel: ${channel.id}`)
-    return
-  }
+  // if (IGNORED_CHANNELS.has(channel.id)) {
+  //   logger.debug(`Ignoring embeds in channel: ${channel.id}`)
+  //   return
+  // }
   // Let's include a text call if no embeds are to be used in a message
   if (message.includes("<no_embeds>")) {
     logger.debug(
