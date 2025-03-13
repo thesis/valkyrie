@@ -204,7 +204,7 @@ async function processLinearEmbeds(
     return
   }
   // Let's include a text call if no embeds are to be used in a message
-  if (message.includes("<no_embeds>")) {
+  if (message.includes("<no-embeds>")) {
     logger.debug(
       `Skipping embeds for message: ${messageId} (contains <no_embeds>)`,
     )
