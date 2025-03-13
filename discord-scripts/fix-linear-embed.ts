@@ -11,6 +11,10 @@ import { LinearClient } from "@linear/sdk"
 
 const { LINEAR_API_TOKEN } = process.env
 
+// Add channelIDs which should ignore the embed processing entirely
+// #mezo-standup
+const IGNORED_CHANNELS = new Set(["1187783048427741296"])
+
 // track processed message to avoid duplicates if original message is edited
 const processedMessages = new Map<
   string,
@@ -27,20 +31,20 @@ const processedMessages = new Map<
 >()
 
 // let us also track sent embeds to delete them if the original message is deleted or edited WIP
-const sentEmbeds = new Map<string, Message>()
+const sentEmbeds = new Map<string, Map<string, Message>>()
 
 let issueTagRegex: RegExp | null = null
 
 function initializeIssueTagRegex() {
   issueTagRegex =
-    /(?<!https:\/\/linear\.app\/[a-zA-Z0-9-]+\/issue\/)[A-Z]{3,}-\d+\b/gi
+    /(?<!https:\/\/linear\.app\/[a-zA-Z0-9-]+\/issue\/)(?<![<[])[A-Z]{3,}-\d+(?![>\]])\b/gi
 }
 
 const projectRegex =
   /https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/project\/([a-zA-Z0-9-]+)(?:#projectUpdate-([a-zA-Z0-9]+))?/g
 
 const issueUrlRegex =
-  /https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/issue\/([a-zA-Z0-9-]+)(?:.*#comment-([a-zA-Z0-9]+))?/g
+  /(?<![<[]])https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/issue\/([a-zA-Z0-9-]+)(?:.*#comment-([a-zA-Z0-9]+))?(?![>\]])/g
 
 function truncateToWords(
   content: string | undefined,
@@ -195,6 +199,18 @@ async function processLinearEmbeds(
   logger: Log,
   linearClient: LinearClient,
 ) {
+  if (IGNORED_CHANNELS.has(channel.id)) {
+    logger.debug(`Ignoring embeds in channel: ${channel.id}`)
+    return
+  }
+  // Let's include a text call if no embeds are to be used in a message
+  if (message.includes("<no_embeds>")) {
+    logger.debug(
+      `Skipping embeds for message: ${messageId} (contains <no_embeds>)`,
+    )
+    return
+  }
+
   if (!issueTagRegex) {
     logger.error("IssueTagRegex is not initialized.")
     return
@@ -286,19 +302,31 @@ async function processLinearEmbeds(
         result.embed !== null,
     )
     .forEach(({ embed, issueId }) => {
-      if (embed) {
+      if (!sentEmbeds.has(messageId)) {
+        sentEmbeds.set(messageId, new Map())
+      }
+      const messageEmbeds = sentEmbeds.get(messageId)!
+
+      if (messageEmbeds.has(issueId)) {
+        messageEmbeds
+          .get(issueId)!
+          .edit({ embeds: [embed] })
+          .catch((error) =>
+            logger.error(
+              `Failed to edit embed for issue ID: ${issueId}: ${error}`,
+            ),
+          )
+      } else {
         channel
           .send({ embeds: [embed] })
           .then((sentMessage) => {
-            sentEmbeds.set(messageId, sentMessage)
+            messageEmbeds.set(issueId, sentMessage)
           })
           .catch((error) =>
             logger.error(
               `Failed to send embed for issue ID: ${issueId}: ${error}`,
             ),
           )
-      } else {
-        logger.error(`Failed to create embed for issue ID: ${issueId}`)
       }
     })
 }
@@ -337,71 +365,45 @@ export default async function linearEmbeds(
       !newMessage.content ||
       !(
         newMessage.channel instanceof TextChannel ||
-        newMessage.channel instanceof ThreadChannel ||
-        newMessage.channel instanceof VoiceChannel
+        newMessage.channel instanceof ThreadChannel
       ) ||
       newMessage.author?.bot
     ) {
       return
     }
 
-    const embedMessage = sentEmbeds.get(newMessage.id)
-    const urlMatches = Array.from(newMessage.content.matchAll(issueUrlRegex))
-    const issueMatches = issueTagRegex
-      ? Array.from(newMessage.content.matchAll(issueTagRegex))
-      : []
-    const projectMatches = projectRegex
-      ? Array.from(newMessage.content.matchAll(projectRegex))
-      : []
+    const messageEmbeds = sentEmbeds.get(newMessage.id) ?? new Map()
+    const oldIssues = new Set<string>()
+    const newIssues = new Set<string>()
 
-    if (
-      urlMatches.length === 0 &&
-      issueMatches.length === 0 &&
-      projectMatches.length === 0
-    ) {
-      if (embedMessage) {
-        await embedMessage.delete().catch((error) => {
-          robot.logger.error(
-            `Failed to delete embed for message ID: ${newMessage.id}: ${error}`,
-          )
-        })
-        sentEmbeds.delete(newMessage.id)
-      }
-      return
+    if (oldMessage.content) {
+      ;[
+        ...oldMessage.content.matchAll(issueUrlRegex),
+        ...oldMessage.content.matchAll(issueTagRegex ?? /$^/),
+      ].forEach((match) => oldIssues.add(match[2] ?? match[0]))
     }
 
-    const match = urlMatches[0] || issueMatches[0] || projectMatches[0]
-    const teamName = match[1] || undefined
-    const issueId = match[2] || match[0]
-    const commentId = urlMatches.length > 0 ? match[3] || undefined : undefined
+    ;[
+      ...newMessage.content.matchAll(issueUrlRegex),
+      ...newMessage.content.matchAll(issueTagRegex ?? /$^/),
+    ].forEach((match) => newIssues.add(match[2] ?? match[0]))
 
-    if (embedMessage) {
-      // we will then update the existing embed
-      try {
-        const embed = await createLinearEmbed(
-          linearClient,
-          issueId,
-          commentId,
-          teamName,
-        )
-        if (embed) {
-          await embedMessage.edit({ embeds: [embed] })
-          robot.logger.debug(`Updated embed for message ID: ${newMessage.id}`)
-        } else {
-          robot.logger.error(
-            `Failed to create embed for updated message ID: ${newMessage.id}`,
-          )
-        }
-      } catch (error) {
-        robot.logger.error(
-          `Failed to edit embed for message ID: ${newMessage.id}: ${error}`,
-        )
+    oldIssues.forEach((issueId) => {
+      if (!newIssues.has(issueId) && messageEmbeds.has(issueId)) {
+        messageEmbeds.get(issueId)?.delete().catch(console.error)
+        messageEmbeds.delete(issueId)
       }
-    } else {
+    })
+
+    const addedIssues = [...newIssues].filter(
+      (issueId) => !oldIssues.has(issueId) && !messageEmbeds.has(issueId),
+    )
+
+    if (addedIssues.length > 0) {
       await processLinearEmbeds(
         newMessage.content,
         newMessage.id,
-        newMessage.channel as TextChannel | ThreadChannel,
+        newMessage.channel,
         robot.logger,
         linearClient,
       )
@@ -409,13 +411,19 @@ export default async function linearEmbeds(
   })
 
   discordClient.on("messageDelete", async (message) => {
-    const embedMessage = sentEmbeds.get(message.id)
-    if (embedMessage) {
-      await embedMessage.delete().catch((error) => {
-        robot.logger.error(
-          `Failed to delete embed for message ID: ${message.id}: ${error}`,
-        )
-      })
+    const embedMessages = sentEmbeds.get(message.id)
+    if (embedMessages) {
+      await Promise.all(
+        Array.from(embedMessages.values()).map((embedMessage) =>
+          embedMessage.delete().catch((error: unknown) => {
+            if (error instanceof Error) {
+              robot.logger.error(`Failed to delete embed: ${error.message}`)
+            } else {
+              robot.logger.error(`Unknown error: ${error}`)
+            }
+          }),
+        ),
+      )
       sentEmbeds.delete(message.id)
     }
   })
