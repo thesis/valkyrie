@@ -33,7 +33,7 @@ export default async function timeConverter(discordClient: Client) {
     const [, day, hours, minutes] = match
     const now = new Date()
 
-    let targetDate = new Date()
+    const targetDate = new Date()
     targetDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0)
 
     if (day.toLowerCase() === "tomorrow") {
@@ -51,7 +51,7 @@ export default async function timeConverter(discordClient: Client) {
       const targetDayIndex = daysOfWeek.indexOf(day.toLowerCase())
       if (targetDayIndex === -1) return
 
-      let currentDayIndex = now.getDay()
+      const currentDayIndex = now.getDay()
       let daysAhead = targetDayIndex - currentDayIndex
       if (daysAhead <= 0) {
         daysAhead += 7
