@@ -1,6 +1,5 @@
 import { Client, TextChannel, Message } from "discord.js"
 import { Robot } from "hubot"
-import { GoogleGenerativeAI } from "@google/generative-ai"
 
 const GOOGLE_API_KEY = process.env.GOOGLE_CLOUD_AI_KEY
 if (!GOOGLE_API_KEY) {
