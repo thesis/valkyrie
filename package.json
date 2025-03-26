@@ -6,6 +6,7 @@
   "author": "Antonio Salazar Cardozo <antonio@thesis.co>",
   "description": "Heimdall can see and hear your every need, and keeps watch for the onset of Ragnarok",
   "dependencies": {
+    "@google/genai": "^0.6.1",
     "@google/generative-ai": "^0.22.0",
     "@linear/sdk": "^32.0.0",
     "@types/cookie": "^0.3.1",
@@ -32,16 +33,16 @@
     "express": "^4.18.2",
     "figma-api": "^1.11.0",
     "github-api": "^3.4.0",
-    "hubot": "git+https://github.com/thesis/hubot.git#v4.0.0-alpha.1",
+    "hubot": "git+https://github.com/thesis/hubot.git",
     "hubot-diagnostics": "^1.0.0",
-    "hubot-discord": "git+https://github.com/thesis/hubot-discord.git#v3.0.0-alpha.10",
-    "hubot-even-better-help": "git+https://github.com/thesis/hubot-even-better-help.git#3192eedf2a0f11dd0b5fa736e0b9033741a59050",
+    "hubot-discord": "git+https://github.com/thesis/hubot-discord.git",
+    "hubot-even-better-help": "git+https://github.com/thesis/hubot-even-better-help.git",
     "hubot-gif-locker": "^1.0.7",
-    "hubot-matrix": "git+https://github.com/thesis/hubot-matrix.git#v3.0.0-beta.5",
+    "hubot-matrix": "git+https://github.com/thesis/hubot-matrix.git",
     "hubot-redis-brain": "^1.0.0",
     "hubot-rules": "^0.1.2",
     "hubot-scripts": "^2.17.2",
-    "hubot-shipit": "git+https://github.com/thesis/hubot-shipit.git#d9169c374d0a95cafaaa8f69dca501ea29d4f933",
+    "hubot-shipit": "git+https://github.com/thesis/hubot-shipit.git",
     "js-base64": "^3.7.2",
     "jsonwebtoken": "~9.0.0",
     "lodash": "^4.17.21",
@@ -52,7 +53,6 @@
     "passport": "0.6.0",
     "passport-github2": "0.1.12",
     "typescript": "^5.1.6",
-    "undici": "^7.3.0",
     "uuid": "^3.2.1"
   },
   "engines": {
@@ -79,5 +79,6 @@
     "lint:js": "eslint .",
     "lint:js:fix": "eslint . --fix",
     "lint": "run-p lint:js lint:types"
-  }
+  },
+  "packageManager": "pnpm@9.15.4+sha512.b2dc20e2fc72b3e18848459b37359a32064663e5627a51e4c74b2c29dd8e8e0491483c3abb40789cfd578bf362fb6ba8261b05f0387d76792ed6e23ea3b1b6a0"
 }
