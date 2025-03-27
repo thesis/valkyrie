@@ -13,7 +13,8 @@ import { Robot } from "hubot"
 const GOOGLE_API_KEY = process.env.GOOGLE_CLOUD_AI_KEY
 
 // WIP and have disabled using GoogleGenAI call since this was
-// kicking connection errors, use api endpoint for testing.
+// causing core deps issues on top of 
+// kicking connection errors, used api endpoint for testing.
 // const ai = new GoogleGenAI({ apiKey: GOOGLE_API_KEY! })
 
 async function withRetries<T>(
@@ -116,7 +117,7 @@ export default async function threadSummarizer(
     robot.logger.info("No summary command yet, creating it!")
     await application.commands.create({
       name: "summary",
-      description: "Give a summary in AI of the thread or channel",
+      description: "Generate an AI powered summary of a thread",
     })
 
     robot.logger.info("Created AI command.")
