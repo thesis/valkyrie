@@ -13,7 +13,7 @@ import { Robot } from "hubot"
 const GOOGLE_API_KEY = process.env.GOOGLE_CLOUD_AI_KEY
 
 // WIP and have disabled using GoogleGenAI call since this was
-// causing core deps issues on top of 
+// causing core deps issues on top of
 // kicking connection errors, used api endpoint for testing.
 // const ai = new GoogleGenAI({ apiKey: GOOGLE_API_KEY! })
 
