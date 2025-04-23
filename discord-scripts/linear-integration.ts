@@ -153,14 +153,13 @@ export default async function linearIntegration(
 
       if (subcommand === CONNECT_SUBCOMMAND_NAME) {
         const { channel } = interaction
-        if (!channel || !channel.isTextBased()) {
+        if (!(channel instanceof TextChannel)) {
           await interaction.reply({
-            content: "Invalid channel.",
+            content: "This command must be used in a text channel.",
             ephemeral: true,
           })
           return
         }
-
         await interaction.reply({
           content: "Linked this channel",
           ephemeral: true,
@@ -170,11 +169,19 @@ export default async function linearIntegration(
         const customWebhookUrl = await createCustomWebhookUrl(channel)
 
         if (customWebhookUrl) {
+          const team = await linearClient.team(teamId)
+          const sanitizedChannelName = channel.name
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+          const sanitizedTeamName = team.name.toLowerCase().replace(/\s+/g, "-")
+          const label = `discord-${sanitizedChannelName}-${sanitizedTeamName}`
+
           const createdWebhook = await linearClient.createWebhook({
             url: customWebhookUrl,
             teamId,
             resourceTypes: ["ProjectUpdate"],
             enabled: true,
+            label,
           })
 
           existingConnections[teamId] = {
@@ -186,7 +193,7 @@ export default async function linearIntegration(
           })
 
           await interaction.editReply({
-            content: `Connected Linear team **${teamId}** to this channel with a custom webhook URL.`,
+            content: `Connected Linear team **${team.name}** to this channel and added webhook to Linear`,
           })
         } else {
           await interaction.editReply({
@@ -194,40 +201,53 @@ export default async function linearIntegration(
           })
         }
       } else if (subcommand === DISCONNECT_SUBCOMMAND_NAME) {
-        const connection = existingConnections[teamId]
+        const { channel } = interaction
+        if (!(channel instanceof TextChannel)) {
+          await interaction.reply({
+            content: "This command must be used in a text channel.",
+            ephemeral: true,
+          })
+          return
+        }
 
-        if (connection?.linearWebhookId) {
-          try {
-            let webhookId = connection.linearWebhookId
+        const team = await linearClient.team(teamId)
+        const sanitizedChannelName = channel.name
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+        const sanitizedTeamName = team.name.toLowerCase().replace(/\s+/g, "-")
+        const label = `discord-${sanitizedChannelName}-${sanitizedTeamName}`
 
-            if (webhookId && typeof webhookId === "object" && webhookId.then) {
-              webhookId = await webhookId
-            }
+        try {
+          const webhooks = await linearClient.webhooks()
+          const matchingWebhook = await Promise.all(
+            webhooks.nodes.map(async (wh) => {
+              if (wh.label !== label || !wh.team) return null
+              const team = await wh.team
+              return team.id === teamId ? wh : null
+            }),
+          )
 
-            if (typeof webhookId === "string") {
-              await linearClient.deleteWebhook(webhookId)
-              robot.logger.info(
-                `Deleted Linear webhook ${webhookId} for team ${teamId}`,
-              )
-            } else {
-              robot.logger.error(
-                `Invalid webhook ID for team ${teamId}:`,
-                webhookId,
-              )
-            }
-          } catch (err) {
-            robot.logger.error(
-              `Failed to delete Linear webhook for team ${teamId}:`,
-              err,
+          const foundWebhook = matchingWebhook.find(
+            (wh): wh is (typeof webhooks.nodes)[number] => !!wh,
+          )
+
+          if (foundWebhook) {
+            await linearClient.deleteWebhook(foundWebhook.id)
+            robot.logger.info(
+              `Deleted webhook with label ${label} (id: ${foundWebhook.id})`,
             )
+          } else {
+            robot.logger.error(`No webhook found with label: ${label}`)
           }
+        } catch (err) {
+          robot.logger.error(`Error deleting webhook with label ${label}:`, err)
         }
 
         delete existingConnections[teamId]
         robot.brain.set(LINEAR_BRAIN_KEY, { connections: existingConnections })
 
         await interaction.reply({
-          content: `Disconnected Linear team **${teamId}** and removed webhook.`,
+          content: `Disconnected Linear team **${team.name}** and removed webhook from Linear.`,
           ephemeral: true,
         })
       }
