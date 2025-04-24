@@ -68,6 +68,13 @@ export default async function linearIntegration(
   discordClient: Client,
   robot: Robot,
 ) {
+  if (!LINEAR_API_TOKEN) {
+    robot.logger.error(
+      "Linear API token is not set. Aborting Linear integration.",
+    )
+    return
+  }
+
   robot.logger.info("Configuring Linear integration...")
 
   const { application } = discordClient
