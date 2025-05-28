@@ -13,7 +13,7 @@ import {
 import { Robot } from "hubot"
 // Set to #alarm-trigger channel
 const CHANNEL_ID = "1377183184902688862"
-const INCIDENT_ROUTING_KEY = process.env.INCIDENT_ROUTING_KEY
+const { INCIDENT_ROUTING_KEY } = process.env
 
 export default async function incidentReport(
   discordClient: Client,
