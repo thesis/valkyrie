@@ -96,19 +96,16 @@ export default async function incidentReport(
 
           await interaction.reply({
             content: "🚨 Alert has been triggered.",
-            ephemeral: true,
           })
         } catch (error) {
           robot.logger.error("❌ Failed to trigger alert:", error)
           await interaction.reply({
             content: "⚠️ Failed to trigger alert.",
-            ephemeral: true,
           })
         }
       } else if (interaction.customId === "incident_no") {
         await interaction.reply({
           content: "No problem. Not marked as an incident.",
-          ephemeral: true,
         })
       }
 
