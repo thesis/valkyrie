@@ -33,10 +33,18 @@ export default async function incidentReport(
 
     if (message.channel.id !== CHANNEL_ID) return
 
+    if (/code red/i.test(message.content)) {
+      await message.reply({
+        content:
+          "🚨 Code Red detected! (https://youtu.be/WlPTmXi0pVk?feature=shared&t=61)",
+        allowedMentions: { repliedUser: false },
+      })
+    }
+
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId("incident_yes")
-        .setLabel("🚨 Trigger Alert")
+        .setLabel("🚨 Wake Someone Up!")
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
         .setCustomId("incident_no")
@@ -46,10 +54,11 @@ export default async function incidentReport(
 
     try {
       await message.reply({
-        content: `**Before triggering an alert, ask yourself:**
-                    - Is this incident truly a Critical or High severity issue?
-                    - Could this wait until regular business hours without major impact?
-                    - Can I resolve this with existing documentation or procedures?`,
+        content: `**Before triggering an alert, ask yourself:**  
+- Is this incident truly a Critical or High severity issue?  
+- Could this wait until regular business hours without major impact?  
+- Can I resolve this with existing documentation or procedures?`,
+
         components: [row],
         allowedMentions: { repliedUser: false },
       })
