@@ -87,6 +87,11 @@ spec:
                 secretKeyRef:
                   name: valkyrie-hubot
                   key: imgflip_api_username
+            - name: INCIDENT_ROUTING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: incident_routing_key
             - name: IMGFLIP_API_PASSWORD
               valueFrom:
                 secretKeyRef:
