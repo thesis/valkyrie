@@ -19,6 +19,12 @@ export default async function incidentReport(
   discordClient: Client,
   robot: Robot,
 ) {
+  if (!INCIDENT_ROUTING_KEY) {
+    robot.logger.error(
+      "INCIDENT_ROUTING_KEY is not set. Skipping incident report setup.",
+    )
+    return
+  }
   discordClient.on("messageCreate", async (message: Message) => {
     if (
       message.author.bot ||
