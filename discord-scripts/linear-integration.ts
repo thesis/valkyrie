@@ -127,7 +127,6 @@ export default async function linearIntegration(
 
     const teams = await fetchLinearTeams()
 
-    await application.commands.set([])
     await application.commands.create({
       name: COMMAND_NAME,
       description: "Manage Linear project notifications in this channel.",
@@ -369,14 +368,6 @@ export default async function linearIntegration(
             `No stored connection for team ${channelId} in channel ${matchingChannel.id}`,
           )
           response.writeHead(404).end("Connection not found.")
-          return
-        }
-
-        if (!connection) {
-          robot.logger.error(
-            `No stored connection found for channel: ${channelId}`,
-          )
-          response.writeHead(404).end("Channel not found.")
           return
         }
 
