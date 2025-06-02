@@ -17,7 +17,8 @@ const { LINEAR_API_TOKEN, VALKYRIE_WEBHOOK_URL } = process.env
 const LINEAR_BRAIN_KEY = "linear"
 
 const linearClient = new LinearClient({ apiKey: LINEAR_API_TOKEN })
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/* eslint-disable @typescript-eslint/no-explicit-any  */
 const eventHandlers: Record<
   string,
   (data: any, channel: TextBasedChannel, robot: Robot) => Promise<void>
@@ -33,28 +34,9 @@ const eventHandlers: Record<
     await channel.send({ embeds: [embed] })
   },
 }
+
 function sanitizeName(name: string): string {
   return name.toLowerCase().replace(/\s+/g, "-")
-}
-async function findTextChannelByName(
-  client: Client,
-  name: string,
-): Promise<TextBasedChannel | null> {
-  const normalized = name.toLowerCase().replace(/\s+/g, "-")
-
-  for (const guild of client.guilds.cache.values()) {
-    const channels = await guild.channels.fetch()
-    for (const [, channel] of channels) {
-      if (
-        channel?.isTextBased?.() &&
-        channel.name.toLowerCase().replace(/\s+/g, "-") === normalized
-      ) {
-        return channel as TextBasedChannel
-      }
-    }
-  }
-
-  return null
 }
 
 /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -69,8 +51,8 @@ async function createCustomWebhookUrl(
     }
 
     const randomId = Math.floor(100000 + Math.random() * 900000)
-    const channelName = sanitizeName(channel.name)
-    const customWebhookUrl = `${VALKYRIE_WEBHOOK_URL}linear/webhook/${channelName}-${randomId}`
+    const channelId = channel.id
+    const customWebhookUrl = `${VALKYRIE_WEBHOOK_URL}linear/webhook/${channelId}-${randomId}`
 
     robot.logger.info("Generated custom webhook URL:", customWebhookUrl)
     return customWebhookUrl
@@ -309,6 +291,7 @@ export default async function linearIntegration(
       }
     }
   })
+
   discordClient.on("interactionCreate", async (interaction) => {
     if (!interaction.isAutocomplete()) return
     if (interaction.commandName !== COMMAND_NAME) return
@@ -328,54 +311,45 @@ export default async function linearIntegration(
       })),
     )
   })
+
   robot.router.post(
-    /^\/linear\/webhook\/([a-z0-9-]+)-(\d{6})$/,
+    /^\/linear\/webhook\/(\d+)-(\d{6})$/,
     async (request, response) => {
       try {
         const eventData = request.body
-        const channelName = request.params[0]
-        const channelId = eventData.data?.infoSnapshot?.teamsInfo?.[0]?.id
-        if (!channelId) {
-          robot.logger.error("Channel name not found in the payload.")
-          response.writeHead(400).end("Channel not found in payload.")
-          return
-        }
+        const channelId = request.params[0]
 
         robot.logger.debug(
           "Webhook payload:",
           JSON.stringify(eventData, null, 2),
         )
 
-        const existingConnections =
-          robot.brain.get(LINEAR_BRAIN_KEY)?.connections ?? {}
-        const matchingChannel = await findTextChannelByName(
-          discordClient,
-          channelName,
-        )
-
-        if (!matchingChannel) {
-          robot.logger.error(
-            `No matching channel found for name: ${channelName}`,
-          )
+        const channel = await discordClient.channels
+          .fetch(channelId)
+          .catch(() => null)
+        if (!channel || !channel.isTextBased()) {
+          robot.logger.error(`Channel ${channelId} not found or not text-based`)
           response.writeHead(404).end("Channel not found.")
           return
         }
 
-        const connection = existingConnections[channelId]?.[matchingChannel.id]
-
-        if (!connection) {
-          robot.logger.error(
-            `No stored connection for team ${channelId} in channel ${matchingChannel.id}`,
-          )
-          response.writeHead(404).end("Connection not found.")
-          return
-        }
+        const existingConnections =
+          robot.brain.get(LINEAR_BRAIN_KEY)?.connections ?? {}
 
         const teamIdFromEvent =
           eventData?.data?.infoSnapshot?.teamsInfo?.[0]?.id
-        if (connection.teamId !== teamIdFromEvent) {
-          robot.logger.error("Team ID mismatch.")
-          response.writeHead(403).end("Forbidden: Team ID mismatch.")
+        if (!teamIdFromEvent) {
+          robot.logger.error("Team ID not found in the payload.")
+          response.writeHead(400).end("Team ID not found in payload.")
+          return
+        }
+
+        const connection = existingConnections[teamIdFromEvent]?.[channelId]
+        if (!connection) {
+          robot.logger.error(
+            `No stored connection for team ${teamIdFromEvent} in channel ${channelId}`,
+          )
+          response.writeHead(404).end("Connection not found.")
           return
         }
 
@@ -401,30 +375,6 @@ export default async function linearIntegration(
 
         robot.logger.info("Signature verified successfully.")
 
-        const guilds = discordClient.guilds.cache
-        const guildArray = Array.from(guilds.values())
-
-        const findChannelPromises = guildArray.map(async (guild) => {
-          const channels = await guild.channels.fetch()
-          return channels.find(
-            (ch) =>
-              ch?.isTextBased?.() &&
-              ch.name.toLowerCase().replace(/\s+/g, "-") === channelName,
-          )
-        })
-
-        const potentialChannels = await Promise.all(findChannelPromises)
-        const matchedChannel =
-          potentialChannels.find((ch) => ch?.isTextBased?.()) || null
-
-        if (!matchedChannel) {
-          robot.logger.error(
-            `No matching channel found for name: ${channelName}`,
-          )
-          response.writeHead(404).end("Channel not found.")
-          return
-        }
-
         const eventType = eventData?.type
         if (!eventType || !eventHandlers[eventType]) {
           robot.logger.error(`Unhandled or missing event type: ${eventType}`)
@@ -434,7 +384,7 @@ export default async function linearIntegration(
 
         await eventHandlers[eventType](
           eventData,
-          matchedChannel as TextBasedChannel,
+          channel as TextBasedChannel,
           robot,
         )
         response.writeHead(200).end("Event processed.")
