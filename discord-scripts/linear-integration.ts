@@ -36,6 +36,27 @@ const eventHandlers: Record<
 function sanitizeName(name: string): string {
   return name.toLowerCase().replace(/\s+/g, "-")
 }
+async function findTextChannelByName(
+  client: Client,
+  name: string,
+): Promise<TextBasedChannel | null> {
+  const normalized = name.toLowerCase().replace(/\s+/g, "-")
+
+  for (const guild of client.guilds.cache.values()) {
+    const channels = await guild.channels.fetch()
+    for (const [, channel] of channels) {
+      if (
+        channel?.isTextBased?.() &&
+        channel.name.toLowerCase().replace(/\s+/g, "-") === normalized
+      ) {
+        return channel as TextBasedChannel
+      }
+    }
+  }
+
+  return null
+}
+
 /* eslint-enable @typescript-eslint/no-explicit-any */
 async function createCustomWebhookUrl(
   channel: TextBasedChannel,
@@ -325,7 +346,28 @@ export default async function linearIntegration(
 
         const existingConnections =
           robot.brain.get(LINEAR_BRAIN_KEY)?.connections ?? {}
-        const connection = existingConnections[channelId]
+        const matchingChannel = await findTextChannelByName(
+          discordClient,
+          channelName,
+        )
+
+        if (!matchingChannel) {
+          robot.logger.error(
+            `No matching channel found for name: ${channelName}`,
+          )
+          response.writeHead(404).end("Channel not found.")
+          return
+        }
+
+        const connection = existingConnections[channelId]?.[matchingChannel.id]
+
+        if (!connection) {
+          robot.logger.error(
+            `No stored connection for team ${channelId} in channel ${matchingChannel.id}`,
+          )
+          response.writeHead(404).end("Connection not found.")
+          return
+        }
 
         if (!connection) {
           robot.logger.error(
