@@ -297,7 +297,10 @@ export default async function linearIntegration(
           robot.logger.error(`Error deleting webhook with label ${label}:`, err)
         }
 
-        delete existingConnections[teamId]
+        delete existingConnections[teamId][channel.id]
+        if (Object.keys(existingConnections[teamId]).length === 0) {
+          delete existingConnections[teamId]
+        }
         robot.brain.set(LINEAR_BRAIN_KEY, { connections: existingConnections })
 
         await interaction.reply({
