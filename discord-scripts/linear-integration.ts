@@ -121,10 +121,7 @@ export default async function linearIntegration(
               type: ApplicationCommandOptionType.String,
               description: "The ID of the Linear team to connect.",
               required: true,
-              choices: teams.map((team) => ({
-                name: team.name,
-                value: team.id,
-              })),
+              autocomplete: true,
             },
           ],
         },
@@ -151,7 +148,7 @@ export default async function linearIntegration(
   }
 
   discordClient.on("interactionCreate", async (interaction) => {
-    robot.logger.info("Received interaction:", interaction)
+    robot.logger.debug("Received interaction:", interaction)
     if (
       interaction.isChatInputCommand() &&
       interaction.commandName === COMMAND_NAME
@@ -192,7 +189,7 @@ export default async function linearIntegration(
           return
         }
         await interaction.reply({
-          content: `Connecting project updates to this channel.`,
+          content: "Connecting project updates to this channel.",
           ephemeral: true,
         })
 
@@ -288,6 +285,25 @@ export default async function linearIntegration(
         })
       }
     }
+  })
+  discordClient.on("interactionCreate", async (interaction) => {
+    if (!interaction.isAutocomplete()) return
+    if (interaction.commandName !== COMMAND_NAME) return
+
+    const focusedOption = interaction.options.getFocused(true)
+    if (focusedOption.name !== "team") return
+
+    const teams = await fetchLinearTeams()
+    const filtered = teams.filter((team) =>
+      team.name.toLowerCase().includes(focusedOption.value.toLowerCase()),
+    )
+
+    await interaction.respond(
+      filtered.slice(0, 25).map((team) => ({
+        name: team.name,
+        value: team.id,
+      })),
+    )
   })
   robot.router.post(
     /^\/linear\/webhook\/([a-z0-9-]+)-(\d{6})$/,
