@@ -46,7 +46,9 @@ async function createCustomWebhookUrl(
 ): Promise<string | null> {
   try {
     if (!(channel instanceof TextChannel)) {
-      console.error("Webhook creation failed: Channel is not a TextChannel.")
+      robot.logger.error(
+        "Webhook creation failed: Channel is not a TextChannel.",
+      )
       return null
     }
 
