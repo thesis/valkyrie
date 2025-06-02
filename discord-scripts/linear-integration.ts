@@ -12,7 +12,8 @@ import crypto from "crypto"
 const COMMAND_NAME = "linear-updates"
 const CONNECT_SUBCOMMAND_NAME = "connect"
 const DISCONNECT_SUBCOMMAND_NAME = "disconnect"
-const { LINEAR_API_TOKEN, VALKYRIE_ROOT_URL } = process.env
+// Remember to set the VALKYRIE_WEBHOOK_URL to the endpoint for Linear to access, this should be the Root URL.
+const { LINEAR_API_TOKEN, VALKYRIE_WEBHOOK_URL } = process.env
 const LINEAR_BRAIN_KEY = "linear"
 
 const linearClient = new LinearClient({ apiKey: LINEAR_API_TOKEN })
@@ -32,9 +33,13 @@ const eventHandlers: Record<
     await channel.send({ embeds: [embed] })
   },
 }
+function sanitizeName(name: string): string {
+  return name.toLowerCase().replace(/\s+/g, "-")
+}
 /* eslint-enable @typescript-eslint/no-explicit-any */
 async function createCustomWebhookUrl(
   channel: TextBasedChannel,
+  robot: Robot,
 ): Promise<string | null> {
   try {
     if (!(channel instanceof TextChannel)) {
@@ -43,13 +48,13 @@ async function createCustomWebhookUrl(
     }
 
     const randomId = Math.floor(100000 + Math.random() * 900000)
-    const channelName = channel.name.toLowerCase().replace(/\s+/g, "-")
-    const customWebhookUrl = `${VALKYRIE_ROOT_URL}linear-${channelName}-${randomId}`
+    const channelName = sanitizeName(channel.name)
+    const customWebhookUrl = `${VALKYRIE_WEBHOOK_URL}linear/webhook/${channelName}-${randomId}`
 
-    console.log("Generated custom webhook URL:", customWebhookUrl)
+    robot.logger.info("Generated custom webhook URL:", customWebhookUrl)
     return customWebhookUrl
   } catch (error) {
-    console.error("Error generating custom webhook URL:", error)
+    robot.logger.error("Error generating custom webhook URL:", error)
     return null
   }
 }
@@ -70,7 +75,14 @@ export default async function linearIntegration(
 ) {
   if (!LINEAR_API_TOKEN) {
     robot.logger.error(
-      "Linear API token is not set. Aborting Linear integration.",
+      "Linear API token is not set. aborting Linear integration.",
+    )
+    return
+  }
+
+  if (!VALKYRIE_WEBHOOK_URL) {
+    robot.logger.error(
+      "No Valkyrie Webhook URL being set, aborting Linear integration.",
     )
     return
   }
@@ -168,27 +180,29 @@ export default async function linearIntegration(
           })
           return
         }
-        if (existingConnections[teamId]) {
+        if (
+          existingConnections[teamId] &&
+          existingConnections[teamId][channel.id]
+        ) {
           await interaction.reply({
-            content: "⚠️ This Linear team is already connected to a channel.",
+            content:
+              "⚠️ This Linear team is already connected to this channel.",
             ephemeral: true,
           })
           return
         }
         await interaction.reply({
-          content: "Linked this channel",
+          content: `Connecting project updates to this channel.`,
           ephemeral: true,
         })
 
         robot.logger.info("Creating custom webhook URL for team:", teamId)
-        const customWebhookUrl = await createCustomWebhookUrl(channel)
+        const customWebhookUrl = await createCustomWebhookUrl(channel, robot)
 
         if (customWebhookUrl) {
           const team = await linearClient.team(teamId)
-          const sanitizedChannelName = channel.name
-            .toLowerCase()
-            .replace(/\s+/g, "-")
-          const sanitizedTeamName = team.name.toLowerCase().replace(/\s+/g, "-")
+          const sanitizedChannelName = sanitizeName(channel.name)
+          const sanitizedTeamName = sanitizeName(team.name)
           const label = `discord-${sanitizedChannelName}-${sanitizedTeamName}`
           const secret = crypto.randomBytes(32).toString("hex")
 
@@ -201,18 +215,23 @@ export default async function linearIntegration(
             secret,
           })
 
-          existingConnections[teamId] = {
+          if (!existingConnections[teamId]) {
+            existingConnections[teamId] = {}
+          }
+
+          existingConnections[teamId][channel.id] = {
             webhookUrl: customWebhookUrl,
             linearWebhookId: createdWebhook.webhook,
             secret,
             teamId,
+            channelId: channel.id,
           }
           robot.brain.set(LINEAR_BRAIN_KEY, {
             connections: existingConnections,
           })
 
           await interaction.editReply({
-            content: `Connected Linear team **${team.name}** to this channel and added webhook to Linear`,
+            content: `Connected Linear team **${team.name}** to this channel.`,
           })
         } else {
           await interaction.editReply({
@@ -230,10 +249,8 @@ export default async function linearIntegration(
         }
 
         const team = await linearClient.team(teamId)
-        const sanitizedChannelName = channel.name
-          .toLowerCase()
-          .replace(/\s+/g, "-")
-        const sanitizedTeamName = team.name.toLowerCase().replace(/\s+/g, "-")
+        const sanitizedChannelName = sanitizeName(channel.name)
+        const sanitizedTeamName = sanitizeName(team.name)
         const label = `discord-${sanitizedChannelName}-${sanitizedTeamName}`
 
         try {
@@ -266,14 +283,14 @@ export default async function linearIntegration(
         robot.brain.set(LINEAR_BRAIN_KEY, { connections: existingConnections })
 
         await interaction.reply({
-          content: `Disconnected Linear team **${team.name}** and removed webhook from Linear.`,
+          content: `Disconnected Linear team **${team.name}** updates from this channel.`,
           ephemeral: true,
         })
       }
     }
   })
   robot.router.post(
-    /^\/linear-([a-z0-9-]+)-(\d{6})$/,
+    /^\/linear\/webhook\/([a-z0-9-]+)-(\d{6})$/,
     async (request, response) => {
       try {
         const eventData = request.body
