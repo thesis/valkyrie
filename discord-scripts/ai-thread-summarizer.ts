@@ -12,7 +12,9 @@ import { Robot } from "hubot"
 
 const GOOGLE_API_KEY = process.env.GOOGLE_CLOUD_AI_KEY
 if (!GOOGLE_API_KEY) {
-  throw new Error("❌ GOOGLE_API_KEY is not defined. Please set the GOOGLE_CLOUD_AI_KEY environment variable.")
+  throw new Error(
+    "❌ GOOGLE_API_KEY is not defined. Please set the GOOGLE_CLOUD_AI_KEY environment variable.",
+  )
 }
 
 // WIP and have disabled using GoogleGenAI call since this was
@@ -92,7 +94,7 @@ async function summarizeMessages(text: string): Promise<string> {
 async function sendLongMessage(channel: TextChannel, message: string) {
   const chunkSize = 2000
   for (let i = 0; i < message.length; i += chunkSize) {
-    channel.send(message.substring(i, i + chunkSize))
+    await channel.send(message.substring(i, i + chunkSize))
   }
 }
 
