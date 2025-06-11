@@ -11,6 +11,9 @@ import { Robot } from "hubot"
 // import { GoogleGenAI } from "@google/genai";
 
 const GOOGLE_API_KEY = process.env.GOOGLE_CLOUD_AI_KEY
+if (!GOOGLE_API_KEY) {
+  throw new Error("❌ GOOGLE_API_KEY is not defined. Please set the GOOGLE_CLOUD_AI_KEY environment variable.")
+}
 
 // WIP and have disabled using GoogleGenAI call since this was
 // causing core deps issues on top of
