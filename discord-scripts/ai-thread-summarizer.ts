@@ -17,6 +17,8 @@ if (!GOOGLE_API_KEY) {
   )
 }
 
+const MAX_DISCORD_MESSAGE_LENGTH = 2000
+
 // WIP and have disabled using GoogleGenAI call since this was
 // causing core deps issues on top of
 // kicking connection errors, used api endpoint for testing.
@@ -95,7 +97,7 @@ async function summarizeMessages(text: string): Promise<string> {
 }
 
 async function sendLongMessage(channel: TextChannel, message: string) {
-  const chunkSize = 2000
+  const chunkSize = MAX_DISCORD_MESSAGE_LENGTH
   for (let i = 0; i < message.length; i += chunkSize) {
     await channel.send(message.substring(i, i + chunkSize))
   }
@@ -219,7 +221,7 @@ export default async function threadSummarizer(
 
       const summary = await summarizeMessages(formattedMessages)
 
-      if (summary.length > 2000) {
+      if (summary.length > MAX_DISCORD_MESSAGE_LENGTH) {
         await sendLongMessage(channel, `📜 **Thread Summary:**\n${summary}`)
       } else {
         await channel.send(`📜 **Thread Summary:**\n${summary}`)
