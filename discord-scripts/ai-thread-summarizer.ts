@@ -97,7 +97,7 @@ async function summarizeMessages(text: string): Promise<string> {
 async function sendLongMessage(channel: TextChannel, message: string) {
   const chunkSize = 2000
   for (let i = 0; i < message.length; i += chunkSize) {
-    channel.send(message.substring(i, i + chunkSize))
+    await channel.send(message.substring(i, i + chunkSize))
   }
 }
 
