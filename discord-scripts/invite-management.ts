@@ -132,7 +132,7 @@ export default async function sendInvite(discordClient: Client, robot: Robot) {
 		// Create the defense audit channels and roles based off the command
 		discordClient.on("interactionCreate", async (interaction) => {
 			if (
-				!interaction.isCommand() ||
+				!interaction.isChatInputCommand() ||
 				interaction.commandName !== "defense-audit"
 			) {
 				return

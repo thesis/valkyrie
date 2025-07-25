@@ -5,7 +5,7 @@
 
 import { Adapter, Envelope } from "hubot"
 import { Matrix } from "hubot-matrix"
-import { JoinRule } from "matrix-js-sdk"
+import { JoinRule, Room } from "matrix-js-sdk"
 
 let roomIDByLowercaseName: { [lowercaseRoomName: string]: string } = {}
 
@@ -13,7 +13,7 @@ let roomIDByLowercaseName: { [lowercaseRoomName: string]: string } = {}
  * Returns whether a given adapter is a Matrix adapter. Using instanceof does
  * not work for unclear reasons, so a type guard is introduced to do the check.
  */
-function isMatrixAdapter(adapter: Adapter): adapter is Matrix {
+function isMatrixAdapter(adapter: Adapter): boolean {
 	return adapter.constructor === Matrix
 }
 
@@ -35,10 +35,10 @@ function getRoomIdFromName(
 	}
 
 	if (isMatrixAdapter(robotAdapter)) {
-		const rooms = robotAdapter.client?.getRooms()
+		const rooms = (robotAdapter as unknown as Matrix).client?.getRooms()
 		roomIDByLowercaseName =
 			rooms?.reduce(
-				(acc, room) => {
+				(acc: { [key: string]: string }, room: Room) => {
 					acc[room.normalizedName.toLowerCase()] = room.roomId
 					const canonicalAlias = room.getCanonicalAlias()
 					if (canonicalAlias !== null) {
@@ -67,7 +67,7 @@ function getRoomNameFromId(
 	roomId: string,
 ): string | undefined {
 	if (isMatrixAdapter(robotAdapter)) {
-		return robotAdapter.client?.getRoom(roomId)?.name
+		return (robotAdapter as unknown as Matrix).client?.getRoom(roomId)?.name
 	}
 	return undefined
 }
@@ -96,9 +96,9 @@ function getRoomInfoFromIdOrName(
 		return undefined
 	}
 
-	const rooms = robotAdapter.client?.getRooms() ?? []
+	const rooms = (robotAdapter as unknown as Matrix).client?.getRooms() ?? []
 	const matchingRoom = rooms.find(
-		(room) =>
+		(room: Room) =>
 			room.roomId === roomIdOrName ||
 			room.name.toLowerCase() === roomIdOrName.toLowerCase(),
 	)
@@ -125,7 +125,7 @@ function getRoomInfoFromIdOrName(
  */
 async function getAllJoinedRoomIds(robotAdapter: Adapter): Promise<string[]> {
 	if (isMatrixAdapter(robotAdapter)) {
-		return (await robotAdapter.client?.getJoinedRooms())?.joined_rooms ?? []
+		return (await (robotAdapter as unknown as Matrix).client?.getJoinedRooms())?.joined_rooms ?? []
 	}
 	return []
 }
@@ -143,8 +143,8 @@ async function getPublicJoinedRoomIds(
 ): Promise<string[]> {
 	if (isMatrixAdapter(robotAdapter)) {
 		return (
-			(await robotAdapter.client?.getJoinedRooms())?.joined_rooms.filter(
-				(roomId) =>
+			(await (robotAdapter as unknown as Matrix).client?.getJoinedRooms())?.joined_rooms.filter(
+				(roomId: string) =>
 					getRoomInfoFromIdOrName(robotAdapter, roomId)?.accessType ===
 					"public",
 			) ?? []
@@ -199,10 +199,8 @@ export function isRoomNonPublic(
 	targetRoomId: string,
 ): boolean {
 	if (adapter instanceof Matrix) {
-		return (
-			getRoomInfoFromIdOrName(adapter, targetRoomId)?.accessType !== "public" ??
-			false
-		)
+		const roomInfo = getRoomInfoFromIdOrName(adapter as unknown as Adapter, targetRoomId)
+		return roomInfo ? roomInfo.accessType !== "public" : false
 	}
 	return false
 }
@@ -233,7 +231,7 @@ export function sendThreaded(
 		adapter.send(envelope, ...messages)
 	} else {
 		messages.forEach((message) =>
-			adapter.sendThreaded(envelope, threadId, message),
+			(adapter as unknown as Matrix).sendThreaded(envelope, threadId, message),
 		)
 	}
 }

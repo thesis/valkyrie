@@ -13,8 +13,15 @@ type DiscordScript = {
 	) => void | Promise<void>
 }
 
+// We use unknown here because TS thinks Hubot.Robot<DiscordBot> is not
+// assignable to Hubot.Robot<Adapter> due to DiscordBot being *more
+// restrictive* than Adapter. Unclear why this is the case.
+function isDiscordRobot(robot: unknown): robot is Hubot.Robot<DiscordBot> {
+	return (robot as Hubot.Robot).adapter instanceof DiscordBot
+}
+
 function attachWithAdapter(robot: Hubot.Robot) {
-	if (robot.adapter instanceof DiscordBot) {
+	if (isDiscordRobot(robot)) {
 		const { client } = robot.adapter
 
 		if (client !== undefined) {
@@ -26,10 +33,7 @@ function attachWithAdapter(robot: Hubot.Robot) {
 						const discordScript: DiscordScript = await import(
 							path.join("..", "discord-scripts", file)
 						)
-						await discordScript.default(
-							client,
-							robot as Hubot.Robot<DiscordBot>,
-						)
+						await discordScript.default(client, robot)
 						robot.logger.info(`Loaded Discord script ${file}.`)
 					} catch (error) {
 						const stackString =

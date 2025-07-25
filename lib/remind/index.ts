@@ -1,5 +1,5 @@
 import { Envelope, Message, User } from "hubot"
-import { DateTime } from "luxon"
+import { DateTime, WeekdayNumbers } from "luxon"
 import { sendThreaded } from "../adapter-util.ts"
 import {
 	Job,
@@ -57,21 +57,27 @@ export function computeNextRecurrence(
 							(repeatDate.hour === hour && repeatDate.minute < minute))),
 			) ?? possibleDays[0]
 
+		if (earliestMatchingDay === undefined) {
+			throw new Error("No valid weekday found for recurring reminder")
+		}
+
 		if (
 			repeatDate.weekday < earliestMatchingDay ||
 			(repeatDate.weekday === earliestMatchingDay &&
 				(repeatDate.hour < hour ||
 					(repeatDate.hour === hour && repeatDate.minute < minute)))
 		) {
-			repeatDate = repeatDate.set({ weekday: earliestMatchingDay })
+			repeatDate = repeatDate.set({
+				weekday: earliestMatchingDay as WeekdayNumbers,
+			})
 		} else {
 			repeatDate = repeatDate
 				.plus({ week: interval })
-				.set({ weekday: earliestMatchingDay })
+				.set({ weekday: earliestMatchingDay as WeekdayNumbers })
 		}
 	}
 
-	return repeatDate
+	const result = repeatDate
 		.set({
 			hour,
 			minute,
@@ -80,6 +86,12 @@ export function computeNextRecurrence(
 		})
 		.toUTC()
 		.toISO()
+
+	if (result === null) {
+		throw new Error("Failed to generate ISO string for recurring reminder date")
+	}
+
+	return result
 }
 
 /**

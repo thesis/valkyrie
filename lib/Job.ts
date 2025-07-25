@@ -1,5 +1,5 @@
 import * as hubot from "hubot"
-import { MatrixMessage } from "hubot-matrix"
+import { Matrix, MatrixMessage } from "hubot-matrix"
 import * as scheduler from "node-schedule"
 import util from "util"
 import { isMatrixAdapter } from "./adapter-util.ts"
@@ -25,7 +25,7 @@ export async function postMessageAndSaveThreadId(
 		)
 	}
 
-	const postedEvent = await robot.adapter.sendThreaded(
+	const postedEvent = await (robot.adapter as unknown as Matrix).sendThreaded(
 		{ ...envelope, message: new hubot.TextMessage(envelope.user, "", "") },
 		// Though the job may have an associated thread id, reminders spawn their
 		// own threads.

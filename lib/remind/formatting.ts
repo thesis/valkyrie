@@ -40,7 +40,7 @@ function formatRecurringSpec(
 			typeof spec.dayOfWeek === "number" ? [spec.dayOfWeek] : spec.dayOfWeek
 
 		const formattedDays = daysOfWeek
-			.map((day) => baseDate.set({ weekday: day }).toFormat("EEEE"))
+			.map((day) => baseDate.set({ weekday: day as 1 | 2 | 3 | 4 | 5 | 6 | 7 }).toFormat("EEEE"))
 			.join(", ")
 
 		return (

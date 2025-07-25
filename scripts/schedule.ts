@@ -43,6 +43,8 @@ import {
 	RECURRING_JOB_STORAGE_KEY,
 } from "../lib/schedule-util.ts"
 
+import { MessageMetadata } from "../lib/scheduled-jobs.ts"
+
 const JOBS = {}
 const STORE_KEY = RECURRING_JOB_STORAGE_KEY
 
@@ -118,7 +120,7 @@ export default function setupSchedule(robot: Robot<Adapter>) {
 					targetRoomId ?? targetRoom,
 					pattern,
 					msg.match[3],
-					metadata,
+					metadata as MessageMetadata,
 					false, // remindInThread: default to false for schedule jobs
 				)
 				msg.reply(resp)

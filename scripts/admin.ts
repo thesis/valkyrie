@@ -14,7 +14,8 @@
 
 import * as hubot from "hubot"
 import { Robot } from "hubot"
-import { EventType, MatrixEvent, RoomMemberEvent } from "matrix-js-sdk"
+import { EventType, MatrixEvent, RoomMember, RoomMemberEvent } from "matrix-js-sdk"
+import { Matrix } from "hubot-matrix"
 import { isMatrixAdapter } from "../lib/adapter-util.ts"
 import { generateAvatar, roomNameToAlias } from "../lib/matrix-room-utils.ts"
 
@@ -76,7 +77,7 @@ export default (robot: Robot) => {
 
 	if (isMatrixAdapter(robot.adapter)) {
 		const { adapter } = robot
-		const { client } = adapter
+		const { client } = adapter as unknown as Matrix
 		if (client === undefined || client.getUserId() === null) {
 			return
 		}
@@ -137,7 +138,7 @@ export default (robot: Robot) => {
 			message: new hubot.Message(hubotUser),
 		})
 
-		client.on(RoomMemberEvent.PowerLevel, async (event, member) => {
+		client.on(RoomMemberEvent.PowerLevel, async (event: MatrixEvent, member: RoomMember) => {
 			const roomId = event.getRoomId()
 			if (roomId === undefined) {
 				return
