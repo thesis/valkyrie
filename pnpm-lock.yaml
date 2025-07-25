@@ -148,7 +148,7 @@ importers:
         specifier: 0.1.12
         version: 0.1.12
       typescript:
-        specifier: ^5.8.0
+        specifier: ^5.1.6
         version: 5.8.3
       uuid:
         specifier: ^3.2.1
