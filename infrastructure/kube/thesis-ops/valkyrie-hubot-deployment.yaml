@@ -97,11 +97,21 @@ spec:
                 secretKeyRef:
                   name: valkyrie-hubot
                   key: imgflip_api_password
+            - name: LINEAR_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: linear_api_token
             - name: TESTING_CHANNEL_NAMES
               valueFrom:
                 secretKeyRef:
                   name: valkyrie-hubot
                   key: testing_channel_names
+            - name: VALKYRIE_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: valkyrie_webhook_url
             - name: ZOOM_API_KEY
               valueFrom:
                 secretKeyRef:
