@@ -1,6 +1,7 @@
 import {
 	AnyThreadChannel,
 	ApplicationCommandOptionType,
+	ChannelType,
 	Client,
 	GuildTextBasedChannel,
 	Role,
@@ -257,12 +258,12 @@ export default async function autoJoinAndTagManagement(
 
 			try {
 				// Check if user has permission to manage threads
-				if (!interaction.memberPermissions?.has('MANAGE_CHANNELS')) {
+				if (!interaction.memberPermissions?.has("ManageChannels")) {
 					await interaction.reply({
 						content: "You need the Manage Channels permission to use this command.",
-						ephemeral: true
-					});
-					return;
+						ephemeral: true,
+					})
+					return
 				}
 				if (subcommand === ADD_SUBCOMMAND_NAME) {
 					const roleName = interaction.options.getString("role", true)
@@ -331,11 +332,19 @@ export default async function autoJoinAndTagManagement(
 						if (server) {
 							// Safe type handling - check if channel is a thread first
 							const parentChannel = channel.isThread() ? channel.parent : channel
-							const defaultRole = getDefaultRoleForChannel(parentChannel, server)
-							if (defaultRole) {
-								await interaction.reply({
-									content: `**No custom auto-tag roles set for this channel.**\n\nDefault role that would be auto-tagged: **${defaultRole.name}**`,
-								})
+							
+							// Type guard: only proceed if we have a valid parent channel type  
+							if (parentChannel && (parentChannel.type === ChannelType.GuildText || parentChannel.type === ChannelType.GuildAnnouncement || parentChannel.type === ChannelType.GuildForum || parentChannel.type === ChannelType.GuildMedia)) {
+								const defaultRole = getDefaultRoleForChannel(parentChannel, server)
+								if (defaultRole) {
+									await interaction.reply({
+										content: `**No custom auto-tag roles set for this channel.**\n\nDefault role that would be auto-tagged: **${defaultRole.name}**`,
+									})
+								} else {
+									await interaction.reply({
+										content: "**No custom auto-tag roles set for this channel.**\n\nNo default role would be auto-tagged.",
+									})
+								}
 							} else {
 								await interaction.reply({
 									content: "**No custom auto-tag roles set for this channel.**\n\nNo default role would be auto-tagged.",
