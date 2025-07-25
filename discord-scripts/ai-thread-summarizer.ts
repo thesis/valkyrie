@@ -6,6 +6,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ComponentType,
+  ThreadChannel,
 } from "discord.js"
 import { Robot } from "hubot"
 // import { GoogleGenAI } from "@google/genai";
@@ -67,7 +68,7 @@ async function summarizeMessages(robot: Robot, text: string): Promise<string> {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "x-goog-api-key": GOOGLE_API_KEY
+            "x-goog-api-key": GOOGLE_API_KEY!
           },
           body: JSON.stringify({
             contents: [
@@ -98,7 +99,7 @@ async function summarizeMessages(robot: Robot, text: string): Promise<string> {
   }
 }
 
-async function sendLongMessage(channel: TextChannel, message: string) {
+async function sendLongMessage(channel: TextChannel | ThreadChannel, message: string) {
   const chunkSize = MAX_DISCORD_MESSAGE_LENGTH
   for (let i = 0; i < message.length; i += chunkSize) {
     await channel.send(message.substring(i, i + chunkSize))
