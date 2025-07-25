@@ -305,4 +305,4 @@ Where `<adapter>` is the name of your adapter without the `hubot-` prefix.
 
 ## Debugging
 
-If you'd like to test certain aspects of Valkyrie with a debugger, use `robot.logger.debug` and in your environment variables the flag `export HUBOT_LOG_LEVEL="debug"` which will enable those messages to appear in terminal output. 
+If you'd like to test certain aspects of Valkyrie with a debugger, use `robot.logger.debug` and in your environment variables the flag `export HUBOT_LOG_LEVEL="debug"` which will enable those messages to appear in terminal output.

@@ -1,4 +1,16 @@
-- repo: https://github.com/prettier/prettier
-  rev: "master" # Use the sha or tag you want to point at
-  hooks:
-    - id: prettier
+repos:
+  # Biome for JS/TS/JSON/CSS linting and formatting
+  - repo: https://github.com/biomejs/pre-commit
+    rev: "v0.4.0"
+    hooks:
+      - id: biome-check
+        additional_dependencies: ["@biomejs/biome@2.1.2"]
+        args: ["--write"]
+        files: \.(js|ts|tsx|json|css)$
+  
+  # Prettier for YAML/Markdown formatting  
+  - repo: https://github.com/prettier/prettier
+    rev: "v3.0.2"
+    hooks:
+      - id: prettier
+        files: \.(md|yaml|yml)$

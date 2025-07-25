@@ -14,30 +14,30 @@ export type HubotFeature = "archive-checking"
  * (which may include categories, threads, forums, etc).
  */
 type ChannelMetadata = {
-  /**
-   * A list of Hubot features permitted in this channel.
-   */
-  permittedFeatures: HubotFeature[]
+	/**
+	 * A list of Hubot features permitted in this channel.
+	 */
+	permittedFeatures: HubotFeature[]
 }
 
 /**
  * Metadata tracked about a thread channel.
  */
 type ThreadMetadata = ChannelMetadata & {
-  /**
-   * When true, the thread is currently considered to be a synchronous thread,
-   * meaning it has not had significant periods of dormancy and is likely
-   * engaging its participants in a roughly synchronous conversation. Once this
-   * flips to `false`, it remains that way.
-   */
-  sync: boolean
+	/**
+	 * When true, the thread is currently considered to be a synchronous thread,
+	 * meaning it has not had significant periods of dormancy and is likely
+	 * engaging its participants in a roughly synchronous conversation. Once this
+	 * flips to `false`, it remains that way.
+	 */
+	sync: boolean
 }
 
 /**
  * Channel metadata tracked by channel id, used for storing in the Hubot brain.
  */
 type AvailableChannelMetadata = {
-  [channelId: string]: ThreadMetadata | ChannelMetadata | undefined
+	[channelId: string]: ThreadMetadata | ChannelMetadata | undefined
 }
 
 /**
@@ -45,20 +45,20 @@ type AvailableChannelMetadata = {
  * AvailableChannelMetadata type.
  */
 type AvailableThreadMetadata = {
-  [key in keyof AvailableChannelMetadata]: ThreadMetadata
+	[key in keyof AvailableChannelMetadata]: ThreadMetadata
 }
 
 /**
  * Fetches all available channel metadata from the Hubot brain.
  */
 export function getAllChannelMetadata(
-  brain: Brain<Adapter>,
+	brain: Brain<Adapter>,
 ): AvailableChannelMetadata {
-  return (
-    (JSON.parse(brain.get(CHANNEL_METADATA_KEY) ?? "{}") as
-      | AvailableChannelMetadata
-      | undefined) ?? {}
-  )
+	return (
+		(JSON.parse(brain.get(CHANNEL_METADATA_KEY) ?? "{}") as
+			| AvailableChannelMetadata
+			| undefined) ?? {}
+	)
 }
 
 /**
@@ -66,64 +66,64 @@ export function getAllChannelMetadata(
  * the channel metadata to just threads.
  */
 export function getAllThreadMetadata(
-  brain: Brain<Adapter>,
+	brain: Brain<Adapter>,
 ): AvailableThreadMetadata {
-  return Object.fromEntries(
-    Object.entries(getAllChannelMetadata(brain)).filter(
-      ([, metadata]) => metadata !== undefined && "sync" in metadata,
-    ) as [string, ThreadMetadata][],
-  )
+	return Object.fromEntries(
+		Object.entries(getAllChannelMetadata(brain)).filter(
+			([, metadata]) => metadata !== undefined && "sync" in metadata,
+		) as [string, ThreadMetadata][],
+	)
 }
 
 export function getThreadMetadata(
-  brain: Brain<Adapter>,
-  thread: ThreadChannel,
+	brain: Brain<Adapter>,
+	thread: ThreadChannel,
 ): ThreadMetadata | undefined {
-  return getAllThreadMetadata(brain)[thread.id]
+	return getAllThreadMetadata(brain)[thread.id]
 }
 
 export function updateThreadMetadata(
-  brain: Brain<Adapter>,
-  thread: ThreadChannel,
-  updatedMetadata: Partial<ThreadMetadata> | undefined,
+	brain: Brain<Adapter>,
+	thread: ThreadChannel,
+	updatedMetadata: Partial<ThreadMetadata> | undefined,
 ): void {
-  const { [thread.id]: existingThreadMetadata, ...otherChannelMetadata } =
-    getAllThreadMetadata(brain)
+	const { [thread.id]: existingThreadMetadata, ...otherChannelMetadata } =
+		getAllThreadMetadata(brain)
 
-  const updatedAvailableMetadata: AvailableChannelMetadata =
-    updatedMetadata === undefined
-      ? otherChannelMetadata
-      : {
-          ...otherChannelMetadata,
-          [thread.id]: { ...existingThreadMetadata, ...updatedMetadata },
-        }
+	const updatedAvailableMetadata: AvailableChannelMetadata =
+		updatedMetadata === undefined
+			? otherChannelMetadata
+			: {
+					...otherChannelMetadata,
+					[thread.id]: { ...existingThreadMetadata, ...updatedMetadata },
+				}
 
-  brain.set(CHANNEL_METADATA_KEY, JSON.stringify(updatedAvailableMetadata))
+	brain.set(CHANNEL_METADATA_KEY, JSON.stringify(updatedAvailableMetadata))
 }
 
 export function isInPermittedCategoryOrChannel(
-  brain: Brain<Adapter>,
-  thread: AnyThreadChannel<boolean>,
-  permittedFeature: HubotFeature,
+	brain: Brain<Adapter>,
+	thread: AnyThreadChannel,
+	permittedFeature: HubotFeature,
 ) {
-  const threadChannelId = thread.parentId ?? undefined
-  const threadCategoryId = thread.parent?.parentId ?? undefined
+	const threadChannelId = thread.parentId ?? undefined
+	const threadCategoryId = thread.parent?.parentId ?? undefined
 
-  if (threadChannelId === undefined) {
-    return false
-  }
+	if (threadChannelId === undefined) {
+		return false
+	}
 
-  const channelHierarchyIds = {
-    [thread.id]: true,
-    [threadChannelId]: true,
-    ...(threadCategoryId === undefined ? {} : { [threadCategoryId]: true }),
-  }
+	const channelHierarchyIds = {
+		[thread.id]: true,
+		[threadChannelId]: true,
+		...(threadCategoryId === undefined ? {} : { [threadCategoryId]: true }),
+	}
 
-  return Object.entries(getAllChannelMetadata(brain)).some(
-    ([channelId, metadata]) =>
-      metadata !== undefined &&
-      "allowedFunctions" in metadata &&
-      channelHierarchyIds[channelId] &&
-      metadata.permittedFeatures.includes(permittedFeature),
-  )
+	return Object.entries(getAllChannelMetadata(brain)).some(
+		([channelId, metadata]) =>
+			metadata !== undefined &&
+			"allowedFunctions" in metadata &&
+			channelHierarchyIds[channelId] &&
+			metadata.permittedFeatures.includes(permittedFeature),
+	)
 }

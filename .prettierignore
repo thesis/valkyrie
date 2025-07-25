@@ -1,0 +1,6 @@
+# Files handled by Biome
+*.js
+*.ts
+*.tsx
+*.json
+*.css

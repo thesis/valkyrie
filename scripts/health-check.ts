@@ -10,7 +10,7 @@
 import { Robot } from "hubot"
 
 export default function setUpHealthCheck(robot: Robot) {
-  robot.router.get("/", (req, res) =>
-    res.status(200).send("I watch for Ragnarok."),
-  )
+	robot.router.get("/", (req, res) =>
+		res.status(200).send("I watch for Ragnarok."),
+	)
 }

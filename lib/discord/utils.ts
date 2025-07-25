@@ -1,9 +1,9 @@
 import {
-  Channel,
-  ChannelType,
-  AnyThreadChannel,
-  ClientEvents,
-  ThreadChannel,
+	AnyThreadChannel,
+	Channel,
+	ChannelType,
+	ClientEvents,
+	ThreadChannel,
 } from "discord.js"
 import { Robot } from "hubot"
 import { DiscordBot } from "hubot-discord"
@@ -14,7 +14,7 @@ const BASE_ROLE_ID = "1158333090494689290"
 
 // Channels that are used for testing, may be treated differently.
 const TESTING_CHANNEL_NAMES =
-  process.env.TESTING_CHANNEL_NAMES?.split(",") ?? []
+	process.env.TESTING_CHANNEL_NAMES?.split(",") ?? []
 
 /**
  * Hubot Robot type with Discord adapter.
@@ -26,9 +26,9 @@ export type DiscordHubot = Hubot.Robot<DiscordBot>
  * their last param.
  */
 export type DiscordEventHandlers = {
-  [Event in keyof ClientEvents]?: (
-    ...params: [...ClientEvents[Event], Robot]
-  ) => Promise<void>
+	[Event in keyof ClientEvents]?: (
+		...params: [...ClientEvents[Event], Robot]
+	) => Promise<void>
 }
 
 // Category that is treated as recreational, i.e. the rules don't apply baby.
@@ -39,11 +39,11 @@ export const RECREATIONAL_CATEGORY_ID = "1079492118692757605"
  * times, these channels may be subjected to laxer restrictions.
  */
 export function isInTestingChannel(threadChannel: ThreadChannel): boolean {
-  return (
-    TESTING_CHANNEL_NAMES.indexOf(
-      threadChannel.parent?.name?.toLowerCase() ?? "",
-    ) !== -1
-  )
+	return (
+		TESTING_CHANNEL_NAMES.indexOf(
+			threadChannel.parent?.name?.toLowerCase() ?? "",
+		) !== -1
+	)
 }
 
 /**
@@ -53,28 +53,28 @@ export function isInTestingChannel(threadChannel: ThreadChannel): boolean {
  * decision-making.
  */
 export function isInRecreationalCategory(
-  channel: Channel | undefined | null,
+	channel: Channel | undefined | null,
 ): boolean {
-  if (
-    channel === undefined ||
-    channel === null ||
-    channel.isDMBased() ||
-    channel.parent === null
-  ) {
-    return false
-  }
+	if (
+		channel === undefined ||
+		channel === null ||
+		channel.isDMBased() ||
+		channel.parent === null
+	) {
+		return false
+	}
 
-  // Channel is inside a category.
-  if (channel.parent.type === ChannelType.GuildCategory) {
-    return channel.parent.id === RECREATIONAL_CATEGORY_ID
-  }
+	// Channel is inside a category.
+	if (channel.parent.type === ChannelType.GuildCategory) {
+		return channel.parent.id === RECREATIONAL_CATEGORY_ID
+	}
 
-  // Channel's parent is inside a category; this applies to thread channels.
-  if (channel.parent.parent !== null) {
-    return channel.parent.id === RECREATIONAL_CATEGORY_ID
-  }
+	// Channel's parent is inside a category; this applies to thread channels.
+	if (channel.parent.parent !== null) {
+		return channel.parent.id === RECREATIONAL_CATEGORY_ID
+	}
 
-  return false
+	return false
 }
 
 /**
@@ -83,45 +83,45 @@ export function isInRecreationalCategory(
  * it is designed for use on servers rather than in DMs.
  */
 export function isPrivate(channel: Channel | undefined | null): boolean {
-  if (
-    channel === undefined ||
-    channel === null ||
-    channel.isDMBased() ||
-    channel.parent === null
-  ) {
-    return false
-  }
+	if (
+		channel === undefined ||
+		channel === null ||
+		channel.isDMBased() ||
+		channel.parent === null
+	) {
+		return false
+	}
 
-  // Private and public threads get clear channel types.
-  if (channel.type === ChannelType.PrivateThread) {
-    return true
-  }
+	// Private and public threads get clear channel types.
+	if (channel.type === ChannelType.PrivateThread) {
+		return true
+	}
 
-  if (
-    channel.type === ChannelType.PublicThread ||
-    channel.type === ChannelType.AnnouncementThread
-  ) {
-    return false
-  }
+	if (
+		channel.type === ChannelType.PublicThread ||
+		channel.type === ChannelType.AnnouncementThread
+	) {
+		return false
+	}
 
-  // This cast is needed because the PublicThread/AnnouncementThread
-  // conditional above doesn't correctly filter out
-  // PublicThreadChannel<boolean> from the type list, even though it does
-  // practically exclude them.
-  const knownNonThreadChannel = channel as Exclude<
-    typeof channel,
-    AnyThreadChannel
-  >
+	// This cast is needed because the PublicThread/AnnouncementThread
+	// conditional above doesn't correctly filter out
+	// PublicThreadChannel<boolean> from the type list, even though it does
+	// practically exclude them.
+	const knownNonThreadChannel = channel as Exclude<
+		typeof channel,
+		AnyThreadChannel
+	>
 
-  // For other channels, check if the defined base role has view
-  // channel access.
-  //
-  // NOTE: The way the Thesis Discord is set up, the base
-  // "@everyone" role does NOT have view access; however,
-  // the base role identified by BASE_ROLE_ID does.
-  const everyoneCanView =
-    knownNonThreadChannel.permissionsFor(BASE_ROLE_ID)?.has("ViewChannel") ??
-    false
+	// For other channels, check if the defined base role has view
+	// channel access.
+	//
+	// NOTE: The way the Thesis Discord is set up, the base
+	// "@everyone" role does NOT have view access; however,
+	// the base role identified by BASE_ROLE_ID does.
+	const everyoneCanView =
+		knownNonThreadChannel.permissionsFor(BASE_ROLE_ID)?.has("ViewChannel") ??
+		false
 
-  return !everyoneCanView
+	return !everyoneCanView
 }

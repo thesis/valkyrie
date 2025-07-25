@@ -20,48 +20,48 @@
 import { Robot, TextMessage } from "hubot"
 
 export default function aliasHelpCommand(robot: Robot) {
-  robot.receiveMiddleware((context, next, done) => {
-    const robotRespondPatternInText = robot
-      .respondPattern(/ /)
-      .exec(context.response?.message.text ?? "")
-    if (robotRespondPatternInText) {
-      // Strip robot pattern from message, clean up for next steps.
-      const messageWords =
-        context.response?.message.text
-          ?.replace(robotRespondPatternInText[0], "")
-          .trim()
-          .toLowerCase()
-          .split(" ") ?? []
+	robot.receiveMiddleware((context, next, done) => {
+		const robotRespondPatternInText = robot
+			.respondPattern(/ /)
+			.exec(context.response?.message.text ?? "")
+		if (robotRespondPatternInText) {
+			// Strip robot pattern from message, clean up for next steps.
+			const messageWords =
+				context.response?.message.text
+					?.replace(robotRespondPatternInText[0], "")
+					.trim()
+					.toLowerCase()
+					.split(" ") ?? []
 
-      // Make sure the message contains "help" - but eliminate direct calls to help.
-      if (messageWords.indexOf("help") <= 0) {
-        return next(done)
-      }
-      // Expect "help" to be the second or third word in the message.
-      // We want to avoid catching things like reminders with the word "help"
-      // in the reminder message.
-      if (messageWords.indexOf("help") <= 2 && context.response !== undefined) {
-        const possibleCommand = messageWords[0]
-        const flippedHelpRequest = `help ${possibleCommand}`
-        const messageToRobot = new TextMessage(
-          context.response.envelope.user,
-          `${robot.alias}${flippedHelpRequest}`,
-          "",
-        )
-        // Add metadata to message, if present, so reply is properly threaded.
-        if (
-          context.response.message &&
-          "metadata" in context.response.message
-        ) {
-          // @ts-expect-error ignore missing metadata field since we know
-          // metadata is available. Note that a better solution is needed, but
-          // requires support from Hubot itself.
-          messageToRobot.metadata = context.response.message.metadata
-        }
-        robot.adapter.receive(messageToRobot)
-        return done()
-      }
-    }
-    return next(done)
-  })
+			// Make sure the message contains "help" - but eliminate direct calls to help.
+			if (messageWords.indexOf("help") <= 0) {
+				return next(done)
+			}
+			// Expect "help" to be the second or third word in the message.
+			// We want to avoid catching things like reminders with the word "help"
+			// in the reminder message.
+			if (messageWords.indexOf("help") <= 2 && context.response !== undefined) {
+				const possibleCommand = messageWords[0]
+				const flippedHelpRequest = `help ${possibleCommand}`
+				const messageToRobot = new TextMessage(
+					context.response.envelope.user,
+					`${robot.alias}${flippedHelpRequest}`,
+					"",
+				)
+				// Add metadata to message, if present, so reply is properly threaded.
+				if (
+					context.response.message &&
+					"metadata" in context.response.message
+				) {
+					// @ts-expect-error ignore missing metadata field since we know
+					// metadata is available. Note that a better solution is needed, but
+					// requires support from Hubot itself.
+					messageToRobot.metadata = context.response.message.metadata
+				}
+				robot.adapter.receive(messageToRobot)
+				return done()
+			}
+		}
+		return next(done)
+	})
 }

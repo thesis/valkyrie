@@ -1,6 +1,1 @@
-[
-  "hubot-diagnostics",
-  "hubot-redis-brain",
-  "hubot-rules",
-  "hubot-shipit"
-]
+["hubot-diagnostics", "hubot-redis-brain", "hubot-rules", "hubot-shipit"]

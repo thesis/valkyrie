@@ -1,18 +1,18 @@
-import { registerFont, createCanvas } from "canvas"
+import { createCanvas, registerFont } from "canvas"
 import { Readable } from "stream"
 
 registerFont("web/src/fonts/Inter-Regular.otf", {
-  family: "Inter",
+	family: "Inter",
 })
 
 type AvatarInfo = {
-  filename: string
-  pngStream: Readable
+	filename: string
+	pngStream: Readable
 }
 
 const AVATAR_DIMENSIONS = {
-  width: 234,
-  height: 234,
+	width: 234,
+	height: 234,
 }
 
 /**
@@ -24,52 +24,52 @@ const AVATAR_DIMENSIONS = {
  * `tally-ho-general`.
  */
 export function roomNameToAlias(
-  roomName: string,
-  prefixParentSpaceName?: string,
+	roomName: string,
+	prefixParentSpaceName?: string,
 ): string {
-  const baseAlias = roomName.toLowerCase().replace(/[^a-z0-9]/g, "-")
+	const baseAlias = roomName.toLowerCase().replace(/[^a-z0-9]/g, "-")
 
-  if (prefixParentSpaceName !== undefined) {
-    return `${roomNameToAlias(prefixParentSpaceName)}-${baseAlias}`
-  }
-  return baseAlias
+	if (prefixParentSpaceName !== undefined) {
+		return `${roomNameToAlias(prefixParentSpaceName)}-${baseAlias}`
+	}
+	return baseAlias
 }
 
 export function generateAvatar(
-  roomName: string,
-  baseColorHex: string,
-  prefixParentSpaceName: string | undefined,
+	roomName: string,
+	baseColorHex: string,
+	prefixParentSpaceName: string | undefined,
 ): AvatarInfo {
-  const { width, height } = AVATAR_DIMENSIONS
+	const { width, height } = AVATAR_DIMENSIONS
 
-  const canvas = createCanvas(width, height)
-  const ctx = canvas.getContext("2d")
-  ctx.fillStyle = baseColorHex
+	const canvas = createCanvas(width, height)
+	const ctx = canvas.getContext("2d")
+	ctx.fillStyle = baseColorHex
 
-  ctx.ellipse(width / 2, height / 2, width / 2, height / 2, 0, 0, 2 * Math.PI)
-  ctx.fill()
+	ctx.ellipse(width / 2, height / 2, width / 2, height / 2, 0, 0, 2 * Math.PI)
+	ctx.fill()
 
-  ctx.font = "98pt 'Inter'"
-  ctx.fillStyle = "#ffffff"
+	ctx.font = "98pt 'Inter'"
+	ctx.fillStyle = "#ffffff"
 
-  const text = roomName.substring(0, 1).toUpperCase()
-  const {
-    width: textWidth,
-    actualBoundingBoxAscent,
-    actualBoundingBoxDescent,
-  } = ctx.measureText(text)
-  const textHeight = actualBoundingBoxAscent + actualBoundingBoxDescent
-  ctx.fillText(
-    text,
-    width / 2 - textWidth / 2,
-    width / 2 + textHeight / 2,
-    width,
-  )
+	const text = roomName.substring(0, 1).toUpperCase()
+	const {
+		width: textWidth,
+		actualBoundingBoxAscent,
+		actualBoundingBoxDescent,
+	} = ctx.measureText(text)
+	const textHeight = actualBoundingBoxAscent + actualBoundingBoxDescent
+	ctx.fillText(
+		text,
+		width / 2 - textWidth / 2,
+		width / 2 + textHeight / 2,
+		width,
+	)
 
-  const stream = canvas.createPNGStream()
+	const stream = canvas.createPNGStream()
 
-  return {
-    filename: `${roomNameToAlias(roomName, prefixParentSpaceName)}.png`,
-    pngStream: stream,
-  }
+	return {
+		filename: `${roomNameToAlias(roomName, prefixParentSpaceName)}.png`,
+		pngStream: stream,
+	}
 }

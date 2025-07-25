@@ -15,7 +15,7 @@ import { DateTime, Info } from "luxon"
 const USER_PREFERENCES_BRAIN_KEY = "preferences"
 
 export type UserPreferences = {
-  timezone: string
+	timezone: string
 }
 
 // Eastern time in particular must be stated as EST5EDT to properly handle
@@ -24,73 +24,73 @@ export type UserPreferences = {
 // like "Pacific", "Eastern", etc which are not directly supported by
 // luxon.DateTime.
 const TIMEZONE_MAPS: { [alias: string]: string } = {
-  Eastern: "EST5EDT",
-  EST: "EST5EDT",
-  EDT: "EST5EDT",
-  Pacific: "PST8PDT",
-  Central: "CST6CDT", // Time, Standard Time, Daylight Time
-  Mountain: "America/Phoenix", // Time, Standard Time
-  "Mountain Daylight Time": "America/Boise",
+	Eastern: "EST5EDT",
+	EST: "EST5EDT",
+	EDT: "EST5EDT",
+	Pacific: "PST8PDT",
+	Central: "CST6CDT", // Time, Standard Time, Daylight Time
+	Mountain: "America/Phoenix", // Time, Standard Time
+	"Mountain Daylight Time": "America/Boise",
 }
 
 export default (robot: Robot) => {
-  robot.respond(/timezone$/i, (msg) => {
-    const userPreferences = robot.brain.get(USER_PREFERENCES_BRAIN_KEY)?.[
-      msg.envelope.user.id
-    ] as UserPreferences
+	robot.respond(/timezone$/i, (msg) => {
+		const userPreferences = robot.brain.get(USER_PREFERENCES_BRAIN_KEY)?.[
+			msg.envelope.user.id
+		] as UserPreferences
 
-    if ((userPreferences?.timezone ?? undefined) !== undefined) {
-      msg.reply(`I have you in ${userPreferences.timezone}.`)
-    } else {
-      msg.reply(
-        `I don't know your timezone, so I'm assuming ${DateTime.now().toFormat(
-          "ZZZZ (ZZZZZ)",
-        )}.`,
-      )
-    }
-  })
+		if ((userPreferences?.timezone ?? undefined) !== undefined) {
+			msg.reply(`I have you in ${userPreferences.timezone}.`)
+		} else {
+			msg.reply(
+				`I don't know your timezone, so I'm assuming ${DateTime.now().toFormat(
+					"ZZZZ (ZZZZZ)",
+				)}.`,
+			)
+		}
+	})
 
-  robot.respond(/timezone\s+(.*)/i, (msg) => {
-    const userPreferences = robot.brain.get(USER_PREFERENCES_BRAIN_KEY)?.[
-      msg.envelope.user.id
-    ] as UserPreferences
+	robot.respond(/timezone\s+(.*)/i, (msg) => {
+		const userPreferences = robot.brain.get(USER_PREFERENCES_BRAIN_KEY)?.[
+			msg.envelope.user.id
+		] as UserPreferences
 
-    const existingTimezone =
-      userPreferences?.timezone ?? DateTime.now().toFormat("z")
+		const existingTimezone =
+			userPreferences?.timezone ?? DateTime.now().toFormat("z")
 
-    const trimmedUserTimezone = msg.match[1].trim()
-    const adjustedTimezone =
-      // Try to find a replacement in the maps
-      TIMEZONE_MAPS[trimmedUserTimezone] ??
-      // If not, try finding a replacement for just the first word if in the
-      // format X Time, X Standard Time, or X Daylight Time.
-      TIMEZONE_MAPS[
-        trimmedUserTimezone.replace(/(Daylight|Standard)? Time/, "").trim()
-      ] ??
-      // If not, just use the provided value directly.
-      msg.match[1]
+		const trimmedUserTimezone = msg.match[1].trim()
+		const adjustedTimezone =
+			// Try to find a replacement in the maps
+			TIMEZONE_MAPS[trimmedUserTimezone] ??
+			// If not, try finding a replacement for just the first word if in the
+			// format X Time, X Standard Time, or X Daylight Time.
+			TIMEZONE_MAPS[
+				trimmedUserTimezone.replace(/(Daylight|Standard)? Time/, "").trim()
+			] ??
+			// If not, just use the provided value directly.
+			msg.match[1]
 
-    if (Info.isValidIANAZone(adjustedTimezone)) {
-      robot.brain.set(USER_PREFERENCES_BRAIN_KEY, {
-        ...robot.brain.get(USER_PREFERENCES_BRAIN_KEY),
-        [msg.envelope.user.id]: {
-          ...userPreferences,
-          timezone: adjustedTimezone,
-        },
-      })
+		if (Info.isValidIANAZone(adjustedTimezone)) {
+			robot.brain.set(USER_PREFERENCES_BRAIN_KEY, {
+				...robot.brain.get(USER_PREFERENCES_BRAIN_KEY),
+				[msg.envelope.user.id]: {
+					...userPreferences,
+					timezone: adjustedTimezone,
+				},
+			})
 
-      msg.reply(
-        `Updated your timezone from ${existingTimezone} to ${adjustedTimezone}.`,
-      )
-    } else {
-      msg.reply(
-        `Couldn't properly understand ${msg.match[1]} as a timezone. Try ` +
-          "going to https://greenwichmeantime.com/time-zone/ and using the " +
-          "time zone listed as your local one halfway down the page (e.g. " +
-          "`America/New_York`).",
-      )
-    }
-  })
+			msg.reply(
+				`Updated your timezone from ${existingTimezone} to ${adjustedTimezone}.`,
+			)
+		} else {
+			msg.reply(
+				`Couldn't properly understand ${msg.match[1]} as a timezone. Try ` +
+					"going to https://greenwichmeantime.com/time-zone/ and using the " +
+					"time zone listed as your local one halfway down the page (e.g. " +
+					"`America/New_York`).",
+			)
+		}
+	})
 }
 
 /**
@@ -98,9 +98,9 @@ export default (robot: Robot) => {
  * user id.
  */
 export function userPreferencesFor(robot: Robot, userId: string) {
-  return robot.brain.get(USER_PREFERENCES_BRAIN_KEY)?.[
-    userId
-  ] as UserPreferences
+	return robot.brain.get(USER_PREFERENCES_BRAIN_KEY)?.[
+		userId
+	] as UserPreferences
 }
 
 /**
@@ -108,5 +108,5 @@ export function userPreferencesFor(robot: Robot, userId: string) {
  * user id; defaults to the system timezone if the user has not set a timezone.
  */
 export function userTimezoneFor(robot: Robot, userId: string) {
-  return userPreferencesFor(robot, userId)?.timezone ?? DateTime.now().zoneName
+	return userPreferencesFor(robot, userId)?.timezone ?? DateTime.now().zoneName
 }
