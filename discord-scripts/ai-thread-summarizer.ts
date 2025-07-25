@@ -58,37 +58,39 @@ async function withRetries<T>(
   }
 }
 
-async function summarizeMessages(text: string): Promise<string> {
+async function summarizeMessages(robot: Robot, text: string): Promise<string> {
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
-      {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "x-goog-api-key": GOOGLE_API_KEY
+    const response = await withRetries(robot, "call Gemini API", async () => {
+      return await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
+        {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "x-goog-api-key": GOOGLE_API_KEY
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: "Summarize this conversation with specific bullet points on each different point of the conversation. Be sure to start with a summary of each member and what they said.",
+                  },
+                ],
+              },
+              { role: "user", parts: [{ text }] },
+            ],
+          }),
         },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  text: "Summarize this conversation with specific bullet points on each different point of the conversation. Be sure to start with a summary of each member and what they said.",
-                },
-              ],
-            },
-            { role: "user", parts: [{ text }] },
-          ],
-        }),
-      },
-    )
+      )
+    })
     const data = await response.json()
 
     const textResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text
     return textResponse ?? "⚠️ No summary available."
   } catch (error: unknown) {
-    console.error(
+    robot.logger.error(
       "❌ AI Summarization Error:",
       error instanceof Error ? error.message : error,
     )
@@ -219,7 +221,7 @@ export default async function threadSummarizer(
         .reverse()
         .join("\n")
 
-      const summary = await summarizeMessages(formattedMessages)
+      const summary = await summarizeMessages(robot, formattedMessages)
 
       if (summary.length > MAX_DISCORD_MESSAGE_LENGTH) {
         await sendLongMessage(channel, `📜 **Thread Summary:**\n${summary}`)
