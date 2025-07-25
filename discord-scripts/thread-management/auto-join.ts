@@ -49,6 +49,9 @@ const ADD_SUBCOMMAND_NAME = "add"
 const LIST_SUBCOMMAND_NAME = "list"
 const REMOVE_SUBCOMMAND_NAME = "remove"
 
+// Synchronization for brain operations to prevent race conditions
+const brainLocks = new Map<string, Promise<void>>()
+
 function getDefaultRoleForChannel(
 	containingChannel: AnyThreadChannel["parent"],
 	server: AnyThreadChannel["guild"],
@@ -288,24 +291,46 @@ export default async function autoJoinAndTagManagement(
 						return
 					}
 
-					// Add role to auto-tag list for this channel
-					const autoTagData = robot.brain.get(AUTO_TAG_BRAIN_KEY) ?? {}
-					const channelRoles: string[] = autoTagData[channel.id] ?? []
+					// Add role to auto-tag list for this channel with race condition protection
+					const lockKey = `${AUTO_TAG_BRAIN_KEY}-${channel.id}`
+					const currentLock = brainLocks.get(lockKey) ?? Promise.resolve()
+					
+					const operation = currentLock.then(async () => {
+						try {
+							const autoTagData = robot.brain.get(AUTO_TAG_BRAIN_KEY) ?? {}
+							const channelRoles: string[] = autoTagData[channel.id] ?? []
 
-					if (!channelRoles.includes(role.name)) {
-						channelRoles.push(role.name)
-						autoTagData[channel.id] = channelRoles
-						robot.brain.set(AUTO_TAG_BRAIN_KEY, autoTagData)
+							if (!channelRoles.includes(role.name)) {
+								channelRoles.push(role.name)
+								autoTagData[channel.id] = channelRoles
+								robot.brain.set(AUTO_TAG_BRAIN_KEY, autoTagData)
 
-						await interaction.reply({
-							content: `Added role "${role.name}" to auto-tag list for this channel.`,
-						})
-					} else {
-						await interaction.reply({
-							content: `Role "${role.name}" is already in the auto-tag list for this channel.`,
-							ephemeral: true,
-						})
-					}
+								await interaction.reply({
+									content: `Added role "${role.name}" to auto-tag list for this channel.`,
+								})
+							} else {
+								await interaction.reply({
+									content: `Role "${role.name}" is already in the auto-tag list for this channel.`,
+									ephemeral: true,
+								})
+							}
+						} catch (brainError) {
+							robot.logger.error("Failed to save auto-tag data:", brainError)
+							await interaction.reply({
+								content: `Failed to save role "${role.name}" to auto-tag list. Please try again.`,
+								ephemeral: true,
+							})
+						}
+					})
+					
+					brainLocks.set(lockKey, operation)
+					operation.finally(() => {
+						if (brainLocks.get(lockKey) === operation) {
+							brainLocks.delete(lockKey)
+						}
+					})
+					
+					await operation
 				} else if (subcommand === LIST_SUBCOMMAND_NAME) {
 					const autoTagData = robot.brain.get(AUTO_TAG_BRAIN_KEY) ?? {}
 					const channelRoles: string[] = autoTagData[channel.id] ?? []
@@ -319,7 +344,9 @@ export default async function autoJoinAndTagManagement(
 						// Show default role that would be used
 						const server = interaction.guild
 						if (server) {
-							const defaultRole = getDefaultRoleForChannel(channel as AnyThreadChannel["parent"], server)
+							// Safe type handling - check if channel is a thread first
+							const parentChannel = channel.isThread() ? channel.parent : channel
+							const defaultRole = getDefaultRoleForChannel(parentChannel, server)
 							if (defaultRole) {
 								await interaction.reply({
 									content: `**No custom auto-tag roles set for this channel.**\n\nDefault role that would be auto-tagged: **${defaultRole.name}**`,
@@ -338,27 +365,51 @@ export default async function autoJoinAndTagManagement(
 					}
 				} else if (subcommand === REMOVE_SUBCOMMAND_NAME) {
 					const roleName = interaction.options.getString("role", true)
-					const autoTagData = robot.brain.get(AUTO_TAG_BRAIN_KEY) ?? {}
-					const channelRoles: string[] = autoTagData[channel.id] ?? []
+					
+					// Remove role from auto-tag list with race condition protection
+					const lockKey = `${AUTO_TAG_BRAIN_KEY}-${channel.id}`
+					const currentLock = brainLocks.get(lockKey) ?? Promise.resolve()
+					
+					const operation = currentLock.then(async () => {
+						try {
+							const autoTagData = robot.brain.get(AUTO_TAG_BRAIN_KEY) ?? {}
+							const channelRoles: string[] = autoTagData[channel.id] ?? []
 
-					const roleIndex = channelRoles.findIndex(
-						(role) => role.toLowerCase() === roleName.toLowerCase(),
-					)
+							const roleIndex = channelRoles.findIndex(
+								(role) => role.toLowerCase() === roleName.toLowerCase(),
+							)
 
-					if (roleIndex !== -1) {
-						const removedRole = channelRoles.splice(roleIndex, 1)[0]
-						autoTagData[channel.id] = channelRoles
-						robot.brain.set(AUTO_TAG_BRAIN_KEY, autoTagData)
+							if (roleIndex !== -1) {
+								const removedRole = channelRoles.splice(roleIndex, 1)[0]
+								autoTagData[channel.id] = channelRoles
+								robot.brain.set(AUTO_TAG_BRAIN_KEY, autoTagData)
 
-						await interaction.reply({
-							content: `Removed role "${removedRole}" from auto-tag list for this channel.`,
-						})
-					} else {
-						await interaction.reply({
-							content: `Role "${roleName}" is not in the auto-tag list for this channel.`,
-							ephemeral: true,
-						})
-					}
+								await interaction.reply({
+									content: `Removed role "${removedRole}" from auto-tag list for this channel.`,
+								})
+							} else {
+								await interaction.reply({
+									content: `Role "${roleName}" is not in the auto-tag list for this channel.`,
+									ephemeral: true,
+								})
+							}
+						} catch (brainError) {
+							robot.logger.error("Failed to save auto-tag data:", brainError)
+							await interaction.reply({
+								content: `Failed to remove role "${roleName}" from auto-tag list. Please try again.`,
+								ephemeral: true,
+							})
+						}
+					})
+					
+					brainLocks.set(lockKey, operation)
+					operation.finally(() => {
+						if (brainLocks.get(lockKey) === operation) {
+							brainLocks.delete(lockKey)
+						}
+					})
+					
+					await operation
 				}
 			} catch (error) {
 				robot.logger.error("Error handling auto-tag command:", error)
