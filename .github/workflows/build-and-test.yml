@@ -74,13 +74,13 @@ jobs:
       - name: Read .nvmrc
         run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
         id: nvm
-      - name: Use Node + Yarn
+      - name: Use Node + pnpm
         uses: actions/setup-node@v3
         with:
           node-version: "${{ steps.nvm.outputs.NVMRC }}"
-          cache: "yarn"
-      - run: yarn install --frozen-lockfile
-      - run: yarn test
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
 
   build-and-push-image:
     runs-on: ubuntu-latest
@@ -93,12 +93,12 @@ jobs:
       - name: Read .nvmrc
         run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
         id: nvm
-      - name: Use Node + Yarn
+      - name: Use Node + pnpm
         uses: actions/setup-node@v3
         with:
           node-version: "${{ steps.nvm.outputs.NVMRC }}"
-          cache: "yarn"
-      - run: yarn install --frozen-lockfile
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
       - name: Build docker image
         run: |
           echo $GITHUB_SHA > BUILD
@@ -155,10 +155,10 @@ jobs:
       - name: Read .nvmrc
         run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
         id: nvm
-      - name: Use Node + Yarn
+      - name: Use Node + pnpm
         uses: actions/setup-node@v3
         with:
           node-version: "${{ steps.nvm.outputs.NVMRC }}"
-          cache: "yarn"
-      - run: yarn install --frozen-lockfile
-      - run: yarn lint
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
