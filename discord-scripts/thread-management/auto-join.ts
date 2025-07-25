@@ -255,6 +255,14 @@ export default async function autoJoinAndTagManagement(
 			const { channel } = interaction
 
 			try {
+				// Check if user has permission to manage threads
+				if (!interaction.memberPermissions?.has('MANAGE_CHANNELS')) {
+					await interaction.reply({
+						content: "You need the Manage Channels permission to use this command.",
+						ephemeral: true
+					});
+					return;
+				}
 				if (subcommand === ADD_SUBCOMMAND_NAME) {
 					const roleName = interaction.options.getString("role", true)
 					const server = interaction.guild
