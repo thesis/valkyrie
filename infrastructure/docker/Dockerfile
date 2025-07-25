@@ -32,9 +32,12 @@ RUN apk add --no-cache \
 	git && \
 	rm -rf /usr/share/man/
 
-COPY yarn.lock package.json ./
+# Install pnpm
+RUN npm install -g pnpm
 
-RUN yarn install --frozen-lockfile
+COPY pnpm-lock.yaml package.json ./
+
+RUN pnpm install --frozen-lockfile
 
 RUN mkdir web bin discord-scripts scripts lib test
 COPY external-scripts.json .
