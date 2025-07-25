@@ -18,28 +18,28 @@
 import { Adapter, Robot, TextMessage } from "hubot"
 
 export default (robot: Robot<Adapter>) => {
-  // robot.hear(
-  //   /\bdad\b/i,
-  //   {
-  //     id: "dad-jokes",
-  //   },
-  //   res => {
-  //     new Promise((resolve, reject) =>
-  //       robot
-  //         .http(dadJokeUrl)
-  //         .headers(requestHeaders)
-  //         .get()((err, response, body) => (err ? reject(err) : resolve(body))),
-  //     )
-  //       .then(body => JSON.parse(body))
-  //       .then(json => decode(json.joke))
-  //       .then(joke => res.send("Dad jokes? I got dad jokes! ", joke))
-  //       .catch(err => res.send("Looks like Dad borked the internet: ", err))
-  //   },
-  // )
-  robot.respond(/shrug(?!\W)/, (res) => {
-    const messageToRobot = new TextMessage(res.message.user, "shrug.gif", "")
-    // @ts-expect-error something is awry in the typing here...
-    messageToRobot.metadata = res.message.metadata
-    robot.adapter.receive(messageToRobot)
-  })
+	// robot.hear(
+	//   /\bdad\b/i,
+	//   {
+	//     id: "dad-jokes",
+	//   },
+	//   res => {
+	//     new Promise((resolve, reject) =>
+	//       robot
+	//         .http(dadJokeUrl)
+	//         .headers(requestHeaders)
+	//         .get()((err, response, body) => (err ? reject(err) : resolve(body))),
+	//     )
+	//       .then(body => JSON.parse(body))
+	//       .then(json => decode(json.joke))
+	//       .then(joke => res.send("Dad jokes? I got dad jokes! ", joke))
+	//       .catch(err => res.send("Looks like Dad borked the internet: ", err))
+	//   },
+	// )
+	robot.respond(/shrug(?!\W)/, (res) => {
+		const messageToRobot = new TextMessage(res.message.user, "shrug.gif", "")
+		// @ts-expect-error something is awry in the typing here...
+		messageToRobot.metadata = res.message.metadata
+		robot.adapter.receive(messageToRobot)
+	})
 }

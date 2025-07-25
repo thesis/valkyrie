@@ -7,7 +7,7 @@ metadata:
   name: valkyrie-web-ingress
 spec:
   tls:
-  - secretName: thesis-co-cloudflare-origin-cert
+    - secretName: thesis-co-cloudflare-origin-cert
   defaultBackend:
     service:
       name: valkyrie-http-service
