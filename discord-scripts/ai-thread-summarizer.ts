@@ -151,25 +151,6 @@ export default async function threadSummarizer(
         return
       }
       const thread = interaction.channel
-      const threadId = thread.id
-
-      const guild = discordClient.guilds.cache.first()
-      if (!guild) {
-        await interaction.reply({
-          content: "⚠️ Failed to resolve Discord server.",
-          ephemeral: true,
-        })
-        return
-      }
-
-      const channel = (await guild.channels.fetch(threadId)) as TextChannel
-      if (!channel || !channel.isTextBased()) {
-        await interaction.reply({
-          content: "⚠️ No matching thread found.",
-          ephemeral: true,
-        })
-        return
-      }
 
       const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
@@ -212,7 +193,7 @@ export default async function threadSummarizer(
 
       const messages = await thread.messages.fetch({ limit: 100 })
       if (!messages.size) {
-        await channel.send("⚠️ No messages found in this thread.")
+        await thread.send("⚠️ No messages found in this thread.")
         return
       }
 
@@ -224,9 +205,9 @@ export default async function threadSummarizer(
       const summary = await summarizeMessages(robot, formattedMessages)
 
       if (summary.length > MAX_DISCORD_MESSAGE_LENGTH) {
-        await sendLongMessage(channel, `📜 **Thread Summary:**\n${summary}`)
+        await sendLongMessage(thread, `📜 **Thread Summary:**\n${summary}`)
       } else {
-        await channel.send(`📜 **Thread Summary:**\n${summary}`)
+        await thread.send(`📜 **Thread Summary:**\n${summary}`)
       }
 
       await interaction.followUp({
