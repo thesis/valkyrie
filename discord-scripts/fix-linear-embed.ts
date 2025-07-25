@@ -1,415 +1,432 @@
+import { LinearClient } from "@linear/sdk"
 import {
-  Client,
-  EmbedBuilder,
-  TextChannel,
-  ThreadChannel,
-  VoiceChannel,
-  Message,
+	Client,
+	EmbedBuilder,
+	Message,
+	TextChannel,
+	ThreadChannel,
+	VoiceChannel,
 } from "discord.js"
 import { Log, Robot } from "hubot"
-import { LinearClient } from "@linear/sdk"
 
 const { LINEAR_API_TOKEN } = process.env
 
+// Add channelIDs which should ignore the embed processing entirely
+// #mezo-standup
+const IGNORED_CHANNELS = new Set(["1187783048427741296"])
+
 // track processed message to avoid duplicates if original message is edited
 const processedMessages = new Map<
-  string,
-  Map<
-    string,
-    {
-      issueId?: string
-      commentId?: string
-      teamName?: string
-      projectId?: string
-      projectUpdateId?: string
-    }
-  >
+	string,
+	Map<
+		string,
+		{
+			issueId?: string
+			commentId?: string
+			teamName?: string
+			projectId?: string
+			projectUpdateId?: string
+		}
+	>
 >()
 
 // let us also track sent embeds to delete them if the original message is deleted or edited WIP
-const sentEmbeds = new Map<string, Message>()
+const sentEmbeds = new Map<string, Map<string, Message>>()
 
 let issueTagRegex: RegExp | null = null
 
 function initializeIssueTagRegex() {
-  issueTagRegex =
-    /(?<!https:\/\/linear\.app\/[a-zA-Z0-9-]+\/issue\/)[A-Z]{3,}-\d+\b/gi
+	issueTagRegex =
+		/(?<!https:\/\/linear\.app\/[a-zA-Z0-9-]+\/issue\/)(?<![<[])[A-Z]{3,}-\d+(?![>\]])\b/gi
 }
 
 const projectRegex =
-  /https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/project\/([a-zA-Z0-9-]+)(?:#projectUpdate-([a-zA-Z0-9]+))?/g
+	/https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/project\/([a-zA-Z0-9-]+)(?:#projectUpdate-([a-zA-Z0-9]+))?/g
 
 const issueUrlRegex =
-  /https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/issue\/([a-zA-Z0-9-]+)(?:.*#comment-([a-zA-Z0-9]+))?/g
+	/(?<![<[]])https:\/\/linear\.app\/([a-zA-Z0-9-]+)\/issue\/([a-zA-Z0-9-]+)(?:.*#comment-([a-zA-Z0-9]+))?(?![>\]])/g
 
 function truncateToWords(
-  content: string | undefined,
-  ifBlank: string,
-  maxWords = 50,
+	content: string | undefined,
+	ifBlank: string,
+	maxWords = 50,
 ): string {
-  if (content === undefined || content.trim() === "") {
-    return ifBlank
-  }
+	if (content === undefined || content.trim() === "") {
+		return ifBlank
+	}
 
-  const truncatedContent = content.split(" ").slice(0, maxWords).join(" ")
+	const truncatedContent = content.split(" ").slice(0, maxWords).join(" ")
 
-  if (truncatedContent !== content) {
-    return `${truncatedContent}...`
-  }
+	if (truncatedContent !== content) {
+		return `${truncatedContent}...`
+	}
 
-  return content
+	return content
 }
 
 async function createLinearEmbed(
-  linearClient: LinearClient,
-  issueId?: string,
-  commentId?: string,
-  teamName?: string,
-  projectId?: string,
-  projectUpdateId?: string,
+	linearClient: LinearClient,
+	issueId?: string,
+	commentId?: string,
+	projectId?: string,
+	projectUpdateId?: string,
+	compact: boolean = false,
 ) {
-  try {
-    const embed = new EmbedBuilder()
+	try {
+		const embed = new EmbedBuilder()
 
-    // project embed handling
-    if (projectId) {
-      const cleanProjectId = projectId.split("-").pop()
-      const project = cleanProjectId
-        ? await linearClient.project(cleanProjectId)
-        : null
-      const updates = await project?.projectUpdates()
-      const update = projectUpdateId
-        ? updates?.nodes.find((u) => u.id.startsWith(projectUpdateId))
-        : null
+		// project embed handling
+		if (projectId) {
+			const cleanProjectId = projectId.split("-").pop()
+			const project = cleanProjectId
+				? await linearClient.project(cleanProjectId)
+				: null
+			const updates = await project?.projectUpdates()
+			const update = projectUpdateId
+				? updates?.nodes.find((u) => u.id.startsWith(projectUpdateId))
+				: null
 
-      if (project) {
-        embed
-          .setTitle(`Project: ${project.name}`)
-          .setURL(
-            `https://linear.app/${teamName}/project/${projectId}/overview`,
-          )
-          .setDescription(
-            truncateToWords(
-              project.description,
-              "No description available.",
-              50,
-            ),
-          )
-          .setTimestamp(new Date(project.updatedAt))
-        if (update) {
-          embed
-            .setTitle(
-              `Project Update: ${project.name} - ${new Date(
-                project.updatedAt,
-              ).toLocaleString()}`,
-            )
-            .setURL(
-              `https://linear.app/${teamName}/project/${projectId}#projectUpdate-${projectUpdateId}`,
-            )
-            .setDescription(
-              truncateToWords(update?.body, "No description available.", 50),
-            )
-        }
-      }
+			if (project) {
+				embed
+					.setTitle(`Project: ${project.name}`)
+					.setURL(project.url)
+					.setDescription(
+						truncateToWords(
+							project.description,
+							"No description available.",
+							50,
+						),
+					)
+					.setTimestamp(new Date(project.updatedAt))
+				if (update) {
+					embed
+						.setTitle(
+							`Project Update: ${project.name} - ${new Date(
+								project.updatedAt,
+							).toLocaleString()}`,
+						)
+						.setURL(`${project.url}#projectUpdate-${projectUpdateId}`)
+						.setDescription(
+							truncateToWords(update?.body, "No description available.", 50),
+						)
+				}
+			}
 
-      return embed
-    }
+			return embed
+		}
 
-    // issue + comment embed handling
-    if (issueId) {
-      const issue = await linearClient.issue(issueId)
-      const state = issue.state ? await issue.state : null
-      const assignee = issue.assignee ? await issue.assignee : null
-      const comments = await issue.comments()
-      const comment = commentId
-        ? comments.nodes.find((c) => c.id.startsWith(commentId))
-        : null
+		// issue + comment embed handling
+		if (issueId) {
+			const issue = await linearClient.issue(issueId)
+			const state = issue.state ? await issue.state : null
+			const assignee = issue.assignee ? await issue.assignee : null
+			const comments = await issue.comments()
+			const comment = commentId
+				? comments.nodes.find((c) => c.id.startsWith(commentId))
+				: null
 
-      if (comment) {
-        embed
-          .setTitle(`Comment on [${issue.identifier}] ${issue.title}`)
-          .setURL(
-            `https://linear.app/${teamName}/issue/${issue.identifier}#comment-${commentId}`,
-          )
-          .setDescription(
-            truncateToWords(comment.body, "No comment body available.", 50),
-          )
-          .addFields(
-            {
-              name: "Issue",
-              value: `${issue.title} (${state?.name || "No status"})`,
-            },
-            {
-              name: "Assignee",
-              value: assignee?.name || "Unassigned",
-              inline: true,
-            },
-            {
-              name: "Priority",
-              value: issue.priority?.toString() || "None",
-              inline: true,
-            },
-          )
-      } else {
-        embed
-          .setTitle(`[${issue.identifier}] ${issue.title}`)
-          .setURL(`https://linear.app/${teamName}/issue/${issue.identifier}`)
-          .setDescription(
-            truncateToWords(issue.description, "No description available.", 50),
-          )
-          .addFields(
-            { name: "Status", value: state?.name || "No status", inline: true },
-            {
-              name: "Assignee",
-              value: assignee?.name || "Unassigned",
-              inline: true,
-            },
-            {
-              name: "Priority",
-              value: issue.priority?.toString() || "None",
-              inline: true,
-            },
-          )
-      }
+			if (compact) {
+				embed.setTitle(`[${issue.identifier}] ${issue.title}`).setURL(issue.url)
+				return embed
+			}
 
-      return embed
-    }
+			if (comment && compact) {
+				embed
+					.setTitle(`Comment on [${issue.identifier}] ${issue.title}`)
+					.setURL(`${issue.url}#comment-${commentId}`)
+				return embed
+			}
 
-    return null
-  } catch (error) {
-    console.error("Error creating Linear embed:", error)
-    return null
-  }
+			if (comment) {
+				embed
+					.setTitle(`Comment on [${issue.identifier}] ${issue.title}`)
+					.setURL(`${issue.url}#comment-${commentId}`)
+					.setDescription(
+						truncateToWords(comment.body, "No comment body available.", 50),
+					)
+					.addFields(
+						{
+							name: "Issue",
+							value: `${issue.title} (${state?.name || "No status"})`,
+						},
+						{
+							name: "Assignee",
+							value: assignee?.name || "Unassigned",
+							inline: true,
+						},
+						{
+							name: "Priority",
+							value: issue.priority?.toString() || "None",
+							inline: true,
+						},
+					)
+			} else {
+				embed
+					.setTitle(`[${issue.identifier}] ${issue.title}`)
+					.setURL(issue.url)
+					.setDescription(
+						truncateToWords(issue.description, "No description available.", 50),
+					)
+					.addFields(
+						{ name: "Status", value: state?.name || "No status", inline: true },
+						{
+							name: "Assignee",
+							value: assignee?.name || "Unassigned",
+							inline: true,
+						},
+						{
+							name: "Priority",
+							value: issue.priority?.toString() || "None",
+							inline: true,
+						},
+					)
+			}
+
+			return embed
+		}
+
+		return null
+	} catch (error) {
+		// biome-ignore lint/suspicious/noConsole: Discord script without robot instance
+		console.error("Error creating Linear embed:", error)
+		return null
+	}
 }
 
 async function processLinearEmbeds(
-  message: string,
-  messageId: string,
-  channel: TextChannel | ThreadChannel | VoiceChannel,
-  logger: Log,
-  linearClient: LinearClient,
+	message: string,
+	messageId: string,
+	channel: TextChannel | ThreadChannel | VoiceChannel,
+	logger: Log,
+	linearClient: LinearClient,
 ) {
-  if (!issueTagRegex) {
-    logger.error("IssueTagRegex is not initialized.")
-    return
-  }
+	if (IGNORED_CHANNELS.has(channel.id)) {
+		logger.debug(`Ignoring embeds in channel: ${channel.id}`)
+		return
+	}
+	// Let's include a text call if no embeds are to be used in a message
+	if (message.includes("<no-embeds>")) {
+		logger.debug(
+			`Skipping embeds for message: ${messageId} (contains <no-embeds>)`,
+		)
+		return
+	}
 
-  const urlMatches = Array.from(message.matchAll(issueUrlRegex))
-  const issueMatches = Array.from(message.matchAll(issueTagRegex))
-  const projectMatches = Array.from(message.matchAll(projectRegex))
+	if (!issueTagRegex) {
+		logger.error("IssueTagRegex is not initialized.")
+		return
+	}
 
-  if (
-    urlMatches.length === 0 &&
-    issueMatches.length === 0 &&
-    projectMatches.length === 0
-  ) {
-    return
-  }
+	const urlMatches = Array.from(message.matchAll(issueUrlRegex))
+	const issueMatches = Array.from(message.matchAll(issueTagRegex))
+	const projectMatches = Array.from(message.matchAll(projectRegex))
 
-  const processedIssues =
-    processedMessages.get(messageId) ??
-    new Map<
-      string,
-      {
-        issueId?: string
-        commentId?: string
-        teamName?: string
-        projectId?: string
-        projectUpdateId?: string
-      }
-    >()
-  processedMessages.set(messageId, processedIssues)
+	if (
+		urlMatches.length === 0 &&
+		issueMatches.length === 0 &&
+		projectMatches.length === 0
+	) {
+		return
+	}
 
-  urlMatches.forEach((match) => {
-    const teamName = match[1]
-    const issueId = match[2]
-    const commentId = match[3] || undefined
-    const uniqueKey = `${issueId}-${commentId || ""}`
+	const processedIssues =
+		processedMessages.get(messageId) ??
+		new Map<
+			string,
+			{
+				issueId?: string
+				commentId?: string
+				teamName?: string
+				projectId?: string
+				projectUpdateId?: string
+			}
+		>()
+	processedMessages.set(messageId, processedIssues)
 
-    if (!processedIssues.has(uniqueKey)) {
-      processedIssues.set(uniqueKey, { issueId, commentId, teamName })
-    }
-  })
+	urlMatches.forEach((match) => {
+		const teamName = match[1]
+		const issueId = match[2]
+		const commentId = match[3] || undefined
+		const uniqueKey = `${issueId}-${commentId || ""}`
 
-  issueMatches.forEach((match) => {
-    const issueId = match[0]
-    const uniqueKey = `${issueId}`
+		if (!processedIssues.has(uniqueKey)) {
+			processedIssues.set(uniqueKey, { issueId, commentId, teamName })
+		}
+	})
 
-    if (!processedIssues.has(uniqueKey)) {
-      processedIssues.set(uniqueKey, { issueId })
-    }
-  })
+	issueMatches.forEach((match) => {
+		const issueId = match[0]
+		const uniqueKey = `${issueId}`
 
-  projectMatches.forEach((match) => {
-    const teamName = match[1]
-    const projectId = match[2]
-    const projectUpdateId = match[3]
-    const uniqueKey = `project-${projectId}`
+		if (!processedIssues.has(uniqueKey)) {
+			processedIssues.set(uniqueKey, { issueId })
+		}
+	})
 
-    if (!processedIssues.has(uniqueKey)) {
-      processedIssues.set(uniqueKey, { projectId, teamName, projectUpdateId })
-    }
-  })
+	projectMatches.forEach((match) => {
+		const teamName = match[1]
+		const projectId = match[2]
+		const projectUpdateId = match[3]
+		const uniqueKey = `project-${projectId}`
 
-  const embedPromises = Array.from(processedIssues.values()).map(
-    async ({ issueId, commentId, teamName, projectId, projectUpdateId }) => {
-      logger.debug(
-        `Processing issue: ${issueId}, comment: ${commentId ?? "N/A"}, team: ${
-          teamName ?? "N/A"
-        }`,
-      )
+		if (!processedIssues.has(uniqueKey)) {
+			processedIssues.set(uniqueKey, { projectId, teamName, projectUpdateId })
+		}
+	})
 
-      const embed = await createLinearEmbed(
-        linearClient,
-        issueId,
-        commentId,
-        teamName,
-        projectId,
-        projectUpdateId,
-      )
-      return { embed, issueId }
-    },
-  )
+	const embedPromises = Array.from(processedIssues.values()).map(
+		async ({ issueId, commentId, teamName, projectId, projectUpdateId }) => {
+			logger.debug(
+				`Processing issue: ${issueId}, comment: ${commentId ?? "N/A"}, team: ${
+					teamName ?? "N/A"
+				}`,
+			)
+			const compactMode = processedIssues.size > 2
 
-  const results = await Promise.all(embedPromises)
+			const embed = await createLinearEmbed(
+				linearClient,
+				issueId,
+				commentId,
+				projectId,
+				projectUpdateId,
+				compactMode,
+			)
+			return { embed, issueId }
+		},
+	)
 
-  results
-    .filter(
-      (result): result is { embed: EmbedBuilder; issueId: string } =>
-        result.embed !== null,
-    )
-    .forEach(({ embed, issueId }) => {
-      if (embed) {
-        channel
-          .send({ embeds: [embed] })
-          .then((sentMessage) => {
-            sentEmbeds.set(messageId, sentMessage)
-          })
-          .catch((error) =>
-            logger.error(
-              `Failed to send embed for issue ID: ${issueId}: ${error}`,
-            ),
-          )
-      } else {
-        logger.error(`Failed to create embed for issue ID: ${issueId}`)
-      }
-    })
+	const results = await Promise.all(embedPromises)
+
+	results
+		.filter(
+			(result): result is { embed: EmbedBuilder; issueId: string } =>
+				result.embed !== null,
+		)
+		.forEach(({ embed, issueId }) => {
+			if (!sentEmbeds.has(messageId)) {
+				sentEmbeds.set(messageId, new Map())
+			}
+			const messageEmbeds = sentEmbeds.get(messageId)!
+
+			if (messageEmbeds.has(issueId)) {
+				messageEmbeds
+					.get(issueId)!
+					.edit({ embeds: [embed] })
+					.catch((error) =>
+						logger.error(
+							`Failed to edit embed for issue ID: ${issueId}: ${error}`,
+						),
+					)
+			} else {
+				channel
+					.send({ embeds: [embed] })
+					.then((sentMessage) => {
+						messageEmbeds.set(issueId, sentMessage)
+					})
+					.catch((error) =>
+						logger.error(
+							`Failed to send embed for issue ID: ${issueId}: ${error}`,
+						),
+					)
+			}
+		})
 }
 
 export default async function linearEmbeds(
-  discordClient: Client,
-  robot: Robot,
+	discordClient: Client,
+	robot: Robot,
 ) {
-  const linearClient = new LinearClient({ apiKey: LINEAR_API_TOKEN })
-  initializeIssueTagRegex()
+	const linearClient = new LinearClient({ apiKey: LINEAR_API_TOKEN })
+	initializeIssueTagRegex()
 
-  discordClient.on("messageCreate", async (message: Message) => {
-    if (
-      message.author.bot ||
-      !(
-        message.channel instanceof TextChannel ||
-        message.channel instanceof ThreadChannel ||
-        message.channel instanceof VoiceChannel
-      )
-    ) {
-      return
-    }
+	discordClient.on("messageCreate", async (message: Message) => {
+		if (
+			message.author.bot ||
+			!(
+				message.channel instanceof TextChannel ||
+				message.channel instanceof ThreadChannel ||
+				message.channel instanceof VoiceChannel
+			)
+		) {
+			return
+		}
 
-    robot.logger.debug(`Processing message: ${message.content}`)
-    await processLinearEmbeds(
-      message.content,
-      message.id,
-      message.channel,
-      robot.logger,
-      linearClient,
-    )
-  })
+		robot.logger.debug(`Processing message: ${message.content}`)
+		await processLinearEmbeds(
+			message.content,
+			message.id,
+			message.channel,
+			robot.logger,
+			linearClient,
+		)
+	})
 
-  discordClient.on("messageUpdate", async (oldMessage, newMessage) => {
-    if (
-      !newMessage.content ||
-      !(
-        newMessage.channel instanceof TextChannel ||
-        newMessage.channel instanceof ThreadChannel ||
-        newMessage.channel instanceof VoiceChannel
-      ) ||
-      newMessage.author?.bot
-    ) {
-      return
-    }
+	discordClient.on("messageUpdate", async (oldMessage, newMessage) => {
+		if (
+			!newMessage.content ||
+			!(
+				newMessage.channel instanceof TextChannel ||
+				newMessage.channel instanceof ThreadChannel
+			) ||
+			newMessage.author?.bot
+		) {
+			return
+		}
 
-    const embedMessage = sentEmbeds.get(newMessage.id)
-    const urlMatches = Array.from(newMessage.content.matchAll(issueUrlRegex))
-    const issueMatches = issueTagRegex
-      ? Array.from(newMessage.content.matchAll(issueTagRegex))
-      : []
-    const projectMatches = projectRegex
-      ? Array.from(newMessage.content.matchAll(projectRegex))
-      : []
+		const messageEmbeds = sentEmbeds.get(newMessage.id) ?? new Map()
+		const oldIssues = new Set<string>()
+		const newIssues = new Set<string>()
 
-    if (
-      urlMatches.length === 0 &&
-      issueMatches.length === 0 &&
-      projectMatches.length === 0
-    ) {
-      if (embedMessage) {
-        await embedMessage.delete().catch((error) => {
-          robot.logger.error(
-            `Failed to delete embed for message ID: ${newMessage.id}: ${error}`,
-          )
-        })
-        sentEmbeds.delete(newMessage.id)
-      }
-      return
-    }
+		if (oldMessage.content) {
+			;[
+				...oldMessage.content.matchAll(issueUrlRegex),
+				...oldMessage.content.matchAll(issueTagRegex ?? /$^/),
+			].forEach((match) => oldIssues.add(match[2] ?? match[0]))
+		}
 
-    const match = urlMatches[0] || issueMatches[0] || projectMatches[0]
-    const teamName = match[1] || undefined
-    const issueId = match[2] || match[0]
-    const commentId = urlMatches.length > 0 ? match[3] || undefined : undefined
+		;[
+			...newMessage.content.matchAll(issueUrlRegex),
+			...newMessage.content.matchAll(issueTagRegex ?? /$^/),
+		].forEach((match) => newIssues.add(match[2] ?? match[0]))
 
-    if (embedMessage) {
-      // we will then update the existing embed
-      try {
-        const embed = await createLinearEmbed(
-          linearClient,
-          issueId,
-          commentId,
-          teamName,
-        )
-        if (embed) {
-          await embedMessage.edit({ embeds: [embed] })
-          robot.logger.debug(`Updated embed for message ID: ${newMessage.id}`)
-        } else {
-          robot.logger.error(
-            `Failed to create embed for updated message ID: ${newMessage.id}`,
-          )
-        }
-      } catch (error) {
-        robot.logger.error(
-          `Failed to edit embed for message ID: ${newMessage.id}: ${error}`,
-        )
-      }
-    } else {
-      await processLinearEmbeds(
-        newMessage.content,
-        newMessage.id,
-        newMessage.channel as TextChannel | ThreadChannel,
-        robot.logger,
-        linearClient,
-      )
-    }
-  })
+		oldIssues.forEach((issueId) => {
+			if (!newIssues.has(issueId) && messageEmbeds.has(issueId)) {
+				// biome-ignore lint/suspicious/noConsole: Discord script without robot instance
+				messageEmbeds.get(issueId)?.delete().catch(console.error)
+				messageEmbeds.delete(issueId)
+			}
+		})
 
-  discordClient.on("messageDelete", async (message) => {
-    const embedMessage = sentEmbeds.get(message.id)
-    if (embedMessage) {
-      await embedMessage.delete().catch((error) => {
-        robot.logger.error(
-          `Failed to delete embed for message ID: ${message.id}: ${error}`,
-        )
-      })
-      sentEmbeds.delete(message.id)
-    }
-  })
+		const addedIssues = [...newIssues].filter(
+			(issueId) => !oldIssues.has(issueId) && !messageEmbeds.has(issueId),
+		)
+
+		if (addedIssues.length > 0) {
+			await processLinearEmbeds(
+				newMessage.content,
+				newMessage.id,
+				newMessage.channel,
+				robot.logger,
+				linearClient,
+			)
+		}
+	})
+
+	discordClient.on("messageDelete", async (message) => {
+		const embedMessages = sentEmbeds.get(message.id)
+		if (embedMessages) {
+			await Promise.all(
+				Array.from(embedMessages.values()).map((embedMessage) =>
+					embedMessage.delete().catch((error: unknown) => {
+						if (error instanceof Error) {
+							robot.logger.error(`Failed to delete embed: ${error.message}`)
+						} else {
+							robot.logger.error(`Unknown error: ${error}`)
+						}
+					}),
+				),
+			)
+			sentEmbeds.delete(message.id)
+		}
+	})
 }

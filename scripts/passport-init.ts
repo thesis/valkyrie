@@ -4,5 +4,5 @@ import { Robot } from "hubot"
 import passport from "passport"
 
 export default function setUpPassport(robot: Robot) {
-  robot.router.use(passport.initialize())
+	robot.router.use(passport.initialize())
 }

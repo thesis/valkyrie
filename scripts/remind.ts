@@ -21,168 +21,167 @@
 
 import { Robot } from "hubot"
 import {
-  getRoomIdFromName,
-  robotIsInRoom,
-  isRoomNonPublic,
+	getRoomIdFromName,
+	isRoomNonPublic,
+	robotIsInRoom,
 } from "../lib/adapter-util.ts"
-import { userTimezoneFor } from "./user-preferences.ts"
-import JobScheduler from "../lib/remind/index.ts"
 import {
-  formatJobForMessage,
-  formatJobsForListMessage,
+	formatJobForMessage,
+	formatJobsForListMessage,
 } from "../lib/remind/formatting.ts"
-
+import JobScheduler from "../lib/remind/index.ts"
 import { isBlank } from "../lib/schedule-util.ts"
+import { userTimezoneFor } from "./user-preferences.ts"
 
 export default function setupRemind(robot: Robot) {
-  robot.brain.once("loaded", () => {
-    const jobScheduler = new JobScheduler(robot)
+	robot.brain.once("loaded", () => {
+		const jobScheduler = new JobScheduler(robot)
 
-    robot.respond(/remind (me|team|here|room) ((?:.|\s)*)$/i, (msg) => {
-      const timezone = userTimezoneFor(robot, msg.envelope.user.id)
+		robot.respond(/remind (me|team|here|room) ((?:.|\s)*)$/i, (msg) => {
+			const timezone = userTimezoneFor(robot, msg.envelope.user.id)
 
-      try {
-        msg.reply(
-          `Scheduled new reminder with ${formatJobForMessage(
-            jobScheduler.addJobFromMessageEnvelope(msg.envelope, timezone),
-            timezone,
-          )}`,
-        )
-      } catch (error) {
-        robot.logger.error(
-          `Error adding job for message "${msg.message.text}": ${error}.`,
-          error instanceof Error ? error.stack : "",
-        )
-        msg.reply(
-          "I couldn't quite figure out what you meant for me to do with that, sorry :(",
-        )
-      }
-    })
+			try {
+				msg.reply(
+					`Scheduled new reminder with ${formatJobForMessage(
+						jobScheduler.addJobFromMessageEnvelope(msg.envelope, timezone),
+						timezone,
+					)}`,
+				)
+			} catch (error) {
+				robot.logger.error(
+					`Error adding job for message "${msg.message.text}": ${error}.`,
+					error instanceof Error ? error.stack : "",
+				)
+				msg.reply(
+					"I couldn't quite figure out what you meant for me to do with that, sorry :(",
+				)
+			}
+		})
 
-    robot.respond(/remind(?:ers?)? list(?: (all|.*))?/i, async (msg) => {
-      const timezone = userTimezoneFor(robot, msg.envelope.user.id)
+		robot.respond(/remind(?:ers?)? list(?: (all|.*))?/i, async (msg) => {
+			const timezone = userTimezoneFor(robot, msg.envelope.user.id)
 
-      let outputPrefix
-      const targetRoom = msg.match[1]
-      let targetRoomId = null
-      let output = ""
+			let outputPrefix
+			const targetRoom = msg.match[1]
+			let targetRoomId = null
+			let output = ""
 
-      // If targetRoom is specified, check whether list for is permitted.
-      if (!isBlank(targetRoom) && targetRoom !== "all") {
-        targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
-        if (
-          targetRoomId === undefined ||
-          !(await robotIsInRoom(robot.adapter, targetRoomId))
-        ) {
-          msg.reply(
-            `Sorry, I'm not in the ${targetRoom} flow - or maybe you mistyped?`,
-          )
-          return
-        }
-        if (targetRoomId && isRoomNonPublic(robot.adapter, targetRoomId)) {
-          if (msg.message.user.room !== targetRoomId) {
-            msg.reply(
-              "Sorry, that's a private flow. I can only show jobs scheduled from that flow from within the flow.",
-            )
-            return
-          }
-        }
-      }
+			// If targetRoom is specified, check whether list for is permitted.
+			if (!isBlank(targetRoom) && targetRoom !== "all") {
+				targetRoomId = getRoomIdFromName(robot.adapter, targetRoom)
+				if (
+					targetRoomId === undefined ||
+					!(await robotIsInRoom(robot.adapter, targetRoomId))
+				) {
+					msg.reply(
+						`Sorry, I'm not in the ${targetRoom} flow - or maybe you mistyped?`,
+					)
+					return
+				}
+				if (targetRoomId && isRoomNonPublic(robot.adapter, targetRoomId)) {
+					if (msg.message.user.room !== targetRoomId) {
+						msg.reply(
+							"Sorry, that's a private flow. I can only show jobs scheduled from that flow from within the flow.",
+						)
+						return
+					}
+				}
+			}
 
-      try {
-        const jobs = jobScheduler.jobsForRooms()
-        output = formatJobsForListMessage(jobs, timezone)
+			try {
+				const jobs = jobScheduler.jobsForRooms()
+				output = formatJobsForListMessage(jobs, timezone)
 
-        if (output.length) {
-          output = `${outputPrefix ?? ""}\n\n----\n\n${output}`
-          msg.reply(output)
-          return
-        }
-        msg.reply("No reminders have been scheduled")
-        return
-      } catch (error) {
-        robot.logger.error(
-          `Error getting or formatting reminder job list: ${
-            error instanceof Error ? error.message : "(unknown error)"
-          }\nFull error: %o`,
-          error,
-        )
-        msg.reply("Something went wrong getting the reminder list.")
-      }
-    })
+				if (output.length) {
+					output = `${outputPrefix ?? ""}\n\n----\n\n${output}`
+					msg.reply(output)
+					return
+				}
+				msg.reply("No reminders have been scheduled")
+				return
+			} catch (error) {
+				robot.logger.error(
+					`Error getting or formatting reminder job list: ${
+						error instanceof Error ? error.message : "(unknown error)"
+					}\nFull error: %o`,
+					error,
+				)
+				msg.reply("Something went wrong getting the reminder list.")
+			}
+		})
 
-    robot.respond(
-      /remind(?:ers?)? (?:upd|update|edit) (?<id>\d+)\sto\s(?<specOrMessage>(?:.|\s)*)/i,
-      (msg) => {
-        const timezone = userTimezoneFor(robot, msg.envelope.user.id)
+		robot.respond(
+			/remind(?:ers?)? (?:upd|update|edit) (?<id>\d+)\sto\s(?<specOrMessage>(?:.|\s)*)/i,
+			(msg) => {
+				const timezone = userTimezoneFor(robot, msg.envelope.user.id)
 
-        try {
-          const { id: unparsedId, specOrMessage } = msg.match.groups ?? {
-            id: "",
-            specOrMessage: "",
-          }
+				try {
+					const { id: unparsedId, specOrMessage } = msg.match.groups ?? {
+						id: "",
+						specOrMessage: "",
+					}
 
-          const id = parseInt(unparsedId, 10)
+					const id = parseInt(unparsedId, 10)
 
-          const updatedJob = specOrMessage
-            .trim()
-            .toLowerCase()
-            .startsWith("say")
-            ? jobScheduler.updateJobMessage(
-                id,
-                specOrMessage.replace(/^say\s+/, ""),
-              )
-            : jobScheduler.updateJobSpec(id, specOrMessage, timezone)
+					const updatedJob = specOrMessage
+						.trim()
+						.toLowerCase()
+						.startsWith("say")
+						? jobScheduler.updateJobMessage(
+								id,
+								specOrMessage.replace(/^say\s+/, ""),
+							)
+						: jobScheduler.updateJobSpec(id, specOrMessage, timezone)
 
-          if (updatedJob === undefined) {
-            msg.reply(`Could not find a reminder with id ${msg.match[1]}`)
-            return
-          }
+					if (updatedJob === undefined) {
+						msg.reply(`Could not find a reminder with id ${msg.match[1]}`)
+						return
+					}
 
-          msg.reply(
-            `Updated reminder to ${formatJobForMessage(updatedJob, timezone)}`,
-          )
-        } catch (error) {
-          robot.logger.error(
-            `Error updating reminder (${JSON.stringify(msg.match)}): ${
-              error instanceof Error
-                ? `${error.message}\n${error.stack ?? ""}`
-                : "(unknown error)"
-            }`,
-          )
-          msg.reply("Something went wrong updating this reminder.")
-        }
-      },
-    )
+					msg.reply(
+						`Updated reminder to ${formatJobForMessage(updatedJob, timezone)}`,
+					)
+				} catch (error) {
+					robot.logger.error(
+						`Error updating reminder (${JSON.stringify(msg.match)}): ${
+							error instanceof Error
+								? `${error.message}\n${error.stack ?? ""}`
+								: "(unknown error)"
+						}`,
+					)
+					msg.reply("Something went wrong updating this reminder.")
+				}
+			},
+		)
 
-    robot.respond(
-      /remind(?:ers?)? (?:del|delete|remove|cancel) (\d+)/i,
-      (msg) => {
-        const timezone = userTimezoneFor(robot, msg.envelope.user.id)
+		robot.respond(
+			/remind(?:ers?)? (?:del|delete|remove|cancel) (\d+)/i,
+			(msg) => {
+				const timezone = userTimezoneFor(robot, msg.envelope.user.id)
 
-        try {
-          const removedJob = jobScheduler.removeJob(parseInt(msg.match[1], 10))
+				try {
+					const removedJob = jobScheduler.removeJob(parseInt(msg.match[1], 10))
 
-          if (removedJob === undefined) {
-            msg.reply(`Could not find a reminder with id ${msg.match[1]}`)
-            return
-          }
+					if (removedJob === undefined) {
+						msg.reply(`Could not find a reminder with id ${msg.match[1]}`)
+						return
+					}
 
-          msg.reply(
-            `Cancelled reminder with ${formatJobForMessage(
-              removedJob,
-              timezone,
-            )}`,
-          )
-        } catch (error) {
-          robot.logger.error(
-            `Job deletion error: ${
-              error instanceof Error ? error.message : "(unknown error)"
-            }`,
-          )
-          msg.reply("Something went wrong deleting this reminder.")
-        }
-      },
-    )
-  })
+					msg.reply(
+						`Cancelled reminder with ${formatJobForMessage(
+							removedJob,
+							timezone,
+						)}`,
+					)
+				} catch (error) {
+					robot.logger.error(
+						`Job deletion error: ${
+							error instanceof Error ? error.message : "(unknown error)"
+						}`,
+					)
+					msg.reply("Something went wrong deleting this reminder.")
+				}
+			},
+		)
+	})
 }

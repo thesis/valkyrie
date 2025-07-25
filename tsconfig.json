@@ -1,19 +1,19 @@
 {
-  "ts-node": { "files": true },
-  "compilerOptions": {
-    "alwaysStrict": true,
-    "allowJs": true,
-    "lib": ["ESNext"],
-    "noEmit": true,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "allowSyntheticDefaultImports": true,
-    "allowImportingTsExtensions": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "strict": true,
-    "target": "es2022",
-    "module": "es2022",
-    "moduleResolution": "node"
-  }
+	"ts-node": { "files": true },
+	"compilerOptions": {
+		"alwaysStrict": true,
+		"allowJs": true,
+		"lib": ["ESNext"],
+		"noEmit": true,
+		"noImplicitAny": true,
+		"noImplicitThis": true,
+		"allowSyntheticDefaultImports": true,
+		"allowImportingTsExtensions": true,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"strict": true,
+		"target": "es2022",
+		"module": "es2022",
+		"moduleResolution": "node"
+	}
 }

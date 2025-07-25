@@ -3,9 +3,9 @@
 // These functions return immediately if the adapter in use isn't properly
 // set up, or isn't a flowdock adapter, enabling better error handling.
 
-import { Envelope, Adapter } from "hubot"
+import { Adapter, Envelope } from "hubot"
 import { Matrix } from "hubot-matrix"
-import { JoinRule } from "matrix-js-sdk"
+import { JoinRule, Room } from "matrix-js-sdk"
 
 let roomIDByLowercaseName: { [lowercaseRoomName: string]: string } = {}
 
@@ -13,8 +13,8 @@ let roomIDByLowercaseName: { [lowercaseRoomName: string]: string } = {}
  * Returns whether a given adapter is a Matrix adapter. Using instanceof does
  * not work for unclear reasons, so a type guard is introduced to do the check.
  */
-function isMatrixAdapter(adapter: Adapter): adapter is Matrix {
-  return adapter.constructor === Matrix
+function isMatrixAdapter(adapter: Adapter): boolean {
+	return adapter.constructor === Matrix
 }
 
 /**
@@ -25,34 +25,34 @@ function isMatrixAdapter(adapter: Adapter): adapter is Matrix {
  * room is unknown, returns undefined.
  */
 function getRoomIdFromName(
-  robotAdapter: Adapter,
-  roomName: string,
+	robotAdapter: Adapter,
+	roomName: string,
 ): string | undefined {
-  const lowercaseRoomName = roomName.toLowerCase()
+	const lowercaseRoomName = roomName.toLowerCase()
 
-  if (lowercaseRoomName in roomIDByLowercaseName) {
-    return roomIDByLowercaseName[lowercaseRoomName]
-  }
+	if (lowercaseRoomName in roomIDByLowercaseName) {
+		return roomIDByLowercaseName[lowercaseRoomName]
+	}
 
-  if (isMatrixAdapter(robotAdapter)) {
-    const rooms = robotAdapter.client?.getRooms()
-    roomIDByLowercaseName =
-      rooms?.reduce(
-        (acc, room) => {
-          acc[room.normalizedName.toLowerCase()] = room.roomId
-          const canonicalAlias = room.getCanonicalAlias()
-          if (canonicalAlias !== null) {
-            acc[canonicalAlias.toLowerCase()] = room.roomId
-          }
+	if (isMatrixAdapter(robotAdapter)) {
+		const rooms = (robotAdapter as unknown as Matrix).client?.getRooms()
+		roomIDByLowercaseName =
+			rooms?.reduce(
+				(acc: { [key: string]: string }, room: Room) => {
+					acc[room.normalizedName.toLowerCase()] = room.roomId
+					const canonicalAlias = room.getCanonicalAlias()
+					if (canonicalAlias !== null) {
+						acc[canonicalAlias.toLowerCase()] = room.roomId
+					}
 
-          return acc
-        },
-        {} as typeof roomIDByLowercaseName,
-      ) ?? roomIDByLowercaseName
+					return acc
+				},
+				{} as typeof roomIDByLowercaseName,
+			) ?? roomIDByLowercaseName
 
-    return roomIDByLowercaseName[lowercaseRoomName]
-  }
-  return undefined
+		return roomIDByLowercaseName[lowercaseRoomName]
+	}
+	return undefined
 }
 
 /**
@@ -63,19 +63,19 @@ function getRoomIdFromName(
  * returns undefined.
  */
 function getRoomNameFromId(
-  robotAdapter: Adapter,
-  roomId: string,
+	robotAdapter: Adapter,
+	roomId: string,
 ): string | undefined {
-  if (isMatrixAdapter(robotAdapter)) {
-    return robotAdapter.client?.getRoom(roomId)?.name
-  }
-  return undefined
+	if (isMatrixAdapter(robotAdapter)) {
+		return (robotAdapter as unknown as Matrix).client?.getRoom(roomId)?.name
+	}
+	return undefined
 }
 
 export type RoomInfo = {
-  roomId: string
-  roomName: string
-  accessType: "public" | "non-public"
+	roomId: string
+	roomName: string
+	accessType: "public" | "non-public"
 }
 
 /**
@@ -89,31 +89,31 @@ export type RoomInfo = {
  * response listed for ‘Get a flow’ at https://www.flowdock.com/api/flows.
  */
 function getRoomInfoFromIdOrName(
-  robotAdapter: Adapter,
-  roomIdOrName: string,
+	robotAdapter: Adapter,
+	roomIdOrName: string,
 ): RoomInfo | undefined {
-  if (!isMatrixAdapter(robotAdapter)) {
-    return undefined
-  }
+	if (!isMatrixAdapter(robotAdapter)) {
+		return undefined
+	}
 
-  const rooms = robotAdapter.client?.getRooms() ?? []
-  const matchingRoom = rooms.find(
-    (room) =>
-      room.roomId === roomIdOrName ||
-      room.name.toLowerCase() === roomIdOrName.toLowerCase(),
-  )
+	const rooms = (robotAdapter as unknown as Matrix).client?.getRooms() ?? []
+	const matchingRoom = rooms.find(
+		(room: Room) =>
+			room.roomId === roomIdOrName ||
+			room.name.toLowerCase() === roomIdOrName.toLowerCase(),
+	)
 
-  if (matchingRoom) {
-    return {
-      roomId: matchingRoom.roomId,
-      roomName: matchingRoom.name,
-      accessType:
-        matchingRoom.getJoinRule() === JoinRule.Public
-          ? "public"
-          : "non-public",
-    }
-  }
-  return undefined
+	if (matchingRoom) {
+		return {
+			roomId: matchingRoom.roomId,
+			roomName: matchingRoom.name,
+			accessType:
+				matchingRoom.getJoinRule() === JoinRule.Public
+					? "public"
+					: "non-public",
+		}
+	}
+	return undefined
 }
 
 /**
@@ -124,10 +124,10 @@ function getRoomInfoFromIdOrName(
  * isn't properly set up, or doesn't support this lookup, returns an empty array.
  */
 async function getAllJoinedRoomIds(robotAdapter: Adapter): Promise<string[]> {
-  if (isMatrixAdapter(robotAdapter)) {
-    return (await robotAdapter.client?.getJoinedRooms())?.joined_rooms ?? []
-  }
-  return []
+	if (isMatrixAdapter(robotAdapter)) {
+		return (await (robotAdapter as unknown as Matrix).client?.getJoinedRooms())?.joined_rooms ?? []
+	}
+	return []
 }
 
 /**
@@ -139,18 +139,18 @@ async function getAllJoinedRoomIds(robotAdapter: Adapter): Promise<string[]> {
  * doesn't support this lookup, returns an empty array.
  */
 async function getPublicJoinedRoomIds(
-  robotAdapter: Adapter,
+	robotAdapter: Adapter,
 ): Promise<string[]> {
-  if (isMatrixAdapter(robotAdapter)) {
-    return (
-      (await robotAdapter.client?.getJoinedRooms())?.joined_rooms.filter(
-        (roomId) =>
-          getRoomInfoFromIdOrName(robotAdapter, roomId)?.accessType ===
-          "public",
-      ) ?? []
-    )
-  }
-  return []
+	if (isMatrixAdapter(robotAdapter)) {
+		return (
+			(await (robotAdapter as unknown as Matrix).client?.getJoinedRooms())?.joined_rooms.filter(
+				(roomId: string) =>
+					getRoomInfoFromIdOrName(robotAdapter, roomId)?.accessType ===
+					"public",
+			) ?? []
+		)
+	}
+	return []
 }
 
 /**
@@ -162,10 +162,10 @@ async function getPublicJoinedRoomIds(
  * properly set up or isn't a flowdock adapter, returns false.
  */
 function isRoomNameValid(robotAdapter: Adapter, roomName: string): boolean {
-  if (!roomName || !getRoomIdFromName(robotAdapter, roomName)) {
-    return false
-  }
-  return true
+	if (!roomName || !getRoomIdFromName(robotAdapter, roomName)) {
+		return false
+	}
+	return true
 }
 
 /**
@@ -176,10 +176,10 @@ function isRoomNameValid(robotAdapter: Adapter, roomName: string): boolean {
  * false
  */
 async function robotIsInRoom(
-  robotAdapter: Adapter,
-  roomId: string,
+	robotAdapter: Adapter,
+	roomId: string,
 ): Promise<boolean> {
-  return (await getAllJoinedRoomIds(robotAdapter)).indexOf(roomId) >= 0
+	return (await getAllJoinedRoomIds(robotAdapter)).indexOf(roomId) >= 0
 }
 
 /**
@@ -191,31 +191,29 @@ async function robotIsInRoom(
  * replace dashes, we have to do a string replace as well.
  */
 function encodeThreadId(threadId: string) {
-  return encodeURIComponent(threadId).replace(/-/g, "%2D")
+	return encodeURIComponent(threadId).replace(/-/g, "%2D")
 }
 
 export function isRoomNonPublic(
-  adapter: Adapter,
-  targetRoomId: string,
+	adapter: Adapter,
+	targetRoomId: string,
 ): boolean {
-  if (adapter instanceof Matrix) {
-    return (
-      getRoomInfoFromIdOrName(adapter, targetRoomId)?.accessType !== "public" ??
-      false
-    )
-  }
-  return false
+	if (adapter instanceof Matrix) {
+		const roomInfo = getRoomInfoFromIdOrName(adapter as unknown as Adapter, targetRoomId)
+		return roomInfo ? roomInfo.accessType !== "public" : false
+	}
+	return false
 }
 
 /**
  * Generates a matrix URL for a particular event, room, and server.
  */
 export function matrixUrlFor(
-  roomId: string,
-  serverName: string,
-  eventId: string,
+	roomId: string,
+	serverName: string,
+	eventId: string,
 ): string {
-  return `https://matrix.to/#/${roomId}/${eventId}?via=${serverName}`
+	return `https://matrix.to/#/${roomId}/${eventId}?via=${serverName}`
 }
 
 /**
@@ -223,29 +221,29 @@ export function matrixUrlFor(
  * send to a thread with the given adapter, sends a regular message.
  */
 export function sendThreaded(
-  adapter: Adapter,
-  envelope: Envelope,
-  threadId: string,
-  ...messages: string[]
+	adapter: Adapter,
+	envelope: Envelope,
+	threadId: string,
+	...messages: string[]
 ) {
-  if (threadId === undefined || !isMatrixAdapter(adapter)) {
-    // If it isn't the matrix adapter or there is no thread, fall back on a standard message.
-    adapter.send(envelope, ...messages)
-  } else {
-    messages.forEach((message) =>
-      adapter.sendThreaded(envelope, threadId, message),
-    )
-  }
+	if (threadId === undefined || !isMatrixAdapter(adapter)) {
+		// If it isn't the matrix adapter or there is no thread, fall back on a standard message.
+		adapter.send(envelope, ...messages)
+	} else {
+		messages.forEach((message) =>
+			(adapter as unknown as Matrix).sendThreaded(envelope, threadId, message),
+		)
+	}
 }
 
 export {
-  getRoomIdFromName,
-  getRoomNameFromId,
-  getRoomInfoFromIdOrName,
-  getAllJoinedRoomIds,
-  getPublicJoinedRoomIds,
-  encodeThreadId,
-  isRoomNameValid,
-  robotIsInRoom,
-  isMatrixAdapter,
+	getRoomIdFromName,
+	getRoomNameFromId,
+	getRoomInfoFromIdOrName,
+	getAllJoinedRoomIds,
+	getPublicJoinedRoomIds,
+	encodeThreadId,
+	isRoomNameValid,
+	robotIsInRoom,
+	isMatrixAdapter,
 }

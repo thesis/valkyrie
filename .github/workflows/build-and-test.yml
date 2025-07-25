@@ -4,9 +4,9 @@ on:
   pull_request: {}
   push:
     branches:
-    - main
+      - main
     tags:
-    - v*
+      - v*
   issue_comment:
     types: [created, edited]
 
@@ -14,12 +14,12 @@ jobs:
   decide-parameters:
     runs-on: ubuntu-latest
     steps:
-    - name: Output environment
-      run: |
-        echo '${{ github.ref }}'
-        echo <<-EOF
-          ${{ toJSON(github.event) }}
-        EOF
+      - name: Output environment
+        run: |
+          echo '${{ github.ref }}'
+          echo <<-EOF
+            ${{ toJSON(github.event) }}
+          EOF
     outputs:
       # Run builds for all triggers; ideally we would reuse an existing build
       # for comment triggers, but since we don't currently push images on
@@ -61,63 +61,71 @@ jobs:
     needs: decide-parameters
     runs-on: ubuntu-latest
     steps:
-    - name: Output parameters
-      run: |
-        echo '${{ toJSON(needs.decide-parameters.outputs) }}'
+      - name: Output parameters
+        run: |
+          echo '${{ toJSON(needs.decide-parameters.outputs) }}'
 
   test:
     runs-on: ubuntu-latest
     needs: decide-parameters
     if: ${{ needs.decide-parameters.outputs.should-test == 'true' }}
     steps:
-    - uses: actions/checkout@v3
-    - name: Read .nvmrc
-      run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
-      id: nvm
-    - name: Use Node + Yarn
-      uses: actions/setup-node@v3
-      with:
-        node-version: "${{ steps.nvm.outputs.NVMRC }}"
-        cache: "yarn"
-    - run: yarn install --frozen-lockfile
-    - run: yarn test
+      - uses: actions/checkout@v3
+      - name: Read .nvmrc
+        run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
+        id: nvm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "${{ steps.nvm.outputs.NVMRC }}"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
 
   build-and-push-image:
     runs-on: ubuntu-latest
     needs: [test, decide-parameters]
     if: ${{ needs.decide-parameters.outputs.should-build == 'true' || needs.decide-parameters.outputs.should-deploy == 'true' }}
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - name: Read .nvmrc
-      run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
-      id: nvm
-    - name: Use Node + Yarn
-      uses: actions/setup-node@v3
-      with:
-        node-version: "${{ steps.nvm.outputs.NVMRC }}"
-        cache: "yarn"
-    - run: yarn install --frozen-lockfile
-    - name: Build docker image
-      run: |
-        echo $GITHUB_SHA > BUILD
-        docker build . -f infrastructure/docker/Dockerfile -t gcr.io/thesis-ops-2748/valkyrie:$GITHUB_SHA
-    - name: Authenticate push with GCP
-      if: ${{ needs.decide-parameters.outputs.should-deploy == 'true' }}
-      id: 'auth-push'
-      uses: 'google-github-actions/auth@v0'
-      with:
-        credentials_json: '${{ secrets.GCP_GCR_CREDENTIALS }}'
-    - name: Set up GCP tools
-      if: ${{ needs.decide-parameters.outputs.should-deploy == 'true' }}
-      uses: google-github-actions/setup-gcloud@v0
-    - name: Push docker image to GCP
-      if: ${{ needs.decide-parameters.outputs.should-deploy == 'true' }}
-      run: |
-        # Set up docker to authenticate via gcloud command-line tool.
-        gcloud auth configure-docker
-        docker push gcr.io/thesis-ops-2748/valkyrie:${{ github.sha }}
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Read .nvmrc
+        run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
+        id: nvm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "${{ steps.nvm.outputs.NVMRC }}"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Build docker image
+        run: |
+          echo $GITHUB_SHA > BUILD
+          docker build . -f infrastructure/docker/Dockerfile -t gcr.io/thesis-ops-2748/valkyrie:$GITHUB_SHA
+      - name: Authenticate push with GCP
+        if: ${{ needs.decide-parameters.outputs.should-deploy == 'true' }}
+        id: "auth-push"
+        uses: "google-github-actions/auth@v0"
+        with:
+          credentials_json: "${{ secrets.GCP_GCR_CREDENTIALS }}"
+      - name: Set up GCP tools
+        if: ${{ needs.decide-parameters.outputs.should-deploy == 'true' }}
+        uses: google-github-actions/setup-gcloud@v0
+      - name: Push docker image to GCP
+        if: ${{ needs.decide-parameters.outputs.should-deploy == 'true' }}
+        run: |
+          # Set up docker to authenticate via gcloud command-line tool.
+          gcloud auth configure-docker
+          docker push gcr.io/thesis-ops-2748/valkyrie:${{ github.sha }}
 
   deploy:
     needs: [build-and-push-image, decide-parameters]
@@ -151,14 +159,18 @@ jobs:
     if: ${{ needs.decide-parameters.outputs.should-build == 'true' }}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Read .nvmrc
-      run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
-      id: nvm
-    - name: Use Node + Yarn
-      uses: actions/setup-node@v3
-      with:
-        node-version: "${{ steps.nvm.outputs.NVMRC }}"
-        cache: "yarn"
-    - run: yarn install --frozen-lockfile
-    - run: yarn lint
+      - uses: actions/checkout@v3
+      - name: Read .nvmrc
+        run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
+        id: nvm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "${{ steps.nvm.outputs.NVMRC }}"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint

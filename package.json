@@ -9,6 +9,7 @@
     "@linear/sdk": "^32.0.0",
     "@types/cookie": "^0.3.1",
     "@types/cookie-parser": "^1.4.3",
+		"@types/express": "^5.0.3",
     "@types/hubot": "^3.3.2",
     "@types/jsonwebtoken": "~7.2.8",
     "@types/lodash": "^4.14.191",
@@ -57,25 +58,34 @@
     "node": "<=19 >=16"
   },
   "devDependencies": {
-    "@jest/globals": "^29.3.1",
-    "@thesis-co/eslint-config": "^0.6.1",
-    "eslint": "^8.35.0",
-    "hubot-chat-testing": "git+https://github.com/thesis/hubot-chat-testing.git#v2.0.0-beta.1",
-    "hubot-test-helper": "git+https://github.com/thesis/hubot-test-helper.git#v2.0.0-beta.3",
-    "jest": "^29.3.1",
-    "mocha": "10.0.0",
-    "npm-run-all": "^4.1.5",
-    "prettier": "^3.0.2",
-    "ts-jest": "^29.0.3",
-    "ts-node": "^10.9.1"
+		"@biomejs/biome": "^2.1.2",
+		"@jest/globals": "^29.3.1",
+		"hubot-chat-testing": "git+https://github.com/thesis/hubot-chat-testing.git#v2.0.0-beta.1",
+		"hubot-test-helper": "git+https://github.com/thesis/hubot-test-helper.git#v2.0.0-beta.3",
+		"jest": "^29.3.1",
+		"mocha": "10.0.0",
+		"npm-run-all": "^4.1.5",
+		"prettier": "^3.0.2",
+		"ts-jest": "^29.0.3",
+		"ts-node": "^10.9.1"
   },
   "scripts": {
-    "test:mocha": "env NODE_OPTIONS'=--experimental-vm-modules --experimental-loader ts-node/esm' mocha --exit test/**.ts",
-    "test:jest": "env NODE_OPTIONS=--experimental-vm-modules jest",
-    "test": "run-p test:jest",
-    "lint:types": "tsc -p ./tsconfig.json",
-    "lint:js": "eslint .",
-    "lint:js:fix": "eslint . --fix",
-    "lint": "run-p lint:js lint:types"
+		"test:mocha": "env NODE_OPTIONS'=--experimental-vm-modules --experimental-loader ts-node/esm' mocha --exit test/**.ts",
+		"test:jest": "env NODE_OPTIONS=--experimental-vm-modules jest",
+		"test": "run-p test:jest",
+		"lint:types": "tsc -p ./tsconfig.json",
+		"lint:js": "biome lint .",
+		"lint:js:fix": "biome check --write .",
+		"format:biome": "biome format --write .",
+		"format:prettier": "prettier --write \"**/*.{md,yaml,yml}\"",
+		"format": "run-p format:biome format:prettier",
+		"lint:fix": "run-p lint:js:fix format",
+		"lint": "run-p lint:js lint:types"
+	},
+	"pnpm": {
+		"overrides": {
+			"@types/express": "5.0.3",
+			"@types/express-serve-static-core": "5.0.7"
+		}
   }
 }
