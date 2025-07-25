@@ -13,7 +13,7 @@ import { Robot } from "hubot"
 const GOOGLE_API_KEY = process.env.GOOGLE_CLOUD_AI_KEY
 if (!GOOGLE_API_KEY) {
   throw new Error(
-    "❌ GOOGLE_API_KEY is not defined. Please set the GOOGLE_CLOUD_AI_KEY environment variable.",
+    "❌ GOOGLE_CLOUD_AI_KEY is not defined. Please set the GOOGLE_CLOUD_AI_KEY environment variable.",
   )
 }
 
