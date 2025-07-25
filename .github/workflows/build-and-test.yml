@@ -74,7 +74,11 @@ jobs:
       - name: Read .nvmrc
         run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
         id: nvm
-      - name: Use Node + pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "${{ steps.nvm.outputs.NVMRC }}"
@@ -93,7 +97,11 @@ jobs:
       - name: Read .nvmrc
         run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
         id: nvm
-      - name: Use Node + pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "${{ steps.nvm.outputs.NVMRC }}"
@@ -155,7 +163,11 @@ jobs:
       - name: Read .nvmrc
         run: echo "NVMRC=$(cat ./.nvmrc)" > $GITHUB_OUTPUT
         id: nvm
-      - name: Use Node + pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "${{ steps.nvm.outputs.NVMRC }}"
