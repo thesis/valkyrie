@@ -18,15 +18,17 @@ async function generateCompactGitHubEmbeds(
 			return
 		}
 
-		await message.suppressEmbeds(true)
-		const description = receivedEmbeds
-			.map((embed, i) => `(${i + 1}) [${embed.title}](${embed.url})`)
-			.join("\n")
-		const embed = new EmbedBuilder()
-			.setColor("#0099ff")
-			.setDescription(description)
+		if (message.channel.isSendable()) {
+			await message.suppressEmbeds(true)
+			const description = receivedEmbeds
+				.map((embed, i) => `(${i + 1}) [${embed.title}](${embed.url})`)
+				.join("\n")
+			const embed = new EmbedBuilder()
+				.setColor("#0099ff")
+				.setDescription(description)
 
-		message.channel.send({ embeds: [embed] })
+			message.channel.send({ embeds: [embed] })
+		}
 	}
 }
 

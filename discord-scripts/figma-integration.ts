@@ -104,7 +104,9 @@ const eventHandlers: {
 			commentEmbed.setThumbnail(file.thumbnailUrl)
 		}
 
-		channel.send({ embeds: [commentEmbed] })
+		if (channel.isSendable()) {
+			channel.send({ embeds: [commentEmbed] })
+		}
 	},
 	FILE_UPDATE: async (
 		{
@@ -184,7 +186,9 @@ const eventHandlers: {
 		const file = await figma.getFile(fileKey)
 		commentEmbed.setThumbnail(file.thumbnailUrl)
 
-		channel.send({ embeds: [commentEmbed] })
+		if (channel.isSendable()) {
+			channel.send({ embeds: [commentEmbed] })
+		}
 	},
 }
 
@@ -393,7 +397,9 @@ export default async function figmaIntegration(
 					const file = await figma.getFile(fileKey)
 					commentEmbed.setThumbnail(file.thumbnailUrl)
 
-					channel.send({ embeds: [commentEmbed] })
+					if (channel.isSendable()) {
+						channel.send({ embeds: [commentEmbed] })
+					}
 				} catch (error) {
 					robot.logger.error(
 						`Failed to post Figma file update for ${fileKey} into channel ${channel}: ${error}`,

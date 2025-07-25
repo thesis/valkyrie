@@ -20,6 +20,7 @@ Remember to update gitignore entries at the top level rather than managing a ton
 - Follow Thesis style guide via @thesis/prettier-config and @thesis-co/eslint-config
 - Use default exports for single exports
 - Use TypeScript with explicit types (avoid `any`)
+- Never ignore a lint error without asking me
 - Prefix unused TypeScript variables with underscore (\_varName)
 - Name variables in camelCase, classes in PascalCase
 - In React components:

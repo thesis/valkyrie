@@ -1,5 +1,5 @@
 import { ChannelType, Client, TextChannel } from "discord.js"
-import express from "express"
+import express, { RequestHandler } from "express"
 import { Robot } from "hubot"
 
 export default async function webhookDiscord(
@@ -35,7 +35,9 @@ export default async function webhookDiscord(
 		)
 
 		if (existingThread) {
-			await existingThread.send(message)
+			if (existingThread.isSendable()) {
+				await existingThread.send(message)
+			}
 		} else {
 			const newThread = await channel.threads.create({
 				name: title,
@@ -47,7 +49,9 @@ export default async function webhookDiscord(
 					memberIds.map((id) => newThread.members.add(id.trim())),
 				)
 			}
-			await newThread.send(message)
+			if (newThread.isSendable()) {
+				await newThread.send(message)
+			}
 		}
 	}
 
@@ -107,11 +111,7 @@ export default async function webhookDiscord(
 		robot.logger.info("Webhook URL has been set: ", webhookUrl)
 		robot.logger.info("Webhook Auth has been set: ", requiredAuth)
 
-		const handleAuth = (
-			req: express.Request,
-			res: express.Response,
-			next: express.NextFunction,
-		) => {
+		const handleAuth: RequestHandler = (req, res, next) => {
 			const authHeader = req.headers.authorization
 			if (!authHeader || authHeader !== requiredAuth) {
 				res.status(401).send("Unauthorized")
@@ -120,35 +120,31 @@ export default async function webhookDiscord(
 			}
 		}
 
-		robot.router.post(
-			`${webhookUrl}`,
-			handleAuth,
-			async (req: express.Request, res: express.Response) => {
-				const isBodyInvalid = ["channelName", "title", "message"].some(
-					(field) => {
-						const isFieldEmpty = !req.body?.[field]
+		robot.router.post(`${webhookUrl}`, handleAuth, async (req, res) => {
+			const isBodyInvalid = ["channelName", "title", "message"].some(
+				(field) => {
+					const isFieldEmpty = !req.body?.[field]
 
-						if (isFieldEmpty) {
-							res.status(400).send(`Missing field: ${field}`)
-						}
-						return isFieldEmpty
-					},
-				)
+					if (isFieldEmpty) {
+						res.status(400).send(`Missing field: ${field}`)
+					}
+					return isFieldEmpty
+				},
+			)
 
-				if (isBodyInvalid) {
-					return
-				}
+			if (isBodyInvalid) {
+				return
+			}
 
-				const { channelName, tagUser, title, message } = req.body
+			const { channelName, tagUser, title, message } = req.body
 
-				robot.logger.info(
-					`Received data: channelName = ${channelName}, title = ${title}, tagged users = ${tagUser} , message = ${message}`,
-				)
-				await sendToDiscordChannel(channelName, title, message, tagUser)
+			robot.logger.info(
+				`Received data: channelName = ${channelName}, title = ${title}, tagged users = ${tagUser} , message = ${message}`,
+			)
+			await sendToDiscordChannel(channelName, title, message, tagUser)
 
-				res.status(200).send("Message sent to Discord")
-			},
-		)
+			res.status(200).send("Message sent to Discord")
+		})
 		robot.logger.info("Webhook is now enabled")
 
 		robot.router.post("/start-date", handleAuth, async (req, res) => {
@@ -168,7 +164,7 @@ export default async function webhookDiscord(
 		robot.router.post(
 			"/end-date",
 			handleAuth,
-			async (req: express.Request, res: express.Response) => {
+			async (req, res) => {
 				const { username, guildId } = req.body
 				if (!username || !guildId) {
 					return res.status(400).send("Missing username or guildId")

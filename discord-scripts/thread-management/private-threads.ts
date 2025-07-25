@@ -9,7 +9,7 @@ const PRIVATE_THREAD_CHANNELS = [
 ]
 
 async function privateThreadAdmonishment(
-	thread: AnyThreadChannel<boolean>,
+	thread: AnyThreadChannel,
 ): Promise<void> {
 	const { parent: containingChannel } = thread
 

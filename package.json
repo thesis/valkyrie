@@ -9,6 +9,7 @@
 		"@linear/sdk": "^32.0.0",
 		"@types/cookie": "^0.3.1",
 		"@types/cookie-parser": "^1.4.3",
+		"@types/express": "^5.0.3",
 		"@types/hubot": "^3.3.2",
 		"@types/jsonwebtoken": "~7.2.8",
 		"@types/lodash": "^4.14.191",
@@ -80,5 +81,11 @@
 		"format": "run-p format:biome format:prettier",
 		"lint:fix": "run-p lint:js:fix format",
 		"lint": "run-p lint:js lint:types"
+	},
+	"pnpm": {
+		"overrides": {
+			"@types/express": "5.0.3",
+			"@types/express-serve-static-core": "5.0.7"
+		}
 	}
 }

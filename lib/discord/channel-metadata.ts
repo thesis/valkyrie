@@ -103,7 +103,7 @@ export function updateThreadMetadata(
 
 export function isInPermittedCategoryOrChannel(
 	brain: Brain<Adapter>,
-	thread: AnyThreadChannel<boolean>,
+	thread: AnyThreadChannel,
 	permittedFeature: HubotFeature,
 ) {
 	const threadChannelId = thread.parentId ?? undefined

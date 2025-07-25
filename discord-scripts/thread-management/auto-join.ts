@@ -37,7 +37,7 @@ const CUSTOM_CHANNEL_ROLE: ChannelRoleMapping[] = [
 ]
 
 async function autoJoinThread(
-	thread: AnyThreadChannel<boolean>,
+	thread: AnyThreadChannel,
 ): Promise<void> {
 	await thread.join()
 
@@ -46,6 +46,11 @@ async function autoJoinThread(
 	}
 
 	const { guild: server, parent: containingChannel } = thread
+	
+	if (!thread.isSendable()) {
+		return
+	}
+
 	const placeholder = await thread.send("<placeholder>")
 	// Use this to assign a specific role based on the mapping in CUSTOM_CHANNEL_ROLE, in order to map specific roles/channels
 	if (containingChannel) {

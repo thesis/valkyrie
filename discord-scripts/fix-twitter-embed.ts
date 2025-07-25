@@ -52,9 +52,11 @@ async function workingTwitterEmbeds(
 		logger.info(`workingTwitterEmbeds: extracted [${latestUrls.length}] URLs`)
 
 		try {
-			// Kill default embeds in favor of ours <_<
-			await message.suppressEmbeds()
-			await message.channel.send(latestUrls.join(", "))
+			if (message.channel.isSendable()) {
+				// Kill default embeds in favor of ours <_<
+				await message.suppressEmbeds()
+				await message.channel.send(latestUrls.join(", "))
+			}
 		} catch (err) {
 			logger.error(`Error suppressing embeds or sending new links: ${err}`)
 		}
