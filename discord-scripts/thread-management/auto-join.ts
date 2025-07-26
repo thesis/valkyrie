@@ -146,6 +146,8 @@ async function autoJoinThread(
 
 	const placeholder = await thread.send("<placeholder>")
 
+	await server.roles.fetch()
+
 	// Check for custom auto-tag roles first
 	if (robot && containingChannel) {
 		const autoTagData = robot.brain.get(AUTO_TAG_BRAIN_KEY) ?? {}
