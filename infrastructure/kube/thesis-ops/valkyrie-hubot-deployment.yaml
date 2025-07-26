@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: hubot
-          # image: gcr.io/thesis-ops-2748/valkyrie:USE_CIRCLE_CI_BUILDS
+          image: gcr.io/thesis-ops-2748/valkyrie:f534c97b11df079196da6a739c480953e62439f9
           env:
             - name: HUBOT_DISCORD_TOKEN
               valueFrom:
@@ -61,7 +61,7 @@ spec:
                   name: valkyrie-hubot
                   key: valkyrie_alert_flow
             - name: REDIS_URL
-              value: $(VALKYRIE_REDIS_SERVICE_PORT)
+              value: redis://valkyrie-redis-service:6379
             - name: DEFENSE_CATEGORY_ID
               valueFrom:
                 secretKeyRef:
