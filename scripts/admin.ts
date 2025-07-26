@@ -12,7 +12,7 @@
 //   shadowfiend
 //   kb0rg
 
-import * as hubot from "hubot"
+/*import * as hubot from "hubot"
 import { Robot } from "hubot"
 import { EventType, MatrixEvent, RoomMember, RoomMemberEvent } from "matrix-js-sdk"
 import { Matrix } from "hubot-matrix"
@@ -186,7 +186,7 @@ export default (robot: Robot) => {
           "event_id": "$V44XsTkvXTOT-_BP1RoAZPNUOydtZiXnyQ_xKCSRXxw",
           "room_id": "!rWLGMyTmMPeePdBwHb:thesis.co"
         }
-*/
+*
 
 			if (
 				member.userId === client.getUserId() &&
@@ -327,4 +327,4 @@ export default (robot: Robot) => {
 			}
 		})
 	}
-}
+}*/
