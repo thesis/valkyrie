@@ -96,12 +96,13 @@ function getDefaultRoleForChannel(
 	const normalize = (str: string) =>
 		str.toLowerCase().replace(/\s+/g, " ").trim()
 
-	const matchingRole = server.roles.cache.find((role) =>
-		roleMatchPrefixes.some(
-			(channelPrefixRole) =>
-				normalize(role.name) === normalize(channelPrefixRole),
-		),
-	)
+	const matchingRole = roleMatchPrefixes
+		.map((channelPrefixRole) =>
+			server.roles.cache.find(
+				(role) => normalize(role.name) === normalize(channelPrefixRole),
+			),
+		)
+		.find((role) => role !== undefined)
 
 	if (matchingRole !== undefined) {
 		return matchingRole
