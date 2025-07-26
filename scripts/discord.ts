@@ -20,11 +20,20 @@ function isDiscordRobot(robot: unknown): robot is Hubot.Robot<DiscordBot> {
 	return (robot as Hubot.Robot).adapter instanceof DiscordBot
 }
 
-function attachWithAdapter(robot: Hubot.Robot) {
+async function attachWithAdapter(robot: Hubot.Robot) {
 	if (isDiscordRobot(robot)) {
 		const { client } = robot.adapter
 
 		if (client !== undefined) {
+			if (!client.isReady()) {
+				robot.logger.info(
+					"Discord client not ready, waiting for ready event...",
+				)
+				await new Promise<void>((resolve) => {
+					client.once("ready", () => resolve())
+				})
+			}
+
 			fs.readdirSync("./discord-scripts")
 				.sort()
 				.filter((file) => [".ts", ".js"].includes(path.extname(file)))
