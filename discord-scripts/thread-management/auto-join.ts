@@ -50,7 +50,6 @@ const ADD_SUBCOMMAND_NAME = "add"
 const LIST_SUBCOMMAND_NAME = "list"
 const REMOVE_SUBCOMMAND_NAME = "remove"
 
-
 function getDefaultRoleForChannel(
 	containingChannel: AnyThreadChannel["parent"],
 	server: AnyThreadChannel["guild"],
@@ -130,7 +129,8 @@ function getDefaultRoleForChannel(
 
 async function autoJoinThread(
 	thread: AnyThreadChannel,
-	robot?: DiscordHubot,
+	_newlyCreated: boolean,
+	robot: Hubot.Robot,
 ): Promise<void> {
 	await thread.join()
 
@@ -139,7 +139,7 @@ async function autoJoinThread(
 	}
 
 	const { guild: server, parent: containingChannel } = thread
-	
+
 	if (!thread.isSendable()) {
 		return
 	}
@@ -181,11 +181,7 @@ async function autoJoinThread(
 	await placeholder.delete()
 }
 
-
-export default async function autoJoinAndTagManagement(
-	discordClient: Client,
-	robot: DiscordHubot,
-) {
+export async function setup(robot: DiscordHubot, discordClient: Client) {
 	robot.logger.info("Configuring auto-join and auto-tag management...")
 
 	const { application } = discordClient
@@ -196,20 +192,22 @@ export default async function autoJoinAndTagManagement(
 		return
 	}
 
-	const existingAutoTagCommand = (
-		await application.commands.fetch()
-	).find((command) => command.name === COMMAND_NAME)
+	const existingAutoTagCommand = (await application.commands.fetch()).find(
+		(command) => command.name === COMMAND_NAME,
+	)
 
 	if (existingAutoTagCommand === undefined) {
 		robot.logger.info("No auto-tag command yet, creating it!")
 		await application.commands.create({
 			name: COMMAND_NAME,
-			description: "Manage roles that are auto-tagged in new threads for this channel.",
+			description:
+				"Manage roles that are auto-tagged in new threads for this channel.",
 			options: [
 				{
 					name: ADD_SUBCOMMAND_NAME,
 					type: ApplicationCommandOptionType.Subcommand,
-					description: "Add a role to be auto-tagged in new threads for this channel.",
+					description:
+						"Add a role to be auto-tagged in new threads for this channel.",
 					options: [
 						{
 							name: "role",
@@ -223,12 +221,14 @@ export default async function autoJoinAndTagManagement(
 				{
 					name: LIST_SUBCOMMAND_NAME,
 					type: ApplicationCommandOptionType.Subcommand,
-					description: "List roles that will be auto-tagged in new threads for this channel.",
+					description:
+						"List roles that will be auto-tagged in new threads for this channel.",
 				},
 				{
 					name: REMOVE_SUBCOMMAND_NAME,
 					type: ApplicationCommandOptionType.Subcommand,
-					description: "Remove a role from being auto-tagged in new threads for this channel.",
+					description:
+						"Remove a role from being auto-tagged in new threads for this channel.",
 					options: [
 						{
 							name: "role",
@@ -260,7 +260,8 @@ export default async function autoJoinAndTagManagement(
 				// Check if user has permission to manage threads
 				if (!interaction.memberPermissions?.has("ManageChannels")) {
 					await interaction.reply({
-						content: "You need the Manage Channels permission to use this command.",
+						content:
+							"You need the Manage Channels permission to use this command.",
 						ephemeral: true,
 					})
 					return
@@ -331,23 +332,36 @@ export default async function autoJoinAndTagManagement(
 						const server = interaction.guild
 						if (server) {
 							// Safe type handling - check if channel is a thread first
-							const parentChannel = channel.isThread() ? channel.parent : channel
-							
-							// Type guard: only proceed if we have a valid parent channel type  
-							if (parentChannel && (parentChannel.type === ChannelType.GuildText || parentChannel.type === ChannelType.GuildAnnouncement || parentChannel.type === ChannelType.GuildForum || parentChannel.type === ChannelType.GuildMedia)) {
-								const defaultRole = getDefaultRoleForChannel(parentChannel, server)
+							const parentChannel = channel.isThread()
+								? channel.parent
+								: channel
+
+							// Type guard: only proceed if we have a valid parent channel type
+							if (
+								parentChannel &&
+								(parentChannel.type === ChannelType.GuildText ||
+									parentChannel.type === ChannelType.GuildAnnouncement ||
+									parentChannel.type === ChannelType.GuildForum ||
+									parentChannel.type === ChannelType.GuildMedia)
+							) {
+								const defaultRole = getDefaultRoleForChannel(
+									parentChannel,
+									server,
+								)
 								if (defaultRole) {
 									await interaction.reply({
 										content: `**No custom auto-tag roles set for this channel.**\n\nDefault role that would be auto-tagged: **${defaultRole.name}**`,
 									})
 								} else {
 									await interaction.reply({
-										content: "**No custom auto-tag roles set for this channel.**\n\nNo default role would be auto-tagged.",
+										content:
+											"**No custom auto-tag roles set for this channel.**\n\nNo default role would be auto-tagged.",
 									})
 								}
 							} else {
 								await interaction.reply({
-									content: "**No custom auto-tag roles set for this channel.**\n\nNo default role would be auto-tagged.",
+									content:
+										"**No custom auto-tag roles set for this channel.**\n\nNo default role would be auto-tagged.",
 								})
 							}
 						} else {
@@ -359,7 +373,7 @@ export default async function autoJoinAndTagManagement(
 					}
 				} else if (subcommand === REMOVE_SUBCOMMAND_NAME) {
 					const roleName = interaction.options.getString("role", true)
-					
+
 					// Remove role from auto-tag list for this channel
 					try {
 						// Get fresh data before modifying to ensure consistency
@@ -411,53 +425,55 @@ export default async function autoJoinAndTagManagement(
 			interaction.channel !== null
 		) {
 			const focusedOption = interaction.options.getFocused(true)
-			
+
 			if (focusedOption.name === "role") {
 				const { guild, channel } = interaction
 				const userInput = focusedOption.value.toLowerCase()
 				const subcommand = interaction.options.getSubcommand()
-				
+
 				let matchingRoles: { name: string; value: string }[] = []
-				
+
 				if (subcommand === REMOVE_SUBCOMMAND_NAME) {
 					// For remove command, prioritize roles already in auto-tag list
 					const autoTagData = robot.brain.get(AUTO_TAG_BRAIN_KEY) ?? {}
 					const channelRoles: string[] = autoTagData[channel.id] ?? []
-					
+
 					matchingRoles = channelRoles
-						.filter(roleName => roleName.toLowerCase().includes(userInput))
-						.map(roleName => ({
+						.filter((roleName) => roleName.toLowerCase().includes(userInput))
+						.map((roleName) => ({
 							name: roleName,
 							value: roleName,
 						}))
-					
+
 					// If we have space, add other server roles not in the list
 					if (matchingRoles.length < 25) {
 						const additionalRoles = guild.roles.cache
-							.filter(role => 
-								role.name !== "@everyone" && 
-								!role.managed && 
-								!channelRoles.includes(role.name) &&
-								role.name.toLowerCase().includes(userInput)
+							.filter(
+								(role) =>
+									role.name !== "@everyone" &&
+									!role.managed &&
+									!channelRoles.includes(role.name) &&
+									role.name.toLowerCase().includes(userInput),
 							)
-							.map(role => ({
+							.map((role) => ({
 								name: role.name,
 								value: role.name,
 							}))
 							.slice(0, 25 - matchingRoles.length)
-						
+
 						matchingRoles = [...matchingRoles, ...additionalRoles]
 					}
 				} else {
 					// For add command, show all available roles
 					matchingRoles = guild.roles.cache
-						.filter(role => 
-							// Exclude @everyone and bot roles, and filter by name matching user input
-							role.name !== "@everyone" && 
-							!role.managed && 
-							role.name.toLowerCase().includes(userInput)
+						.filter(
+							(role) =>
+								// Exclude @everyone and bot roles, and filter by name matching user input
+								role.name !== "@everyone" &&
+								!role.managed &&
+								role.name.toLowerCase().includes(userInput),
 						)
-						.map(role => ({
+						.map((role) => ({
 							name: role.name,
 							value: role.name,
 						}))
@@ -473,11 +489,12 @@ export default async function autoJoinAndTagManagement(
 		}
 	})
 
-	// Set up thread creation event handler
-	const eventHandlers: DiscordEventHandlers = {
-		threadCreate: (thread: AnyThreadChannel) => autoJoinThread(thread, robot),
-	}
-
 	robot.logger.info("Auto-join and auto-tag management configured.")
-	return eventHandlers
 }
+
+// Set up thread creation event handler
+const eventHandlers: DiscordEventHandlers = {
+	threadCreate: autoJoinThread,
+}
+
+export default eventHandlers
