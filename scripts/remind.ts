@@ -34,7 +34,13 @@ import { isBlank } from "../lib/schedule-util.ts"
 import { userTimezoneFor } from "./user-preferences.ts"
 
 export default function setupRemind(robot: Robot) {
-	robot.brain.once("loaded", () => {
+	robot.brain.once("loaded", async () => {
+		// Wait a tick so the handler can be cleared in case
+		// something subsequent triggers `loaded` again.
+		await new Promise((resolve) => {
+			setTimeout(resolve)
+		})
+
 		const jobScheduler = new JobScheduler(robot)
 
 		robot.respond(/remind (me|team|here|room) ((?:.|\s)*)$/i, (msg) => {
