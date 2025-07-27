@@ -94,7 +94,11 @@ function getDefaultRoleForChannel(
 		.reverse()
 
 	const normalize = (str: string) =>
-		str.toLowerCase().replace(/\s+/g, " ").trim()
+		str
+			.toLowerCase()
+			.replace(/\s+/g, " ")
+			.replace(/[^A-Za-z -]/g, "")
+			.trim()
 
 	const matchingRole = roleMatchPrefixes
 		.map((channelPrefixRole) =>
