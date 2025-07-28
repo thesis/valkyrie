@@ -31,6 +31,9 @@ const eventHandlers: Record<
       .setAuthor({ name: actor.name, iconURL: actor.avatarUrl })
       .setTimestamp()
 
+    if (!channel.isSendable()) {
+      throw new Error("Channel is not sendable")
+    }
     await channel.send({ embeds: [embed] })
   },
 }
@@ -149,6 +152,7 @@ export default async function linearIntegration(
       ],
     })
     robot.logger.info("Created linear command.")
+    robot.logger.info("✅ Linear Updates script loaded.")
   }
 
   discordClient.on("interactionCreate", async (interaction) => {
