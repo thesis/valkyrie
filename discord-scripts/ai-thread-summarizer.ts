@@ -9,21 +9,17 @@ import {
   ThreadChannel,
 } from "discord.js"
 import { Robot } from "hubot"
-// import { GoogleGenAI } from "@google/genai";
 
-const GOOGLE_API_KEY = process.env.GOOGLE_CLOUD_AI_KEY
-if (!GOOGLE_API_KEY) {
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY
+if (!ANTHROPIC_API_KEY) {
   throw new Error(
-    "❌ GOOGLE_CLOUD_AI_KEY is not defined. Please set the GOOGLE_CLOUD_AI_KEY environment variable.",
+    "❌ ANTHROPIC_API_KEY is not defined. Please set the ANTHROPIC_API_KEY environment variable.",
   )
 }
 
 const MAX_DISCORD_MESSAGE_LENGTH = 2000
 
-// WIP and have disabled using GoogleGenAI call since this was
-// causing core deps issues on top of
-// kicking connection errors, used api endpoint for testing.
-// const ai = new GoogleGenAI({ apiKey: GOOGLE_API_KEY! })
+// Using Claude API directly for better precision and reliability
 
 async function withRetries<T>(
   robot: Robot,
@@ -61,38 +57,60 @@ async function withRetries<T>(
 
 async function summarizeMessages(robot: Robot, text: string): Promise<string> {
   try {
-    const response = await withRetries(robot, "call Gemini API", async () => {
+    const response = await withRetries(robot, "call Claude API", async () => {
       return await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
+        "https://api.anthropic.com/v1/messages",
         {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "x-goog-api-key": GOOGLE_API_KEY!
+            "x-api-key": ANTHROPIC_API_KEY!,
+            "anthropic-version": "2023-06-01"
           },
           body: JSON.stringify({
-            contents: [
+            model: "claude-3-5-sonnet-20241022",
+            max_tokens: 2048,
+            messages: [
               {
                 role: "user",
-                parts: [
-                  {
-                    text: "Summarize this conversation with specific bullet points on each different point of the conversation. Be sure to start with a summary of each member and what they said.",
-                  },
-                ],
-              },
-              { role: "user", parts: [{ text }] },
-            ],
+                content: `Please provide a comprehensive and precise summary of this Discord thread conversation. Follow this structure:
+
+## Participants Summary
+- List each participant and their key contributions/viewpoints
+
+## Main Discussion Points
+- Identify and summarize each distinct topic or issue discussed
+- Include any decisions made or conclusions reached
+- Note any unresolved questions or ongoing debates
+
+## Key Takeaways
+- Highlight the most important insights or outcomes
+- Include any action items or next steps mentioned
+
+## Context & Tone
+- Brief note on the overall tone and context of the discussion
+
+Here's the conversation to summarize:
+
+${text}`
+              }
+            ]
           }),
         },
       )
     })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`)
+    }
+    
     const data = await response.json()
-
-    const textResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text
+    const textResponse = data?.content?.[0]?.text
     return textResponse ?? "⚠️ No summary available."
   } catch (error: unknown) {
     robot.logger.error(
-      "❌ AI Summarization Error:",
+      "❌ Claude AI Summarization Error:",
       error instanceof Error ? error.message : error,
     )
     return "⚠️ Failed to summarize the messages."
@@ -115,7 +133,7 @@ export default async function threadSummarizer(
   const { application } = discordClient
   if (application === null) {
     robot.logger.error(
-      "Failed to resolve Discord application, dropping AI Gemini handling.",
+      "Failed to resolve Discord application, dropping AI Claude handling.",
     )
     return
   }
@@ -166,7 +184,7 @@ export default async function threadSummarizer(
 
       await interaction.reply({
         content:
-          "🧠 Do you want to use GeminiAI to summarize this thread?\n⚠️ DO NOT use this on sensitive data or information.",
+          "🧠 Do you want to use Claude AI to summarize this thread?\n⚠️ DO NOT use this on sensitive data or information.",
         components: [row],
         ephemeral: true,
       })
