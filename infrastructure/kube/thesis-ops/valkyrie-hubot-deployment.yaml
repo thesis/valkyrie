@@ -16,8 +16,13 @@ spec:
     spec:
       containers:
         - name: hubot
-          image: gcr.io/thesis-ops-2748/valkyrie:f534c97b11df079196da6a739c480953e62439f9
+          image: gcr.io/thesis-ops-2748/valkyrie:cbd26f48c2311a0c506703b34356121a32557284
           env:
+            - name: GOOGLE_CLOUD_AI_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: google_cloud_ai_key
             - name: HUBOT_DISCORD_TOKEN
               valueFrom:
                 secretKeyRef:
