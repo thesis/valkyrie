@@ -73,7 +73,7 @@ async function summarizeMessages(robot: Robot, text: string): Promise<string> {
             messages: [
               {
                 role: "user",
-                content: `Please provide a comprehensive and precise summary of this Discord thread conversation. Follow this structure:
+                content: `Please provide a concise summary of this Discord thread conversation. Follow this structure:
 
 ## Participants Summary
 - List each participant and their key contributions/viewpoints
@@ -83,12 +83,9 @@ async function summarizeMessages(robot: Robot, text: string): Promise<string> {
 - Include any decisions made or conclusions reached
 - Note any unresolved questions or ongoing debates
 
-## Key Takeaways
+## Key Takeaways & Action Items
 - Highlight the most important insights or outcomes
 - Include any action items or next steps mentioned
-
-## Context & Tone
-- Brief note on the overall tone and context of the discussion
 
 Here's the conversation to summarize:
 
