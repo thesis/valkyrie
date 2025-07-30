@@ -18,6 +18,11 @@ spec:
         - name: hubot
           image: gcr.io/thesis-ops-2748/valkyrie:f534c97b11df079196da6a739c480953e62439f9
           env:
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: anthropic_api_key
             - name: HUBOT_DISCORD_TOKEN
               valueFrom:
                 secretKeyRef:
