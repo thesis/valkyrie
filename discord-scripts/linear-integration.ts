@@ -18,10 +18,45 @@ const LINEAR_BRAIN_KEY = "linear"
 
 const linearClient = new LinearClient({ apiKey: LINEAR_API_TOKEN })
 
-/* eslint-disable @typescript-eslint/no-explicit-any  */
+type LinearWebhookEvent = {
+  data: {
+    id: string
+    createdAt: string
+    updatedAt: string
+    body: string
+    project: {
+      id: string
+      name: string
+      url: string
+    }
+  }
+  actor: {
+    id: string
+    name: string
+    email: string
+    avatarUrl: string
+  }
+  url: string
+  type: string
+}
+
+type LinearConnection = {
+  webhookUrl: string
+  linearWebhookId: string
+  secret: string
+  teamId: string
+  channelId: string
+}
+
+type LinearConnections = {
+  [teamId: string]: {
+    [channelId: string]: LinearConnection
+  }
+}
+
 const eventHandlers: Record<
   string,
-  (data: any, channel: TextBasedChannel, robot: Robot) => Promise<void>
+  (data: LinearWebhookEvent, channel: TextBasedChannel, robot: Robot) => Promise<void>
 > = {
   ProjectUpdate: async ({ data, actor, url }, channel) => {
     const embed = new EmbedBuilder()
@@ -42,7 +77,6 @@ function sanitizeName(name: string): string {
   return name.toLowerCase().replace(/\s+/g, "-")
 }
 
-/* eslint-enable @typescript-eslint/no-explicit-any */
 async function createCustomWebhookUrl(
   channel: TextBasedChannel,
   robot: Robot,
@@ -67,12 +101,12 @@ async function createCustomWebhookUrl(
   }
 }
 
-async function fetchLinearTeams() {
+async function fetchLinearTeams(robot: Robot) {
   try {
     const teams = await linearClient.teams()
     return teams.nodes.map((team) => ({ id: team.id, name: team.name }))
   } catch (error) {
-    console.error("Error fetching Linear teams:", error)
+    robot.logger.error("Error fetching Linear teams:", error)
     return []
   }
 }
@@ -112,7 +146,7 @@ export default async function linearIntegration(
   if (!existingLinearCommand) {
     robot.logger.info("No linear command found, creating it!")
 
-    const teams = await fetchLinearTeams()
+    const teams = await fetchLinearTeams(robot)
 
     await application.commands.create({
       name: COMMAND_NAME,
@@ -173,7 +207,7 @@ export default async function linearIntegration(
         return
       }
 
-      const existingConnections =
+      const existingConnections: LinearConnections =
         robot.brain.get(LINEAR_BRAIN_KEY)?.connections ?? {}
 
       if (subcommand === CONNECT_SUBCOMMAND_NAME) {
@@ -224,9 +258,14 @@ export default async function linearIntegration(
             existingConnections[teamId] = {}
           }
 
+          const webhook = await createdWebhook.webhook
+          if (!webhook) {
+            throw new Error("Failed to create webhook")
+          }
+
           existingConnections[teamId][channel.id] = {
             webhookUrl: customWebhookUrl,
-            linearWebhookId: createdWebhook.webhook,
+            linearWebhookId: webhook.id,
             secret,
             teamId,
             channelId: channel.id,
@@ -253,37 +292,25 @@ export default async function linearIntegration(
           return
         }
 
-        const team = await linearClient.team(teamId)
-        const sanitizedChannelName = sanitizeName(channel.name)
-        const sanitizedTeamName = sanitizeName(team.name)
-        const label = `discord-${sanitizedChannelName}-${sanitizedTeamName}`
-
-        try {
-          const webhooks = await linearClient.webhooks()
-          const matchingWebhook = await Promise.all(
-            webhooks.nodes.map(async (webhook) => {
-              if (webhook.label !== label || !webhook.team) return null
-              const linearTeam = await webhook.team
-              return linearTeam.id === teamId ? webhook : null
-            }),
-          )
-
-          const foundWebhook = matchingWebhook.find(
-            (wh): wh is (typeof webhooks.nodes)[number] => !!wh,
-          )
-
-          if (foundWebhook) {
-            await linearClient.deleteWebhook(foundWebhook.id)
+        const connection = existingConnections[teamId]?.[channel.id]
+        if (connection?.linearWebhookId) {
+          try {
+            await linearClient.deleteWebhook(connection.linearWebhookId)
             robot.logger.info(
-              `Deleted webhook with label ${label} (id: ${foundWebhook.id})`,
+              `Deleted webhook with ID: ${connection.linearWebhookId}`,
             )
-          } else {
-            robot.logger.error(`No webhook found with label: ${label}`)
+          } catch (err) {
+            robot.logger.error(
+              `Error deleting webhook with ID ${connection.linearWebhookId}:`,
+              err,
+            )
           }
-        } catch (err) {
-          robot.logger.error(`Error deleting webhook with label ${label}:`, err)
+        } else {
+          robot.logger.error("No webhook ID found in connection")
         }
 
+        const team = await linearClient.team(teamId)
+        
         delete existingConnections[teamId][channel.id]
         if (Object.keys(existingConnections[teamId]).length === 0) {
           delete existingConnections[teamId]
@@ -305,7 +332,7 @@ export default async function linearIntegration(
     const focusedOption = interaction.options.getFocused(true)
     if (focusedOption.name !== "team") return
 
-    const teams = await fetchLinearTeams()
+    const teams = await fetchLinearTeams(robot)
     const filtered = teams.filter((team) =>
       team.name.toLowerCase().includes(focusedOption.value.toLowerCase()),
     )
@@ -324,6 +351,7 @@ export default async function linearIntegration(
       try {
         const eventData = request.body
         const channelId = request.params[0]
+        const webhookId = eventData?.webhookId
 
         robot.logger.debug(
           "Webhook payload:",
@@ -339,21 +367,26 @@ export default async function linearIntegration(
           return
         }
 
-        const existingConnections =
+        // Find connection by webhook ID instead of team ID
+        const existingConnections: LinearConnections =
           robot.brain.get(LINEAR_BRAIN_KEY)?.connections ?? {}
-
-        const teamIdFromEvent =
-          eventData?.data?.infoSnapshot?.teamsInfo?.[0]?.id
-        if (!teamIdFromEvent) {
-          robot.logger.error("Team ID not found in the payload.")
-          response.writeHead(400).end("Team ID not found in payload.")
-          return
+        
+        let connection = null
+        let _connectionTeamId = null
+        
+        // Search through all connections to find matching webhook ID and channel
+        for (const [teamId, teamConnections] of Object.entries(existingConnections)) {
+          const teamConnection = teamConnections[channelId]
+          if (teamConnection && teamConnection.linearWebhookId === webhookId) {
+            connection = teamConnection
+            _connectionTeamId = teamId
+            break
+          }
         }
 
-        const connection = existingConnections[teamIdFromEvent]?.[channelId]
         if (!connection) {
           robot.logger.error(
-            `No stored connection for team ${teamIdFromEvent} in channel ${channelId}`,
+            `No stored connection for webhook ${webhookId} in channel ${channelId}`,
           )
           response.writeHead(404).end("Connection not found.")
           return
