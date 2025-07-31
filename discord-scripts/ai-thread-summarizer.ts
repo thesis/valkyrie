@@ -73,10 +73,11 @@ async function summarizeMessages(robot: Robot, text: string): Promise<string> {
             messages: [
               {
                 role: "user",
-                content: `Please provide a concise summary of this Discord thread conversation. Follow this structure:
+                content: `Please provide a concise summary of this Discord thread conversation. Avoid numbered lists and use nested bullets under numbered lists. Follow this structure:
 
 ## Participants Summary
 - List each participant and their key contributions/viewpoints
+- If Discord tags are provided in the participant information below, include them next to each participant's name (e.g., "username (<@123456789>)")
 
 ## Main Discussion Points
 - Identify and summarize each distinct topic or issue discussed
@@ -112,6 +113,33 @@ ${text}`
     )
     return "⚠️ Failed to summarize the messages."
   }
+}
+
+async function getUserIdByUsername(
+  discordClient: Client,
+  guildId: string,
+  username: string,
+): Promise<string | null> {
+  const guild = discordClient.guilds.cache.get(guildId)
+  if (!guild) return null
+
+  await guild.members.fetch()
+
+  const matchedMember = guild.members.cache.find((member) =>
+    member.user.username === username || member.displayName === username
+  )
+
+  return matchedMember ? matchedMember.user.id : null
+}
+
+async function getUniqueParticipants(messages: Message[]): Promise<Set<string>> {
+  const participants = new Set<string>()
+  messages.forEach((message) => {
+    if (!message.author.bot) {
+      participants.add(message.author.username)
+    }
+  })
+  return participants
 }
 
 async function sendLongMessage(channel: TextChannel | ThreadChannel, message: string) {
@@ -213,17 +241,44 @@ export default async function threadSummarizer(
         return
       }
 
-      const formattedMessages = messages
+      const messagesArray = Array.from(messages.values())
+      const participants = await getUniqueParticipants(messagesArray)
+      
+      // Get user IDs for tagging
+      const guildId = thread.guildId
+      const userTags: string[] = []
+      const participantMappings: { [username: string]: string } = {}
+      
+      if (guildId) {
+        for (const username of participants) {
+          const userId = await getUserIdByUsername(discordClient, guildId, username)
+          if (userId) {
+            const tag = `<@${userId}>`
+            userTags.push(tag)
+            participantMappings[username] = tag
+          }
+        }
+      }
+
+      const formattedMessages = messagesArray
         .map((m: Message) => `${m.author.username}: ${m.content}`)
         .reverse()
         .join("\n")
 
-      const summary = await summarizeMessages(robot, formattedMessages)
+      const participantInfo = Array.from(participants).map(username => {
+        const tag = participantMappings[username]
+        return tag ? `${username} (${tag})` : username
+      }).join(", ")
 
-      if (summary.length > MAX_DISCORD_MESSAGE_LENGTH) {
-        await sendLongMessage(thread, `📜 **Thread Summary:**\n${summary}`)
+      const summary = await summarizeMessages(robot, `${formattedMessages}\n\n--- PARTICIPANT TAGS FOR SUMMARY ---\nParticipants with Discord tags: ${participantInfo}`)
+      
+      const taggedUsersText = userTags.length > 0 ? `\n\n👥 **Participants:** ${userTags.join(" ")}` : ""
+      const fullSummary = `📜 **Thread Summary:**\n${summary}${taggedUsersText}`
+
+      if (fullSummary.length > MAX_DISCORD_MESSAGE_LENGTH) {
+        await sendLongMessage(thread, fullSummary)
       } else {
-        await thread.send(`📜 **Thread Summary:**\n${summary}`)
+        await thread.send(fullSummary)
       }
 
       await interaction.followUp({
