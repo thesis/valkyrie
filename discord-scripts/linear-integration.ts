@@ -146,8 +146,6 @@ export default async function linearIntegration(
   if (!existingLinearCommand) {
     robot.logger.info("No linear command found, creating it!")
 
-    const teams = await fetchLinearTeams(robot)
-
     await application.commands.create({
       name: COMMAND_NAME,
       description: "Manage Linear project notifications in this channel.",
@@ -176,10 +174,7 @@ export default async function linearIntegration(
               type: ApplicationCommandOptionType.String,
               description: "The ID of the Linear team to disconnect.",
               required: true,
-              choices: teams.map((team) => ({
-                name: team.name,
-                value: team.id,
-              })),
+              autocomplete: true,
             },
           ],
         },
@@ -293,7 +288,15 @@ export default async function linearIntegration(
         }
 
         const connection = existingConnections[teamId]?.[channel.id]
-        if (connection?.linearWebhookId) {
+        if (!connection) {
+          await interaction.reply({
+            content: "This team is not connected to this channel",
+            ephemeral: true,
+          })
+          return
+        }
+        
+        if (connection.linearWebhookId) {
           try {
             await linearClient.deleteWebhook(connection.linearWebhookId)
             robot.logger.info(
@@ -332,17 +335,51 @@ export default async function linearIntegration(
     const focusedOption = interaction.options.getFocused(true)
     if (focusedOption.name !== "team") return
 
-    const teams = await fetchLinearTeams(robot)
-    const filtered = teams.filter((team) =>
-      team.name.toLowerCase().includes(focusedOption.value.toLowerCase()),
-    )
+    const subcommand = interaction.options.getSubcommand()
+    
+    if (subcommand === CONNECT_SUBCOMMAND_NAME) {
+      // For connect, show all available teams
+      const teams = await fetchLinearTeams(robot)
+      const filtered = teams.filter((team) =>
+        team.name.toLowerCase().includes(focusedOption.value.toLowerCase()),
+      )
 
-    await interaction.respond(
-      filtered.slice(0, 25).map((team) => ({
-        name: team.name,
-        value: team.id,
-      })),
-    )
+      await interaction.respond(
+        filtered.slice(0, 25).map((team) => ({
+          name: team.name,
+          value: team.id,
+        })),
+      )
+    } else if (subcommand === DISCONNECT_SUBCOMMAND_NAME) {
+      // For disconnect, show only connected teams in this channel
+      const existingConnections: LinearConnections =
+        robot.brain.get(LINEAR_BRAIN_KEY)?.connections ?? {}
+      
+      const channelId = interaction.channelId
+      const connectedTeams: Array<{ id: string; name: string }> = []
+      
+      for (const [teamId, teamConnections] of Object.entries(existingConnections)) {
+        if (teamConnections[channelId]) {
+          try {
+            const team = await linearClient.team(teamId)
+            connectedTeams.push({ id: team.id, name: team.name })
+          } catch (error) {
+            robot.logger.error(`Error fetching team ${teamId}:`, error)
+          }
+        }
+      }
+      
+      const filtered = connectedTeams.filter((team) =>
+        team.name.toLowerCase().includes(focusedOption.value.toLowerCase()),
+      )
+
+      await interaction.respond(
+        filtered.slice(0, 25).map((team) => ({
+          name: team.name,
+          value: team.id,
+        })),
+      )
+    }
   })
 
   robot.router.post(
