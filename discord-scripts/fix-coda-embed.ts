@@ -146,7 +146,7 @@ class CodaApiClient {
 			const data = response.data as CodaDocument
 			this.setCache(cacheKey, data)
 			return data
-		} catch (error) {
+		} catch (_error) {
 			return null
 		}
 	}
@@ -161,7 +161,7 @@ class CodaApiClient {
 			const data = response.data as CodaPage
 			this.setCache(cacheKey, data)
 			return data
-		} catch (error) {
+		} catch (_error) {
 			return null
 		}
 	}
@@ -176,7 +176,7 @@ class CodaApiClient {
 			const data = response.data as CodaSection
 			this.setCache(cacheKey, data)
 			return data
-		} catch (error) {
+		} catch (_error) {
 			return null
 		}
 	}
@@ -202,7 +202,7 @@ class CodaApiClient {
 			
 			this.setCache(cacheKey, data)
 			return data
-		} catch (error) {
+		} catch (_error) {
 			return null
 		}
 	}
@@ -417,7 +417,7 @@ async function createCodaEmbed(
 		}
 
 		return embed
-	} catch (error) {
+	} catch (_error) {
 		// Log error but don't throw - return null to gracefully handle failures
 		return null
 	}
