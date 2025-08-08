@@ -15,7 +15,7 @@ const { CODA_API_TOKEN } = process.env
 const IGNORED_CHANNELS = new Set<string>([])
 
 // Cache for storing API responses to reduce rate limit usage
-const cache = new Map<string, { data: any; timestamp: number }>()
+const cache = new Map<string, { data: unknown; timestamp: number }>()
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
 // Track processed messages to avoid duplicates if original message is edited
@@ -37,9 +37,9 @@ const sentEmbeds = new Map<string, Map<string, Message>>()
 
 // URL pattern matching for different Coda link types
 const CODA_URL_PATTERNS = {
-	document: /https:\/\/coda\.io\/d\/([^\/\?#]+)(?:\/([^\/\?#_]+))?/g,
-	section: /https:\/\/coda\.io\/d\/([^\/\?#]+)\/_su([^\/\?#]+)/g,
-	table: /https:\/\/coda\.io\/d\/([^\/\?#]+)\/_t([^\/\?#]+)/g,
+	document: /https:\/\/coda\.io\/d\/([^/?#]+)(?:\/([^/?#_]+))?/g,
+	section: /https:\/\/coda\.io\/d\/([^/?#]+)\/_su([^/?#]+)/g,
+	table: /https:\/\/coda\.io\/d\/([^/?#]+)\/_t([^/?#]+)/g,
 }
 
 type CodaLinkData = {
@@ -132,7 +132,7 @@ class CodaApiClient {
 		return null
 	}
 
-	private setCache(key: string, data: any): void {
+	private setCache(key: string, data: unknown): void {
 		cache.set(key, { data, timestamp: Date.now() })
 	}
 
@@ -166,13 +166,18 @@ class CodaApiClient {
 		}
 	}
 
-	async getSection(docId: string, sectionId: string): Promise<CodaSection | null> {
+	async getSection(
+		docId: string,
+		sectionId: string,
+	): Promise<CodaSection | null> {
 		const cacheKey = this.getCacheKey(`docs/${docId}/sections/${sectionId}`)
 		const cached = this.getFromCache<CodaSection>(cacheKey)
 		if (cached) return cached
 
 		try {
-			const response = await this.client.get(`/docs/${docId}/sections/${sectionId}`)
+			const response = await this.client.get(
+				`/docs/${docId}/sections/${sectionId}`,
+			)
 			const data = response.data as CodaSection
 			this.setCache(cacheKey, data)
 			return data
@@ -191,15 +196,15 @@ class CodaApiClient {
 				this.client.get(`/docs/${docId}/tables/${tableId}`),
 				this.client.get(`/docs/${docId}/tables/${tableId}/columns`),
 			])
-			
+
 			const tableData = tableResponse.data
 			const columnsData = columnsResponse.data
-			
+
 			const data: CodaTable = {
 				...tableData,
 				columns: columnsData.items || [],
 			}
-			
+
 			this.setCache(cacheKey, data)
 			return data
 		} catch (_error) {
@@ -354,7 +359,10 @@ async function createCodaEmbed(
 			}
 		} else if (linkData.type === "section" && linkData.sectionId) {
 			// Section-specific embed
-			const section = await codaClient.getSection(linkData.docId, linkData.sectionId)
+			const section = await codaClient.getSection(
+				linkData.docId,
+				linkData.sectionId,
+			)
 			if (!section) return null
 
 			embed
@@ -528,10 +536,7 @@ async function processCodaEmbeds(
 		})
 }
 
-export default async function codaEmbeds(
-	discordClient: Client,
-	robot: Robot,
-) {
+export default async function codaEmbeds(discordClient: Client, robot: Robot) {
 	if (!CODA_API_TOKEN) {
 		robot.logger.warn(
 			"CODA_API_TOKEN not found. Coda embed processing will be disabled.",
@@ -576,24 +581,33 @@ export default async function codaEmbeds(
 		}
 
 		const messageEmbeds = sentEmbeds.get(newMessage.id) ?? new Map()
-		
+
 		// Parse old and new Coda links
 		const oldLinks = oldMessage.content ? parseCodaUrls(oldMessage.content) : []
 		const newLinks = parseCodaUrls(newMessage.content)
-		
+
 		const oldKeys = new Set(
-			oldLinks.map((link) => `${link.docId}-${link.pageId || ""}-${link.sectionId || ""}-${link.tableId || ""}`)
+			oldLinks.map(
+				(link) =>
+					`${link.docId}-${link.pageId || ""}-${link.sectionId || ""}-${link.tableId || ""}`,
+			),
 		)
 		const newKeys = new Set(
-			newLinks.map((link) => `${link.docId}-${link.pageId || ""}-${link.sectionId || ""}-${link.tableId || ""}`)
+			newLinks.map(
+				(link) =>
+					`${link.docId}-${link.pageId || ""}-${link.sectionId || ""}-${link.tableId || ""}`,
+			),
 		)
 
 		// Remove embeds for deleted links
 		oldKeys.forEach((key) => {
 			if (!newKeys.has(key) && messageEmbeds.has(key)) {
-				messageEmbeds.get(key)?.delete().catch((error) =>
-					robot.logger.error(`Failed to delete Coda embed: ${error}`)
-				)
+				messageEmbeds
+					.get(key)
+					?.delete()
+					.catch((error) =>
+						robot.logger.error(`Failed to delete Coda embed: ${error}`),
+					)
 				messageEmbeds.delete(key)
 			}
 		})
@@ -622,7 +636,9 @@ export default async function codaEmbeds(
 				Array.from(embedMessages.values()).map((embedMessage) =>
 					embedMessage.delete().catch((error: unknown) => {
 						if (error instanceof Error) {
-							robot.logger.error(`Failed to delete Coda embed: ${error.message}`)
+							robot.logger.error(
+								`Failed to delete Coda embed: ${error.message}`,
+							)
 						} else {
 							robot.logger.error(`Unknown error deleting Coda embed: ${error}`)
 						}
