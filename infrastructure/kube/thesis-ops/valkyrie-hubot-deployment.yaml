@@ -45,6 +45,11 @@ spec:
                 secretKeyRef:
                   name: valkyrie-hubot
                   key: hubot_webhook_auth
+            - name: HUBOT_CODA_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: hubot_coda_token
             - name: HUBOT_N8N_WEBHOOK
               valueFrom:
                 secretKeyRef:
