@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: hubot
-          image: gcr.io/thesis-ops-2748/valkyrie:f534c97b11df079196da6a739c480953e62439f9
+#          image: gcr.io/thesis-ops-2748/valkyrie:571907d25da706484e12f7d8c40e03a9d82105a8
           env:
             - name: ANTHROPIC_API_KEY
               valueFrom:
@@ -45,6 +45,11 @@ spec:
                 secretKeyRef:
                   name: valkyrie-hubot
                   key: hubot_webhook_auth
+            - name: HUBOT_CODA_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: hubot_coda_token
             - name: HUBOT_N8N_WEBHOOK
               valueFrom:
                 secretKeyRef:
