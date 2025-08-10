@@ -1,0 +1,43 @@
+# Stoleded from https://github.com/kubernetes/examples/blob/master/staging/storage/redis/ .
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: valkyrie-redis-set
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  serviceName: valkyrie-redis-service
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: master
+          image: redis:3.2-alpine
+          env:
+            - name: MASTER
+              value: "true"
+          ports:
+            - containerPort: 6379
+          resources:
+            limits:
+              cpu: "0.1"
+          command: ["sh", "-c"]
+          args:
+            - echo "dir /redis-master-data" | redis-server -
+          volumeMounts:
+            - mountPath: /redis-master-data
+              name: valkyrie-data
+  volumeClaimTemplates:
+    - metadata:
+        name: valkyrie-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
