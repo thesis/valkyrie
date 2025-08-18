@@ -214,7 +214,7 @@ export default async function threadSummarizer(
       }
 
       const formattedMessages = messages
-        .map((m: Message) => `${m.author.username}: ${m.content}`)
+        .map((m: Message) => `${m.member?.displayName ?? m.author.displayName ?? m.author.username}: ${m.content}`)
         .reverse()
         .join("\n")
 
