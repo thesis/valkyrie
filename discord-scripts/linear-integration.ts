@@ -76,7 +76,7 @@ const eventHandlers: Record<
     let description = data.body || "No description provided."
     description = hideTextBetweenMarkers(description)
     const trimmedDescription = description.length > 500 
-      ? `${description.substring(0, 497)}...`
+      ? `${description.substring(0, 500)}...`
       : description
 
     const embed = new EmbedBuilder()
