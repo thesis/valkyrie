@@ -36,6 +36,7 @@ type LinearWebhookEvent = {
     email: string
     avatarUrl: string
   }
+  updatedFrom?: Record<string, unknown>
   url: string
   type: string
 }
@@ -54,14 +55,33 @@ type LinearConnections = {
   }
 }
 
+function hideTextBetweenMarkers(text: string): string {
+  // Remove text between first +++ and second +++
+  const regex = /\+\+\+[\s\S]*?\+\+\+/g
+  return text.replace(regex, "").trim()
+}
+
 const eventHandlers: Record<
   string,
   (data: LinearWebhookEvent, channel: TextBasedChannel, robot: Robot) => Promise<void>
 > = {
-  ProjectUpdate: async ({ data, actor, url }, channel) => {
+  ProjectUpdate: async ({ data, actor, url, updatedFrom }, channel, robot) => {
+    // Skip updates that have been edited (contain updatedFrom object)
+    if (updatedFrom) {
+      robot.logger.debug(`Skipping edited update: ${data.id}`)
+      return
+    }
+    
+    // Process description: hide text between +++ markers, then trim if too long
+    let description = data.body || "No description provided."
+    description = hideTextBetweenMarkers(description)
+    const trimmedDescription = description.length > 500 
+      ? `${description.substring(0, 500)}...`
+      : description
+
     const embed = new EmbedBuilder()
       .setTitle(`Project Update: ${data.project.name}`)
-      .setDescription(data.body || "No description provided.")
+      .setDescription(trimmedDescription)
       .setURL(url)
       .setAuthor({ name: actor.name, iconURL: actor.avatarUrl })
       .setTimestamp()
@@ -69,6 +89,7 @@ const eventHandlers: Record<
     if (!channel.isSendable()) {
       throw new Error("Channel is not sendable")
     }
+    
     await channel.send({ embeds: [embed] })
   },
 }
@@ -409,14 +430,12 @@ export default async function linearIntegration(
           robot.brain.get(LINEAR_BRAIN_KEY)?.connections ?? {}
         
         let connection = null
-        let _connectionTeamId = null
         
         // Search through all connections to find matching webhook ID and channel
-        for (const [teamId, teamConnections] of Object.entries(existingConnections)) {
+        for (const [_teamId, teamConnections] of Object.entries(existingConnections)) {
           const teamConnection = teamConnections[channelId]
           if (teamConnection && teamConnection.linearWebhookId === webhookId) {
             connection = teamConnection
-            _connectionTeamId = teamId
             break
           }
         }
