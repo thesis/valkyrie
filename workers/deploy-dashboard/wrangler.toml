@@ -1,0 +1,70 @@
+# Deploy Dashboard Worker Configuration
+#
+# This worker serves the deployment dashboard built with Next.js
+# and uses D1 for data storage.
+
+name = "deploy-dashboard"
+main = ".worker-next/index.mjs"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers dev mode
+workers_dev = true
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "deploy-dashboard-db"
+database_id = "" # Set via wrangler d1 create or environment variable
+
+# Assets for the Next.js app
+[assets]
+directory = ".worker-next/assets"
+binding = "ASSETS"
+
+# Environment-specific configuration
+[env.production]
+name = "deploy-dashboard"
+route = "deploy.example.com/*"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "deploy-dashboard-db"
+database_id = "" # Production database ID
+
+[env.production.vars]
+ENVIRONMENT = "production"
+
+[env.staging]
+name = "deploy-dashboard-staging"
+route = "deploy-staging.example.com/*"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "deploy-dashboard-db-staging"
+database_id = "" # Staging database ID
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+
+[env.preview]
+name = "deploy-dashboard-preview"
+workers_dev = true
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "deploy-dashboard-db-preview"
+database_id = "" # Preview database ID
+
+[env.preview.vars]
+ENVIRONMENT = "preview"
+
+# Build configuration
+[build]
+command = "pnpm build"
+
+# Cloudflare Access configuration (for protected routes)
+# Uncomment and configure when you have Access set up
+# [vars]
+# CF_ACCESS_TEAM_DOMAIN = "your-team.cloudflareaccess.com"
+# CF_ACCESS_AUD = "your-audience-tag"

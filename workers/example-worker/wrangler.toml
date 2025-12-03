@@ -1,0 +1,43 @@
+# Example Worker Configuration
+#
+# This is a template for creating new Cloudflare Workers in this project.
+# Copy this directory and customize for your worker.
+
+name = "example-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers dev mode for local development
+workers_dev = true
+
+# Production environment
+[env.production]
+name = "example-worker"
+route = "api.example.com/example/*"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "info"
+
+# Staging environment
+[env.staging]
+name = "example-worker-staging"
+route = "api-staging.example.com/example/*"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+LOG_LEVEL = "debug"
+
+# Preview environment (used for PR deployments)
+[env.preview]
+name = "example-worker-preview"
+workers_dev = true
+
+[env.preview.vars]
+ENVIRONMENT = "preview"
+LOG_LEVEL = "debug"
+
+# Build configuration
+[build]
+command = "pnpm build"
