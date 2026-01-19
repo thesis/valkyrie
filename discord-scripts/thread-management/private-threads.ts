@@ -6,6 +6,7 @@ const PRIVATE_THREAD_CHANNELS = [
 	{ id: "1202691029996675104", name: "hiring" },
 	{ id: "1218285168888909975", name: "onboarding" },
 	{ id: "1270737328629092374", name: "people-management" },
+	{ id: "1088473554259017748", name: "🔒accounting" },
 ]
 
 async function privateThreadAdmonishment(
