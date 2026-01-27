@@ -1,0 +1,11 @@
+Type,Channel/Category,Roles,Notes
+hardcoded,biz-dev-investor,BD,Custom mapping
+hardcoded,press-relations,"M Group, Marketing",Custom mapping - multiple roles
+hardcoded,mezo-marketing,Mezo Marketing,Custom mapping
+hardcoded,mezo-cathedral,Mezo Cathedral,Custom mapping
+hardcoded,mezo-ecosystem,Mezo Ecosystem,Custom mapping
+special-category,1079492118692757605,(none),Recreational category - auto-tagging disabled
+fallback-rule,main (in General category),@everyone,Tags everyone when in General category
+fallback-rule,bifrost (in General category),@everyone,Tags everyone when in General category
+pattern-match,<channel-name>,<Role matching channel name>,e.g. #tech → @Tech
+pattern-match,<category-name>,<Role matching category name>,Fallback if no channel match
