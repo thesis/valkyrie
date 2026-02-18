@@ -35,7 +35,7 @@ type LinearWebhookEvent = {
     name: string
     email: string
     avatarUrl: string
-  }
+  } | null
   updatedFrom?: Record<string, unknown>
   url: string
   type: string
@@ -83,8 +83,14 @@ const eventHandlers: Record<
       .setTitle(`Project Update: ${data.project.name}`)
       .setDescription(trimmedDescription)
       .setURL(url)
-      .setAuthor({ name: actor.name, iconURL: actor.avatarUrl })
       .setTimestamp()
+
+    const authorName = actor !== null ? actor.name : "Linear"
+    const authorIconURL =
+      actor !== null
+        ? actor.avatarUrl
+        : "https://avatars.githubusercontent.com/u/46686594?v=4"
+    embed.setAuthor({ name: authorName, iconURL: authorIconURL })
 
     if (!channel.isSendable()) {
       throw new Error("Channel is not sendable")
