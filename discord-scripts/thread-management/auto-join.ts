@@ -1,6 +1,7 @@
 import {
 	AnyThreadChannel,
 	ApplicationCommandOptionType,
+	ChatInputApplicationCommandData,
 	ChannelType,
 	Client,
 	GuildTextBasedChannel,
@@ -18,8 +19,10 @@ import {
 // to the thread (they may later leave the thread to opt out). The role that
 // is tagged is, in order:
 //
+// - If the containing channel has auto-tagging disabled (via /auto-tag disable),
+//   no role.
 // - If the containing channel's category is recreational, no role.
-// - If the containnig channel has a role with a matching name, that role
+// - If the containing channel has a role with a matching name, that role
 //   (e.g., a message to #tech will tag a Tech role if it exists).
 // - If the containing channel's category has a role with a matching name, that role
 //   (e.g., a message to #taho-standup inside the Taho category will tag the
@@ -45,10 +48,13 @@ const CUSTOM_CHANNEL_ROLE: ChannelRoleMapping[] = [
 ]
 
 const AUTO_TAG_BRAIN_KEY = "auto-tag-roles"
+const AUTO_TAG_DISABLED_BRAIN_KEY = "auto-tag-disabled-channels"
 const COMMAND_NAME = "auto-tag"
 const ADD_SUBCOMMAND_NAME = "add"
 const LIST_SUBCOMMAND_NAME = "list"
 const REMOVE_SUBCOMMAND_NAME = "remove"
+const DISABLE_SUBCOMMAND_NAME = "disable"
+const ENABLE_SUBCOMMAND_NAME = "enable"
 
 function getDefaultRoleForChannel(
 	containingChannel: AnyThreadChannel["parent"],
@@ -145,6 +151,12 @@ async function autoJoinThread(
 
 	const { guild: server, parent: containingChannel } = thread
 
+	const disabledChannels: string[] =
+		robot.brain.get(AUTO_TAG_DISABLED_BRAIN_KEY) ?? []
+	if (containingChannel !== null && disabledChannels.includes(containingChannel.id)) {
+		return
+	}
+
 	if (!thread.isSendable()) {
 		return
 	}
@@ -199,57 +211,73 @@ export async function setup(robot: DiscordHubot, discordClient: Client) {
 		return
 	}
 
+	const autoTagCommandDefinition: ChatInputApplicationCommandData = {
+		name: COMMAND_NAME,
+		description:
+			"Manage roles that are auto-tagged in new threads for this channel.",
+		options: [
+			{
+				name: ADD_SUBCOMMAND_NAME,
+				type: ApplicationCommandOptionType.Subcommand,
+				description:
+					"Add a role to be auto-tagged in new threads for this channel.",
+				options: [
+					{
+						name: "role",
+						type: ApplicationCommandOptionType.String,
+						description: "The name of the role to add.",
+						required: true,
+						autocomplete: true,
+					},
+				],
+			},
+			{
+				name: LIST_SUBCOMMAND_NAME,
+				type: ApplicationCommandOptionType.Subcommand,
+				description:
+					"List roles that will be auto-tagged in new threads for this channel.",
+			},
+			{
+				name: REMOVE_SUBCOMMAND_NAME,
+				type: ApplicationCommandOptionType.Subcommand,
+				description:
+					"Remove a role from being auto-tagged in new threads for this channel.",
+				options: [
+					{
+						name: "role",
+						type: ApplicationCommandOptionType.String,
+						description: "The name of the role to remove.",
+						required: true,
+						autocomplete: true,
+					},
+				],
+			},
+			{
+				name: DISABLE_SUBCOMMAND_NAME,
+				type: ApplicationCommandOptionType.Subcommand,
+				description:
+					"Disable auto-tagging of users in new threads for this channel.",
+			},
+			{
+				name: ENABLE_SUBCOMMAND_NAME,
+				type: ApplicationCommandOptionType.Subcommand,
+				description:
+					"Re-enable auto-tagging of users in new threads for this channel.",
+			},
+		],
+	}
+
 	const existingAutoTagCommand = (await application.commands.fetch()).find(
 		(command) => command.name === COMMAND_NAME,
 	)
 
 	if (existingAutoTagCommand === undefined) {
 		robot.logger.info("No auto-tag command yet, creating it!")
-		await application.commands.create({
-			name: COMMAND_NAME,
-			description:
-				"Manage roles that are auto-tagged in new threads for this channel.",
-			options: [
-				{
-					name: ADD_SUBCOMMAND_NAME,
-					type: ApplicationCommandOptionType.Subcommand,
-					description:
-						"Add a role to be auto-tagged in new threads for this channel.",
-					options: [
-						{
-							name: "role",
-							type: ApplicationCommandOptionType.String,
-							description: "The name of the role to add.",
-							required: true,
-							autocomplete: true,
-						},
-					],
-				},
-				{
-					name: LIST_SUBCOMMAND_NAME,
-					type: ApplicationCommandOptionType.Subcommand,
-					description:
-						"List roles that will be auto-tagged in new threads for this channel.",
-				},
-				{
-					name: REMOVE_SUBCOMMAND_NAME,
-					type: ApplicationCommandOptionType.Subcommand,
-					description:
-						"Remove a role from being auto-tagged in new threads for this channel.",
-					options: [
-						{
-							name: "role",
-							type: ApplicationCommandOptionType.String,
-							description: "The name of the role to remove.",
-							required: true,
-							autocomplete: true,
-						},
-					],
-				},
-			],
-		})
-
+		await application.commands.create(autoTagCommandDefinition)
 		robot.logger.info("Created auto-tag command.")
+	} else {
+		await existingAutoTagCommand.edit(autoTagCommandDefinition)
+		robot.logger.info("Updated auto-tag command.")
 	}
 
 	// Handle auto-tag slash command interactions
@@ -410,6 +438,43 @@ export async function setup(robot: DiscordHubot, discordClient: Client) {
 						await interaction.reply({
 							content: `Failed to remove role "${roleName}" from auto-tag list. Please try again.`,
 							ephemeral: true,
+						})
+					}
+				} else if (subcommand === DISABLE_SUBCOMMAND_NAME) {
+					const disabledChannels: string[] =
+						robot.brain.get(AUTO_TAG_DISABLED_BRAIN_KEY) ?? []
+
+					if (disabledChannels.includes(channel.id)) {
+						await interaction.reply({
+							content: "Auto-tagging is already disabled for this channel.",
+							ephemeral: true,
+						})
+					} else {
+						robot.brain.set(AUTO_TAG_DISABLED_BRAIN_KEY, [
+							...disabledChannels,
+							channel.id,
+						])
+						await interaction.reply({
+							content:
+								"Auto-tagging disabled for this channel. New threads will not tag any users or roles.",
+						})
+					}
+				} else if (subcommand === ENABLE_SUBCOMMAND_NAME) {
+					const disabledChannels: string[] =
+						robot.brain.get(AUTO_TAG_DISABLED_BRAIN_KEY) ?? []
+
+					if (!disabledChannels.includes(channel.id)) {
+						await interaction.reply({
+							content: "Auto-tagging is already enabled for this channel.",
+							ephemeral: true,
+						})
+					} else {
+						robot.brain.set(
+							AUTO_TAG_DISABLED_BRAIN_KEY,
+							disabledChannels.filter((id) => id !== channel.id),
+						)
+						await interaction.reply({
+							content: "Auto-tagging re-enabled for this channel.",
 						})
 					}
 				}
