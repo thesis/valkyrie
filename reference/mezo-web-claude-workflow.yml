@@ -1,0 +1,59 @@
+# Reference workflow for Mezo-org/web.
+#
+# Copy this file to Mezo-org/web/.github/workflows/claude.yml to enable
+# the /investigate command from Discord #mezo-issue-reports threads.
+#
+# When a GitHub issue is created with @claude in the body, this workflow
+# runs Claude Code to analyze the issue, diagnose the root cause, and
+# propose a fix.
+#
+# Required repository secret: ANTHROPIC_API_KEY
+
+name: Claude Code
+
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened]
+
+jobs:
+  claude:
+    if: |
+      (github.event_name == 'issues' && contains(github.event.issue.body, '@claude')) ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+          allowed_tools: "Bash(npm install),Bash(npm run build),Bash(npm run test:*),Bash(npm run lint:*),Bash(npx tsc --noEmit)"
+
+          custom_instructions: |
+            You are investigating an issue report that originated from a Discord
+            #mezo-issue-reports thread. Your job is to:
+
+            1. **Analyze**: Read the issue description carefully. Identify the
+               symptoms, any reproduction steps, and the expected vs actual
+               behavior.
+            2. **Diagnose**: Search the codebase for the relevant files and code
+               paths. Identify the likely root cause. Explain your reasoning.
+            3. **Propose a fix**: If you can confidently identify a fix, create a
+               pull request with the changes. Include tests if applicable. If the
+               fix is uncertain, comment on the issue with your analysis and
+               suggested next steps.
+
+            Always explain your reasoning clearly in issue comments so the team
+            can follow your investigation.

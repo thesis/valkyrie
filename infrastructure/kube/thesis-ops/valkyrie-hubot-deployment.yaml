@@ -132,6 +132,11 @@ spec:
                 secretKeyRef:
                   name: valkyrie-hubot
                   key: zoom_api_secret
+            - name: GITHUB_ISSUE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: valkyrie-hubot
+                  key: github_issue_token
             - name: ZOOM_EXPECTED_MEETING_DURATION
               value: "60"
           ports:
