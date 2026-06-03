@@ -32,8 +32,9 @@ RUN apk add --no-cache \
 	git && \
 	rm -rf /usr/share/man/
 
-# Install pnpm
-RUN npm install -g pnpm
+# Install pnpm. Pin to v9, the last major that still supports the Node 18
+# runtime this image is built on (pnpm 10 requires Node >=22.13).
+RUN npm install -g pnpm@9
 
 COPY pnpm-lock.yaml package.json ./
 
