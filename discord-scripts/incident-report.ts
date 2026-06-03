@@ -14,15 +14,21 @@ import { Robot } from "hubot"
 
 // Set to #alarm-trigger channel
 const CHANNEL_ID = "1377183184902688862"
-const { INCIDENT_ROUTING_KEY } = process.env
+const { CRITICAL_INCIDENT_ROUTING_KEY, HIGH_INCIDENT_ROUTING_KEY } = process.env
 
 export default async function incidentReport(
 	discordClient: Client,
 	robot: Robot,
 ) {
-	if (!INCIDENT_ROUTING_KEY) {
+	if (!CRITICAL_INCIDENT_ROUTING_KEY) {
 		robot.logger.error(
-			"INCIDENT_ROUTING_KEY is not set. Skipping incident report setup.",
+			"CRITICAL_INCIDENT_ROUTING_KEY is not set. Skipping incident report setup.",
+		)
+		return
+	}
+	if (!HIGH_INCIDENT_ROUTING_KEY) {
+		robot.logger.error(
+			"HIGH_INCIDENT_ROUTING_KEY is not set. Skipping incident report setup.",
 		)
 		return
 	}
@@ -50,9 +56,13 @@ export default async function incidentReport(
 
 		const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
 			new ButtonBuilder()
-				.setCustomId("incident_yes")
-				.setLabel("🚨 Wake Someone Up!")
+				.setCustomId("incident_critical")
+				.setLabel("🚨 Critical: Security incident or chain halt")
 				.setStyle(ButtonStyle.Danger),
+			new ButtonBuilder()
+				.setCustomId("incident_high")
+				.setLabel("🛎 High: Other high severity incident")
+				.setStyle(ButtonStyle.Primary),
 			new ButtonBuilder()
 				.setCustomId("incident_no")
 				.setLabel("Don't Trigger")
@@ -63,7 +73,6 @@ export default async function incidentReport(
 			await message.reply({
 				content: `**Before triggering an alert, ask yourself:**  
 - Is this incident truly a Critical or High severity issue?  
-- Could this wait until regular business hours without major impact?  
 - Can I resolve this with existing documentation or procedures?`,
 
 				components: [row],
@@ -79,24 +88,50 @@ export default async function incidentReport(
 		async (interaction: Interaction) => {
 			if (!interaction.isButton()) return
 
-			if (interaction.customId === "incident_yes") {
+			if (interaction.customId === "incident_critical") {
 				try {
 					await fetch("https://events.pagerduty.com/v2/enqueue", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({
 							payload: {
-								summary: "Mezo Critical alert triggered from Discord",
+								summary: "Mezo Security alert triggered from Discord",
 								severity: "critical",
 								source: "Mezo",
 							},
-							routing_key: INCIDENT_ROUTING_KEY,
+							routing_key: CRITICAL_INCIDENT_ROUTING_KEY,
 							event_action: "trigger",
 						}),
 					})
 
 					await interaction.reply({
-						content: "🚨 Alert has been triggered.",
+						content: "🚨 Critical severity alert has been triggered. Escalating to the Security Response group.",
+					})
+				} catch (error) {
+					robot.logger.error("❌ Failed to trigger alert:", error)
+					await interaction.reply({
+						content: "⚠️ Failed to trigger alert.",
+					})
+				}
+			} else if (interaction.customId === "incident_high") {
+				try {
+					await fetch("https://events.pagerduty.com/v2/enqueue", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							payload: {
+								summary: "Mezo High severity alert triggered from Discord",
+								severity: "critical", // PagerDuty does not support "high"
+								source: "Mezo",
+							},
+							routing_key: HIGH_INCIDENT_ROUTING_KEY,
+							event_action: "trigger",
+						}),
+					})
+
+					await interaction.reply({
+						content:
+							"🛎 High severity alert has been triggered. Note these are handled during business hours.",
 					})
 				} catch (error) {
 					robot.logger.error("❌ Failed to trigger alert:", error)
