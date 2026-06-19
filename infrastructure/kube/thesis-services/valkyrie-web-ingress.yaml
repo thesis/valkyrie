@@ -1,0 +1,15 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.allow-http: "false"
+    kubernetes.io/ingress.global-static-ip-name: valkyrie-web-ip
+  name: valkyrie-web-ingress
+spec:
+  tls:
+  - secretName: thesis-co-cloudflare-origin-cert
+  defaultBackend:
+    service:
+      name: valkyrie-http-service
+      port:
+        number: 8080
